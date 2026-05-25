@@ -711,7 +711,13 @@ build_and_start() {
         rm -rf "$dest/data/requiredDataFiles.json"
     fi
     if [[ ! -f "$dest/data/requiredDataFiles.json" ]]; then
-        echo '[]' > "$dest/data/requiredDataFiles.json"
+        cat > "$dest/data/requiredDataFiles.json" << 'EOF'
+[
+    "Morrowind.esm",
+    "Tribunal.esm",
+    "Bloodmoon.esm"
+]
+EOF
     fi
 
     info "Building Docker image (this may take a minute)..."
