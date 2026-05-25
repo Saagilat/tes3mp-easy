@@ -121,7 +121,7 @@ install_utils() {
 }
 
 # ────────────────────────────────────────────────────────────
-# 3. Interactive questionnaire
+# 3. Interactive questionnaire (TES3MP core)
 # ────────────────────────────────────────────────────────────
 gather_options() {
     echo ""
@@ -225,6 +225,196 @@ gather_options() {
 }
 
 # ────────────────────────────────────────────────────────────
+# 3b. Interactive questionnaire (config.lua)
+# ────────────────────────────────────────────────────────────
+gather_lua_options() {
+    echo ""
+    echo "========================================"
+    echo "  Lua Config (config.lua) Settings"
+    echo "========================================"
+    echo ""
+
+    # ---- Game settings ----
+    echo "--- Game Settings ---"
+    echo ""
+
+    read -r -p "Game mode (displayed in server browser) [default: Default]: " LUA_GAME_MODE </dev/tty
+    LUA_GAME_MODE="${LUA_GAME_MODE:-Default}"
+
+    read -r -p "Difficulty (-100..100) [default: 0]: " LUA_DIFFICULTY </dev/tty
+    LUA_DIFFICULTY="${LUA_DIFFICULTY:-0}"
+
+    read -r -p "Login time (seconds) [default: 60]: " LUA_LOGIN_TIME </dev/tty
+    LUA_LOGIN_TIME="${LUA_LOGIN_TIME:-60}"
+
+    read -r -p "Max clients per IP [default: 3]: " LUA_MAX_CLIENTS_PER_IP </dev/tty
+    LUA_MAX_CLIENTS_PER_IP="${LUA_MAX_CLIENTS_PER_IP:-3}"
+
+    # ---- Sharing ----
+    echo ""
+    echo "--- Sharing ---"
+    echo ""
+
+    read -r -p "Share journal (quests are shared) [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_SHARE_JOURNAL="true" ;; *) LUA_SHARE_JOURNAL="false" ;; esac
+
+    read -r -p "Share faction ranks [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_SHARE_FACTION_RANKS="true" ;; *) LUA_SHARE_FACTION_RANKS="false" ;; esac
+
+    read -r -p "Share faction expulsion [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_SHARE_FACTION_EXPULSION="true" ;; *) LUA_SHARE_FACTION_EXPULSION="false" ;; esac
+
+    read -r -p "Share faction reputation [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_SHARE_FACTION_REPUTATION="true" ;; *) LUA_SHARE_FACTION_REPUTATION="false" ;; esac
+
+    read -r -p "Share dialogue topics [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_SHARE_TOPICS="true" ;; *) LUA_SHARE_TOPICS="false" ;; esac
+
+    read -r -p "Share bounty [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_SHARE_BOUNTY="true" ;; *) LUA_SHARE_BOUNTY="false" ;; esac
+
+    read -r -p "Share reputation [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_SHARE_REPUTATION="true" ;; *) LUA_SHARE_REPUTATION="false" ;; esac
+
+    read -r -p "Share map exploration [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_SHARE_MAP_EXPLORATION="true" ;; *) LUA_SHARE_MAP_EXPLORATION="false" ;; esac
+
+    read -r -p "Share videos [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_SHARE_VIDEOS="true" ;; *) LUA_SHARE_VIDEOS="false" ;; esac
+
+    # ---- Permissions ----
+    echo ""
+    echo "--- Permissions ---"
+    echo ""
+
+    read -r -p "Allow console (~) [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_ALLOW_CONSOLE="true" ;; *) LUA_ALLOW_CONSOLE="false" ;; esac
+
+    read -r -p "Allow bed rest [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ALLOW_BED_REST="true" ;; *) LUA_ALLOW_BED_REST="false" ;; esac
+
+    read -r -p "Allow wilderness rest [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ALLOW_WILDERNESS_REST="true" ;; *) LUA_ALLOW_WILDERNESS_REST="false" ;; esac
+
+    read -r -p "Allow wait [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ALLOW_WAIT="true" ;; *) LUA_ALLOW_WAIT="false" ;; esac
+
+    read -r -p "Allow /suicide command [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ALLOW_SUICIDE_COMMAND="true" ;; *) LUA_ALLOW_SUICIDE_COMMAND="false" ;; esac
+
+    read -r -p "Allow /fixme command [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ALLOW_FIXME_COMMAND="true" ;; *) LUA_ALLOW_FIXME_COMMAND="false" ;; esac
+
+    # ---- Respawn & Death ----
+    echo ""
+    echo "--- Respawn & Death ---"
+    echo ""
+
+    read -r -p "Players respawn on death [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_PLAYERS_RESPAWN="true" ;; *) LUA_PLAYERS_RESPAWN="false" ;; esac
+
+    read -r -p "Death time (seconds) [default: 5]: " LUA_DEATH_TIME </dev/tty
+    LUA_DEATH_TIME="${LUA_DEATH_TIME:-5}"
+
+    read -r -p "Jail days on death [default: 5]: " LUA_DEATH_PENALTY_JAIL_DAYS </dev/tty
+    LUA_DEATH_PENALTY_JAIL_DAYS="${LUA_DEATH_PENALTY_JAIL_DAYS:-5}"
+
+    read -r -p "Reset bounty on death [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_BOUNTY_RESET_ON_DEATH="true" ;; *) LUA_BOUNTY_RESET_ON_DEATH="false" ;; esac
+
+    read -r -p "Bounty-based jail time on death [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_BOUNTY_DEATH_PENALTY="true" ;; *) LUA_BOUNTY_DEATH_PENALTY="false" ;; esac
+
+    read -r -p "Respawn at Imperial shrine [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_RESPAWN_AT_IMPERIAL_SHRINE="true" ;; *) LUA_RESPAWN_AT_IMPERIAL_SHRINE="false" ;; esac
+
+    read -r -p "Respawn at Tribunal temple [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_RESPAWN_AT_TRIBUNAL_TEMPLE="true" ;; *) LUA_RESPAWN_AT_TRIBUNAL_TEMPLE="false" ;; esac
+
+    # ---- Collisions ----
+    echo ""
+    echo "--- Collisions ---"
+    echo ""
+
+    read -r -p "Player-player collision [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ENABLE_PLAYER_COLLISION="true" ;; *) LUA_ENABLE_PLAYER_COLLISION="false" ;; esac
+
+    read -r -p "Actor-actor collision [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ENABLE_ACTOR_COLLISION="true" ;; *) LUA_ENABLE_ACTOR_COLLISION="false" ;; esac
+
+    read -r -p "Placed object collision [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_ENABLE_PLACED_OBJECT_COLLISION="true" ;; *) LUA_ENABLE_PLACED_OBJECT_COLLISION="false" ;; esac
+
+    # ---- Time ----
+    echo ""
+    echo "--- Time ---"
+    echo ""
+
+    read -r -p "Pass time when server is empty [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_PASS_TIME_WHEN_EMPTY="true" ;; *) LUA_PASS_TIME_WHEN_EMPTY="false" ;; esac
+
+    read -r -p "Night start hour [default: 20]: " LUA_NIGHT_START_HOUR </dev/tty
+    LUA_NIGHT_START_HOUR="${LUA_NIGHT_START_HOUR:-20}"
+
+    read -r -p "Night end hour [default: 6]: " LUA_NIGHT_END_HOUR </dev/tty
+    LUA_NIGHT_END_HOUR="${LUA_NIGHT_END_HOUR:-6}"
+
+    # ---- Stats Limits ----
+    echo ""
+    echo "--- Stats Limits ---"
+    echo ""
+
+    read -r -p "Max attribute value [default: 200]: " LUA_MAX_ATTRIBUTE_VALUE </dev/tty
+    LUA_MAX_ATTRIBUTE_VALUE="${LUA_MAX_ATTRIBUTE_VALUE:-200}"
+
+    read -r -p "Max Speed value [default: 365]: " LUA_MAX_SPEED_VALUE </dev/tty
+    LUA_MAX_SPEED_VALUE="${LUA_MAX_SPEED_VALUE:-365}"
+
+    read -r -p "Max skill value [default: 200]: " LUA_MAX_SKILL_VALUE </dev/tty
+    LUA_MAX_SKILL_VALUE="${LUA_MAX_SKILL_VALUE:-200}"
+
+    read -r -p "Max Acrobatics value [default: 1200]: " LUA_MAX_ACROBATICS_VALUE </dev/tty
+    LUA_MAX_ACROBATICS_VALUE="${LUA_MAX_ACROBATICS_VALUE:-1200}"
+
+    # ---- Safety ----
+    echo ""
+    echo "--- Safety ---"
+    echo ""
+
+    read -r -p "Enforce same data files for all clients [Y/n]: " input </dev/tty
+    input="${input:-y}"
+    case "${input,,}" in y|yes) LUA_ENFORCE_DATA_FILES="true" ;; *) LUA_ENFORCE_DATA_FILES="false" ;; esac
+
+    read -r -p "Ignore Lua script errors (dangerous) [y/N]: " input </dev/tty
+    input="${input:-n}"
+    case "${input,,}" in y|yes) LUA_IGNORE_SCRIPT_ERRORS="true" ;; *) LUA_IGNORE_SCRIPT_ERRORS="false" ;; esac
+}
+
+# ────────────────────────────────────────────────────────────
 # 4. Create folder structure & download files
 # ────────────────────────────────────────────────────────────
 setup_files() {
@@ -287,6 +477,83 @@ write_config() {
     echo "$marker" >> "$cfg"
 
     ok "Config updated"
+}
+
+# ────────────────────────────────────────────────────────────
+# 5b. Generate Lua config from answers
+# ────────────────────────────────────────────────────────────
+write_lua_config() {
+    local dest="/opt/tes3mp/data/server/scripts"
+    local cfg="$dest/config.lua"
+    local marker="-- install.sh config"
+
+    # If config already has our marker — user has edited it, skip
+    if [[ -f "$cfg" ]] && tail -1 "$cfg" | grep -qF "$marker"; then
+        warn "Lua config $cfg was already generated by install.sh — skipping."
+        warn "Edit it manually: nano $cfg"
+        return 0
+    fi
+
+    info "Generating $cfg from your answers..."
+
+    # Game settings
+    sed -i "s/^config\.gameMode = .*/config.gameMode = \"$LUA_GAME_MODE\"/" "$cfg"
+    sed -i "s/^config\.difficulty = .*/config.difficulty = $LUA_DIFFICULTY/" "$cfg"
+    sed -i "s/^config\.loginTime = .*/config.loginTime = $LUA_LOGIN_TIME/" "$cfg"
+    sed -i "s/^config\.maxClientsPerIP = .*/config.maxClientsPerIP = $LUA_MAX_CLIENTS_PER_IP/" "$cfg"
+
+    # Sharing
+    sed -i "s/^config\.shareJournal = .*/config.shareJournal = $LUA_SHARE_JOURNAL/" "$cfg"
+    sed -i "s/^config\.shareFactionRanks = .*/config.shareFactionRanks = $LUA_SHARE_FACTION_RANKS/" "$cfg"
+    sed -i "s/^config\.shareFactionExpulsion = .*/config.shareFactionExpulsion = $LUA_SHARE_FACTION_EXPULSION/" "$cfg"
+    sed -i "s/^config\.shareFactionReputation = .*/config.shareFactionReputation = $LUA_SHARE_FACTION_REPUTATION/" "$cfg"
+    sed -i "s/^config\.shareTopics = .*/config.shareTopics = $LUA_SHARE_TOPICS/" "$cfg"
+    sed -i "s/^config\.shareBounty = .*/config.shareBounty = $LUA_SHARE_BOUNTY/" "$cfg"
+    sed -i "s/^config\.shareReputation = .*/config.shareReputation = $LUA_SHARE_REPUTATION/" "$cfg"
+    sed -i "s/^config\.shareMapExploration = .*/config.shareMapExploration = $LUA_SHARE_MAP_EXPLORATION/" "$cfg"
+    sed -i "s/^config\.shareVideos = .*/config.shareVideos = $LUA_SHARE_VIDEOS/" "$cfg"
+
+    # Permissions
+    sed -i "s/^config\.allowConsole = .*/config.allowConsole = $LUA_ALLOW_CONSOLE/" "$cfg"
+    sed -i "s/^config\.allowBedRest = .*/config.allowBedRest = $LUA_ALLOW_BED_REST/" "$cfg"
+    sed -i "s/^config\.allowWildernessRest = .*/config.allowWildernessRest = $LUA_ALLOW_WILDERNESS_REST/" "$cfg"
+    sed -i "s/^config\.allowWait = .*/config.allowWait = $LUA_ALLOW_WAIT/" "$cfg"
+    sed -i "s/^config\.allowSuicideCommand = .*/config.allowSuicideCommand = $LUA_ALLOW_SUICIDE_COMMAND/" "$cfg"
+    sed -i "s/^config\.allowFixmeCommand = .*/config.allowFixmeCommand = $LUA_ALLOW_FIXME_COMMAND/" "$cfg"
+
+    # Respawn & Death
+    sed -i "s/^config\.playersRespawn = .*/config.playersRespawn = $LUA_PLAYERS_RESPAWN/" "$cfg"
+    sed -i "s/^config\.deathTime = .*/config.deathTime = $LUA_DEATH_TIME/" "$cfg"
+    sed -i "s/^config\.deathPenaltyJailDays = .*/config.deathPenaltyJailDays = $LUA_DEATH_PENALTY_JAIL_DAYS/" "$cfg"
+    sed -i "s/^config\.bountyResetOnDeath = .*/config.bountyResetOnDeath = $LUA_BOUNTY_RESET_ON_DEATH/" "$cfg"
+    sed -i "s/^config\.bountyDeathPenalty = .*/config.bountyDeathPenalty = $LUA_BOUNTY_DEATH_PENALTY/" "$cfg"
+    sed -i "s/^config\.respawnAtImperialShrine = .*/config.respawnAtImperialShrine = $LUA_RESPAWN_AT_IMPERIAL_SHRINE/" "$cfg"
+    sed -i "s/^config\.respawnAtTribunalTemple = .*/config.respawnAtTribunalTemple = $LUA_RESPAWN_AT_TRIBUNAL_TEMPLE/" "$cfg"
+
+    # Collisions
+    sed -i "s/^config\.enablePlayerCollision = .*/config.enablePlayerCollision = $LUA_ENABLE_PLAYER_COLLISION/" "$cfg"
+    sed -i "s/^config\.enableActorCollision = .*/config.enableActorCollision = $LUA_ENABLE_ACTOR_COLLISION/" "$cfg"
+    sed -i "s/^config\.enablePlacedObjectCollision = .*/config.enablePlacedObjectCollision = $LUA_ENABLE_PLACED_OBJECT_COLLISION/" "$cfg"
+
+    # Time
+    sed -i "s/^config\.passTimeWhenEmpty = .*/config.passTimeWhenEmpty = $LUA_PASS_TIME_WHEN_EMPTY/" "$cfg"
+    sed -i "s/^config\.nightStartHour = .*/config.nightStartHour = $LUA_NIGHT_START_HOUR/" "$cfg"
+    sed -i "s/^config\.nightEndHour = .*/config.nightEndHour = $LUA_NIGHT_END_HOUR/" "$cfg"
+
+    # Stats Limits
+    sed -i "s/^config\.maxAttributeValue = .*/config.maxAttributeValue = $LUA_MAX_ATTRIBUTE_VALUE/" "$cfg"
+    sed -i "s/^config\.maxSpeedValue = .*/config.maxSpeedValue = $LUA_MAX_SPEED_VALUE/" "$cfg"
+    sed -i "s/^config\.maxSkillValue = .*/config.maxSkillValue = $LUA_MAX_SKILL_VALUE/" "$cfg"
+    sed -i "s/^config\.maxAcrobaticsValue = .*/config.maxAcrobaticsValue = $LUA_MAX_ACROBATICS_VALUE/" "$cfg"
+
+    # Safety
+    sed -i "s/^config\.enforceDataFiles = .*/config.enforceDataFiles = $LUA_ENFORCE_DATA_FILES/" "$cfg"
+    sed -i "s/^config\.ignoreScriptErrors = .*/config.ignoreScriptErrors = $LUA_IGNORE_SCRIPT_ERRORS/" "$cfg"
+
+    # Append our marker so future runs know not to overwrite
+    echo "$marker" >> "$cfg"
+
+    ok "Lua config updated"
 }
 
 # ────────────────────────────────────────────────────────────
@@ -435,11 +702,18 @@ build_and_start() {
         echo "  HTTP port (endpoints): $HTTP_PORT"
     fi
     echo ""
+    echo "  Lua config:"
+    echo "    Game mode:      $LUA_GAME_MODE"
+    echo "    Difficulty:     $LUA_DIFFICULTY"
+    echo "    Sharing:        shareJournal=$LUA_SHARE_JOURNAL, shareBounty=$LUA_SHARE_BOUNTY, shareMapExploration=$LUA_SHARE_MAP_EXPLORATION"
+    echo "    Collisions:     player=$LUA_ENABLE_PLAYER_COLLISION, actor=$LUA_ENABLE_ACTOR_COLLISION"
+    echo ""
     echo "  Logs:        docker compose -f $dest/docker-compose.yml logs -f"
     echo "  Stop:        docker compose -f $dest/docker-compose.yml down"
     echo "  Restart:     docker compose -f $dest/docker-compose.yml up -d --build"
     echo ""
     echo "  Config:      nano $dest/data/tes3mp-server-default.cfg"
+    echo "  Lua config:  nano $dest/data/server/scripts/config.lua"
     echo ""
     echo "  To install mods: bash $dest/update_mods.sh"
     echo ""
@@ -458,8 +732,10 @@ main() {
     install_docker
     install_utils
     gather_options
+    gather_lua_options
     setup_files
     write_config
+    write_lua_config
     configure_endpoints
     configure_firewall
     build_and_start
