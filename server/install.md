@@ -5,13 +5,13 @@
 The script will install Docker, download the server, ask for configuration, and start the container.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/install.sh | bash
 ```
 
 Or download and run:
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/scripts/install.sh
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/install.sh
 sudo bash install.sh
 ```
 
@@ -168,27 +168,27 @@ cd /opt/tes3mp
 ```
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/docker/tes3mp.dockerfile
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/tes3mp.dockerfile
 ```
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/docker/docker-compose.yml
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/docker-compose.yml
 ```
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/docker/nginx.conf
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/nginx.conf
 ```
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/docker/export.dockerfile
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/export.dockerfile
 ```
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/docker/export_server.py
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/export_server.py
 ```
 
 ```bash
-wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/scripts/update_mods.sh
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/update_mods.sh
 ```
 
 ```bash

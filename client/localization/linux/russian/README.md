@@ -2,7 +2,7 @@
 
 Готовая сборка русской локализации (русификатора) Morrowind, адаптированная для установки на Linux с OpenMW или TES3MP (Proton).
 
-Архивы локализации доступны в [GitHub Releases](https://github.com/Saagilat/tes3mp-guide/releases).
+Архивы локализации доступны в [GitHub Releases](https://github.com/Saagilat/tes3mp-easy-setup/releases).
 
 ## Состав
 
@@ -12,7 +12,7 @@
 
 ## Установка
 
-1. Скачайте `russifier.tar` (и опционально `voices_russian.tar`) из [GitHub Releases](https://github.com/Saagilat/tes3mp-guide/releases)
+1. Скачайте `russifier.tar` (и опционально `voices_russian.tar`) из [GitHub Releases](https://github.com/Saagilat/tes3mp-easy-setup/releases)
 2. Поместите скачанные архивы в ту же папку, где лежит `install.sh`
 3. Запустите скрипт, указав путь к папке с Morrowind:
 

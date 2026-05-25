@@ -3,10 +3,10 @@
 # install.sh — Interactive TES3MP Docker server installer
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/install.sh | bash
 #
 # Or download and run:
-#   wget https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/scripts/install.sh
+#   wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/install.sh
 #   bash install.sh
 #
 
@@ -424,17 +424,17 @@ setup_files() {
 
     cd "$dest"
 
-    info "Downloading Dockerfile and configs from Saagilat/tes3mp-guide..."
+    info "Downloading Dockerfile and configs from Saagilat/tes3mp-easy-setup..."
     for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.py; do
-        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/docker/$f" -O "$dest/$f"
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/$f" -O "$dest/$f"
     done
     for f in update_mods.sh; do
-        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/files/scripts/$f" -O "$dest/$f"
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/$f" -O "$dest/$f"
     done
     chmod +x "$dest/update_mods.sh"
 
     # Download management reference
-    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-guide/master/server/management.md" -O "$dest/management.md"
+    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/management.md" -O "$dest/management.md"
 
     # Download TES3MP server binary
     local TES3MP_URL="https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp-server-GNU+Linux-x86_64-release-0.8.1-68954091c5-6da3fdea59.tar.gz"
