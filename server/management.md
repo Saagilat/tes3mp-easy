@@ -24,7 +24,7 @@ What happens:
 - Pulls the built image and starts the container in background
 - Container `stop_grace_period` is set to **30 seconds** — enough for TES3MP to save player state before the container exits
 
-> **Note:** the first time you run this (or after a reboot), TES3MP may re-seed the world with default NPCs and items. Player data (characters, inventory, cells) is **not** affected — it persists across restarts in bind mounts at `./data/players/` (→ `/tes3mp/server/players` inside the container) and `./data/cells/` (→ `/tes3mp/server/cells`).
+> **Note:** the first time you run this (or after a reboot), TES3MP may re-seed the world with default NPCs and items. Player data (characters, inventory, cells) is **not** affected — it persists across restarts in bind mounts at `./data/players/` (→ `/tes3mp/server/data/player` inside the container) and `./data/cells/` (→ `/tes3mp/server/data/cell`).
 
 ## Rebuild (mods, configs, scripts)
 
@@ -59,10 +59,10 @@ Player progress (characters, inventory, cells) is stored in bind mounts on the h
 
 | Inside container | On host |
 |-----------------|---------|
-| `/tes3mp/server/players/` | `/opt/tes3mp/data/players/` |
-| `/tes3mp/server/cells/` | `/opt/tes3mp/data/cells/` |
+| `/tes3mp/server/data/player/` | `/opt/tes3mp/data/players/` |
+| `/tes3mp/server/data/cell/` | `/opt/tes3mp/data/cells/` |
 
-Why `/tes3mp/server/players` and not `/tes3mp/players`? Because TES3MP's config sets `home = ./server`, and by default it writes player data to `./players` relative to that home directory. The bind mounts mirror exactly where TES3MP writes.
+Why `/tes3mp/server/data/player` and not `/tes3mp/players`? Because TES3MP's config sets `home = ./server`, and by default it writes player data to `./data/player` relative to that home directory. The bind mounts mirror exactly where TES3MP writes.
 
 Unlike named volumes, bind mounts are never automatically removed by Docker — data survives rebuilds, container crashes, and even `docker compose down -v`.
 

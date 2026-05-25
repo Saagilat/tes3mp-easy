@@ -10,8 +10,8 @@ services:
     stop_grace_period: 30s
     restart: unless-stopped
     volumes:
-      - ./data/players:/tes3mp/server/players
-      - ./data/cells:/tes3mp/server/cells
+      - ./data/players:/tes3mp/server/data/player
+      - ./data/cells:/tes3mp/server/data/cell
 
   # ⚠️ ALL ENDPOINTS DISABLED BY DEFAULT
   # Uncomment the lines below (and the corresponding location blocks in nginx.conf)
@@ -30,7 +30,9 @@ services:
   #  build:
   #    context: .
   #    dockerfile: export.dockerfile
-  #  volumes:
-  #    - ./data/players:/mnt/characters:ro
-  #    - ./data/cells:/mnt/cells:ro
+    #  volumes:
+    #    - ./data/players:/mnt/characters:ro
+    #    - ./data/player:/mnt/characters:ro
+    #    - ./data/cells:/mnt/cells:ro
+    #    - ./data/cell:/mnt/cells:ro
   #  restart: unless-stopped

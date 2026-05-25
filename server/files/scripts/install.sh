@@ -598,7 +598,9 @@ configure_endpoints() {
         sed -i 's/#\(    dockerfile: export\.dockerfile\)/    dockerfile: export.dockerfile/' "$compose"
         sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
         sed -i 's/#\(    - \.\/data\/players:\/mnt\/characters:ro\)/    - .\/data\/players:\/mnt\/characters:ro/' "$compose"
+        sed -i 's/#\(    - \.\/data\/player:\/mnt\/characters:ro\)/    - .\/data\/player:\/mnt\/characters:ro/' "$compose"
         sed -i 's/#\(    - \.\/data\/cells:\/mnt\/cells:ro\)/    - .\/data\/cells:\/mnt\/cells:ro/' "$compose"
+        sed -i 's/#\(    - \.\/data\/cell:\/mnt\/cells:ro\)/    - .\/data\/cell:\/mnt\/cells:ro/' "$compose"
         sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
     fi
 
