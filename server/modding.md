@@ -23,7 +23,7 @@ If you are the only person managing mods and don't need existing files — skip 
 ## Option B: Local server (same machine)
 
 ```bash
-sudo cp -r ./* /opt/tes3mp/mods/
+sudo cp -r . /opt/tes3mp/mods/
 cd /opt/tes3mp && sudo bash update_mods.sh
 ```
 

@@ -99,7 +99,7 @@ for file in "$MODS_DIR"/*.esp "$MODS_DIR"/*.ESp "$MODS_DIR"/*.esm "$MODS_DIR"/*.
 
     cp "$file" "$DATA_DIR/"
     echo "  - Copied: $basename"
-    ((copied++))
+    ((copied++)) || true
 done
 
 if [ "$copied" -eq 0 ]; then
