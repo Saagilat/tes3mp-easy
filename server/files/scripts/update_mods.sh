@@ -108,18 +108,8 @@ fi
 
 # --- Step 3: Compute CRC32 ---
 echo ""
-echo "[3/6] Computing CRC32 for all files in data/..."
-
-# Collect file list for requiredDataFiles.json
-declare -a FILE_LIST
-for file in "$DATA_DIR"/*.esp "$DATA_DIR"/*.ESp "$DATA_DIR"/*.esm "$DATA_DIR"/*.ESM "$DATA_DIR"/*.ESP "$DATA_DIR"/*.EsM; do
-    [ -f "$file" ] || continue
-    basename="$(basename "$file")"
-    FILE_LIST+=("$file")
-done
-
 echo ""
-echo "[4/6] Generating requiredDataFiles.json..."
+echo "[3/6] Generating requiredDataFiles.json..."
 
 # Generate JSON via Python
 export _DATA_DIR="$DATA_DIR"
@@ -130,19 +120,22 @@ import json, zlib, os, glob
 data_dir = os.environ['_DATA_DIR']
 original_files = os.environ['_ORIG_FILES'].split()
 
-# Collect .esp/.esm files
+result = []
+
+# Always add original master files with empty CRC (allows Steam + GOG + any edition)
+for orig in original_files:
+    result.append({orig: []})
+
+# Collect .esp/.esm files (mods)
 files = []
 for pattern in ('*.esp', '*.ESP', '*.esm', '*.ESM'):
     files.extend(sorted(glob.glob(os.path.join(data_dir, pattern))))
 
-result = []
-
 for filepath in files:
     basename = os.path.basename(filepath)
 
-    # For original master files — skip CRC check (allows Steam + GOG + any edition)
+    # Skip originals — already added above
     if basename in original_files:
-        result.append({basename: []})
         continue
 
     # For mods compute CRC32
