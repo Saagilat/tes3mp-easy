@@ -28,12 +28,6 @@ MODS_DIR="$SCRIPT_DIR/mods"
 # Original Morrowind files — NOT touched or deleted
 ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
 
-# Reference CRC32 values for different Morrowind editions
-declare -A CRC_REFERENCE
-CRC_REFERENCE["Morrowind.esm"]='["0x7B6AF5B9", "0x34282D67"]'
-CRC_REFERENCE["Tribunal.esm"]='["0xF481F334", "0x211329EF"]'
-CRC_REFERENCE["Bloodmoon.esm"]='["0x43DD2132", "0x9EB62F26"]'
-
 echo "=== TES3MP Mod Updater ==="
 echo "Data directory: $DATA_DIR"
 echo "Mods directory: $MODS_DIR"
@@ -136,13 +130,6 @@ import json, zlib, os, glob
 data_dir = os.environ['_DATA_DIR']
 original_files = os.environ['_ORIG_FILES'].split()
 
-# Reference CRC32 values for originals
-crc_reference = {
-    "Morrowind.esm": ["0x7B6AF5B9", "0x34282D67"],
-    "Tribunal.esm": ["0xF481F334", "0x211329EF"],
-    "Bloodmoon.esm": ["0x43DD2132", "0x9EB62F26"],
-}
-
 # Collect .esp/.esm files
 files = []
 for pattern in ('*.esp', '*.ESP', '*.esm', '*.ESM'):
@@ -153,9 +140,9 @@ result = []
 for filepath in files:
     basename = os.path.basename(filepath)
 
-    # For original files use reference CRC32 values
-    if basename in original_files and basename in crc_reference:
-        result.append({basename: crc_reference[basename]})
+    # For original master files — skip CRC check (allows Steam + GOG + any edition)
+    if basename in original_files:
+        result.append({basename: []})
         continue
 
     # For mods compute CRC32
