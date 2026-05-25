@@ -1,6 +1,6 @@
-# TES3MP Easy setup guide
+# TES3MP Easy setup
 
-Collection of guides for setting up and managing a TES3MP servers, and installing the TES3MP client.
+Collection of guides and srcripts for setting up and managing a TES3MP servers with some QOL, and installing the TES3MP client.
 
 ## 🎮 For Players
 
