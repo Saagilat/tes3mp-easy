@@ -4,15 +4,15 @@ All commands are run as root on the VPS from /opt/tes3mp.
 
 | Action | Command | Details |
 |--------|---------|---------|
-| Start | `cd /opt/tes3mp && docker compose up -d` | Use `--build` only after changing mods or scripts |
+| Start | `cd /opt/tes3mp && docker compose up -d` | Use `--build` only after changing server scripts or the Docker image |
 | Restart | `cd /opt/tes3mp && docker compose restart` | Sends SIGTERM to TES3MP; with `stop_grace_period: 30s` the server saves before exit |
-| Rebuild (mods, scripts) | `cd /opt/tes3mp && docker compose up -d --build` | Only when you need to pick up changes to mods or Docker image |
+| Rebuild (server scripts) | `cd /opt/tes3mp && docker compose up -d --build` | Only when you need to pick up changes to server scripts or the Docker image |
 | View live logs | `cd /opt/tes3mp && docker compose logs -f` | |
 | Stop | `cd /opt/tes3mp && docker compose down` | |
 | Edit config | `nano /opt/tes3mp/config/tes3mp-server-default.cfg` | Afterwards, run **Restart** to apply changes |
 | Edit Lua config | `nano /opt/tes3mp/config/server/scripts/config.lua` | Afterwards, run **Restart** to apply changes |
 | Edit ban list | `nano /opt/tes3mp/config/server/data/banlist.json` | Afterwards, run **Restart** to apply changes |
-| Edit required data files | `nano /opt/tes3mp/config/server/data/requiredDataFiles.json` | Afterwards, run **Restart** to apply changes |
+| Edit required data files | `nano /opt/tes3mp/data/requiredDataFiles.json` | Afterwards, run **Restart** to apply changes |
 
 ---
 
@@ -29,9 +29,10 @@ What happens:
 
 > **Note:** the first time you run this (or after a reboot), TES3MP may re-seed the world with default NPCs and items. Player data (characters, inventory, cells) is **not** affected — it persists across restarts in bind mounts at `./data/players/` (→ `/tes3mp/server/data/player` inside the container) and `./data/cells/` (→ `/tes3mp/server/data/cell`).
 
-## Rebuild (mods, scripts)
+## Rebuild (mods, server scripts)
 
-Only needed when you've modified mods, scripts, or the Docker image:
+Only needed when you've modified server scripts or the Docker image. Mods no longer require a rebuild — see
+the **Restart** section or use `update_mods.sh`.
 
 ```bash
 cd /opt/tes3mp
@@ -65,7 +66,7 @@ Config files are now stored on the host filesystem at `/opt/tes3mp/config/` and 
 | `/opt/tes3mp/config/tes3mp-server-default.cfg` | `/tes3mp/tes3mp-server-default.cfg` |
 | `/opt/tes3mp/config/server/scripts/config.lua` | `/tes3mp/server/scripts/config.lua` |
 | `/opt/tes3mp/config/server/data/banlist.json` | `/tes3mp/server/data/banlist.json` |
-| `/opt/tes3mp/config/server/data/requiredDataFiles.json` | `/tes3mp/server/data/requiredDataFiles.json` |
+| `/opt/tes3mp/data/requiredDataFiles.json` | `/tes3mp/server/data/requiredDataFiles.json` |
 
 Why `config/` and not `data/`? Because `data/` is reserved for TES3MP runtime data (players, cells). Putting config files there would cause them to be overwritten on server shutdown. The separate `config/` directory keeps configuration cleanly separated from runtime data.
 
@@ -85,6 +86,7 @@ Player progress (characters, inventory, cells) is stored in bind mounts on the h
 |-----------------|---------|
 | `/tes3mp/server/data/player/` | `/opt/tes3mp/data/players/` |
 | `/tes3mp/server/data/cell/` | `/opt/tes3mp/data/cells/` |
+| `/tes3mp/data/` (mods & assets) | `/opt/tes3mp/data/` |
 
 Why `/tes3mp/server/data/player` and not `/tes3mp/players`? Because TES3MP's config sets `home = ./server`, and by default it writes player data to `./data/player` relative to that home directory. The bind mounts mirror exactly where TES3MP writes.
 

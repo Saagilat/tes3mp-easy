@@ -461,9 +461,6 @@ setup_files() {
     if [[ ! -f "$dest/config/server/data/banlist.json" ]]; then
         cp "$dest/data/server/data/banlist.json" "$dest/config/server/data/"
     fi
-    if [[ ! -f "$dest/config/server/data/requiredDataFiles.json" ]]; then
-        cp "$dest/data/server/data/requiredDataFiles.json" "$dest/config/server/data/"
-    fi
     ok "Config directory ready"
 }
 
@@ -744,7 +741,7 @@ build_and_start() {
     echo "  Config:      nano $dest/config/tes3mp-server-default.cfg"
     echo "  Lua config:  nano $dest/config/server/scripts/config.lua"
     echo "  Ban list:    nano $dest/config/server/data/banlist.json"
-    echo "  Required data files: nano $dest/config/server/data/requiredDataFiles.json"
+    echo "  Required data files: nano $dest/data/requiredDataFiles.json"
     echo ""
     echo "  After editing any config: docker compose restart"
     echo ""
