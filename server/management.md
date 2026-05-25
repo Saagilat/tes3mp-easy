@@ -4,12 +4,15 @@ All commands are run as root on the VPS from /opt/tes3mp.
 
 | Action | Command | Details |
 |--------|---------|---------|
-| Start | `cd /opt/tes3mp && docker compose up -d` | Use `--build` only after changing mods, configs, or scripts |
+| Start | `cd /opt/tes3mp && docker compose up -d` | Use `--build` only after changing mods or scripts |
 | Restart | `cd /opt/tes3mp && docker compose restart` | Sends SIGTERM to TES3MP; with `stop_grace_period: 30s` the server saves before exit |
-| Rebuild (mods, configs, scripts) | `cd /opt/tes3mp && docker compose up -d --build` | Only when you need to pick up changes |
+| Rebuild (mods, scripts) | `cd /opt/tes3mp && docker compose up -d --build` | Only when you need to pick up changes to mods or Docker image |
 | View live logs | `cd /opt/tes3mp && docker compose logs -f` | |
 | Stop | `cd /opt/tes3mp && docker compose down` | |
-| Edit config | `nano /opt/tes3mp/data/tes3mp-server-default.cfg` | Afterwards, run **Restart** to apply changes |
+| Edit config | `nano /opt/tes3mp/config/tes3mp-server-default.cfg` | Afterwards, run **Restart** to apply changes |
+| Edit Lua config | `nano /opt/tes3mp/config/server/scripts/config.lua` | Afterwards, run **Restart** to apply changes |
+| Edit ban list | `nano /opt/tes3mp/config/server/data/banlist.json` | Afterwards, run **Restart** to apply changes |
+| Edit required data files | `nano /opt/tes3mp/config/server/data/requiredDataFiles.json` | Afterwards, run **Restart** to apply changes |
 
 ---
 
@@ -26,9 +29,9 @@ What happens:
 
 > **Note:** the first time you run this (or after a reboot), TES3MP may re-seed the world with default NPCs and items. Player data (characters, inventory, cells) is **not** affected — it persists across restarts in bind mounts at `./data/players/` (→ `/tes3mp/server/data/player` inside the container) and `./data/cells/` (→ `/tes3mp/server/data/cell`).
 
-## Rebuild (mods, configs, scripts)
+## Rebuild (mods, scripts)
 
-Only needed when you've modified `server/` files, mods, or the Docker image:
+Only needed when you've modified mods, scripts, or the Docker image:
 
 ```bash
 cd /opt/tes3mp
@@ -37,7 +40,7 @@ docker compose up -d --build
 
 What happens:
 - Stops the old container (with 30‑second grace period for saving)
-- Rebuilds the Docker image (picks up changes in configs, mods, scripts)
+- Rebuilds the Docker image (picks up changes in mods or scripts)
 - Creates and starts a new container
 
 ## Restart
@@ -52,6 +55,27 @@ Sends SIGTERM to TES3MP, which triggers a graceful save (player data, cells, rec
 If the server seems unresponsive during restart, increase `stop_grace_period` to `60s` in `docker-compose.yml`.
 
 > **Fallback (hard restart, risk of data loss):** `docker compose restart --timeout 0`
+
+## Configuration (bind mounts)
+
+Config files are now stored on the host filesystem at `/opt/tes3mp/config/` and bind-mounted into the container. This means you can edit them with any text editor and changes take effect after a **Restart** (no rebuild needed).
+
+| Host path | Container path |
+|-----------|----------------|
+| `/opt/tes3mp/config/tes3mp-server-default.cfg` | `/tes3mp/tes3mp-server-default.cfg` |
+| `/opt/tes3mp/config/server/scripts/config.lua` | `/tes3mp/server/scripts/config.lua` |
+| `/opt/tes3mp/config/server/data/banlist.json` | `/tes3mp/server/data/banlist.json` |
+| `/opt/tes3mp/config/server/data/requiredDataFiles.json` | `/tes3mp/server/data/requiredDataFiles.json` |
+
+Why `config/` and not `data/`? Because `data/` is reserved for TES3MP runtime data (players, cells). Putting config files there would cause them to be overwritten on server shutdown. The separate `config/` directory keeps configuration cleanly separated from runtime data.
+
+After editing any config file, run:
+
+```bash
+cd /opt/tes3mp && docker compose restart
+```
+
+> **Note:** Config bind mounts are read-only inside the container. To make persistent changes, edit the host files. If you delete a config file from the host, the container will use the defaults bundled in the image.
 
 ## Data persistence
 
@@ -125,7 +149,7 @@ Reverse the steps above and rebuild.
 
 ## config.lua reference
 
-Full documentation of all settings in `/opt/tes3mp/data/server/scripts/config.lua` (TES3MP 0.8.1).
+Full documentation of all settings in `/opt/tes3mp/config/server/scripts/config.lua` (TES3MP 0.8.1).
 
 The **Installer** column shows whether the setting is covered by the interactive install.sh questionnaire.
 

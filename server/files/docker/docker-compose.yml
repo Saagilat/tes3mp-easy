@@ -12,6 +12,10 @@ services:
     volumes:
       - ./data/players:/tes3mp/server/data/player
       - ./data/cells:/tes3mp/server/data/cell
+      - ./config/tes3mp-server-default.cfg:/tes3mp/tes3mp-server-default.cfg
+      - ./config/server/scripts/config.lua:/tes3mp/server/scripts/config.lua
+      - ./config/server/data/banlist.json:/tes3mp/server/data/banlist.json
+      - ./config/server/data/requiredDataFiles.json:/tes3mp/server/data/requiredDataFiles.json
 
   # ⚠️ ALL ENDPOINTS DISABLED BY DEFAULT
   # Uncomment the lines below (and the corresponding location blocks in nginx.conf)
