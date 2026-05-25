@@ -34,9 +34,9 @@ services:
   #  build:
   #    context: .
   #    dockerfile: export.dockerfile
-    #  volumes:
-    #    - ./data/players:/mnt/characters:ro
-    #    - ./data/player:/mnt/characters:ro
-    #    - ./data/cells:/mnt/cells:ro
-    #    - ./data/cell:/mnt/cells:ro
+  #  volumes:
+  #    - ./data/players:/mnt/characters:ro
+  #    - ./data/player:/mnt/characters:ro
+  #    - ./data/cells:/mnt/cells:ro
+  #    - ./data/cell:/mnt/cells:ro
   #  restart: unless-stopped
