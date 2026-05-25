@@ -5,7 +5,7 @@
 - Download the archive **TrueType fonts for OpenMW** from Nexus Mods:  
   https://www.nexusmods.com/morrowind/mods/46854
 - Extract the contents into your `openmw-profile` directory
-- Open `settings.cfg` (inside your `openmw-profile`)
+- Open `settings.cfg` inside your `openmw-profile` (appears once you change any settings in game)
 - Add these lines:
 
 ```
