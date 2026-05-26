@@ -406,9 +406,10 @@ setup_files() {
     for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.py; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/docker/$f" -O "$dest/$f"
     done
-    for f in update_mods.sh tes3mp-upload-mods; do
+    for f in update_mods.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/files/scripts/$f" -O "$dest/$f"
     done
+    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/admin/tes3mp-upload-mods" -O "$dest/tes3mp-upload-mods"
     chmod +x "$dest/update_mods.sh" "$dest/tes3mp-upload-mods"
 
     # Download management reference

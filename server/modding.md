@@ -4,7 +4,20 @@
 
 The `tes3mp-upload-mods` script automates syncing your local mods folder to a remote server and running `update_mods.sh` — all with a single command.
 
-### 1. Set up SSH access (one time)
+### 1. Install the script (one time)
+
+```bash
+# Download
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/admin/tes3mp-upload-mods
+
+# Make executable and install
+chmod +x tes3mp-upload-mods
+sudo mv tes3mp-upload-mods /usr/local/bin/
+```
+
+Or copy from the repository directly.
+
+### 2. Set up SSH access (one time)
 
 Add an alias for your server in `~/.ssh/config`:
 
@@ -16,9 +29,17 @@ Host tes3mp-server
     IdentityFile ~/.ssh/tes3mp_key
 ```
 
-### 2. Create the admin config (one time)
+### 3. Create the admin config (one time)
 
 Create `~/.config/tes3mp/admin.conf`:
+
+```bash
+mkdir -p ~/.config/tes3mp
+wget -O ~/.config/tes3mp/admin.conf \
+  https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/admin/admin.conf
+```
+
+Then edit it with your values:
 
 ```ini
 SSH_HOST=tes3mp-server
@@ -28,7 +49,7 @@ MODS_DIR=/home/user/tes3mp-mods
 - `SSH_HOST` — the alias from `~/.ssh/config` (or `user@host` if you prefer)
 - `MODS_DIR` — absolute path to the folder where you keep your mod files
 
-### 3. Upload mods
+### 4. Upload mods
 
 Put your `.esp`/`.esm`/`.omwaddon`/`.omwscripts`/`.omwgame` files in the `MODS_DIR` folder, then run:
 
@@ -84,3 +105,6 @@ http://<server-IP>:8085/get-mods
 
 There is a rate limit: **no more than 10 downloads per 2 minutes** from a single IP.
 
+### Player quick setup
+
+Players can use the `tes3mp-download-mods` script to automate installation — see [client/installing-mods.md](../client/installing-mods.md).

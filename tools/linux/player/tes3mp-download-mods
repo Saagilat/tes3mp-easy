@@ -7,9 +7,7 @@
 # and ensures openmw.cfg includes the mods config.
 #
 # Configuration (~/.config/tes3mp/client.conf):
-#   CLIENT_DEFAULT=/path/to/tes3mp-client-default.cfg
-#   DATA_FILES=/path/to/OpenMW/Data Files
-#   OPENMW_CFG=/path/to/openmw.cfg
+# Copy from: https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/player/client.conf
 #
 # The mod archive is downloaded from port 8085 (default HTTP endpoint port
 # for the nginx container serving the mod pack).
@@ -37,15 +35,12 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 if [ ! -f "$CONFIG_FILE" ]; then
     err "Config file not found: $CONFIG_FILE"
     echo ""
-    echo "Create it with the following content:"
-    echo "  CLIENT_DEFAULT=/home/user/Games/tes3mp/tes3mp-client-default.cfg"
-    echo "  DATA_FILES=/home/user/Games/OpenMW/Data Files"
-    echo "  OPENMW_CFG=/home/user/.config/openmw/openmw.cfg"
+    echo "Download the template:"
+    echo "  mkdir -p ~/.config/tes3mp"
+    echo "  wget -O $CONFIG_FILE \\"
+    echo "    https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/player/client.conf"
     echo ""
-    echo "Paths with spaces: do NOT use quotes or backslashes — write the path as-is."
-    echo "Lines starting with # are ignored. Empty lines are ignored."
-    echo ""
-    echo "The mod archive is downloaded from port 8085 (server default)."
+    echo "Then edit it: nano $CONFIG_FILE"
     exit 1
 fi
 

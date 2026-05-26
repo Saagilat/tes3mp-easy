@@ -6,8 +6,7 @@
 # syncs the local mods directory to the server, and runs update_mods.sh.
 #
 # Configuration (~/.config/tes3mp/admin.conf):
-#   SSH_HOST=<ssh-alias-or-user@host>
-#   MODS_DIR=/path/to/local/mods/folder
+# Copy from: https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/admin/admin.conf
 #
 # Usage:
 #   tes3mp-upload-mods
@@ -31,16 +30,12 @@ ok()   { echo -e "${GREEN}[OK]${NC}   $*"; }
 if [ ! -f "$CONFIG_FILE" ]; then
     err "Config file not found: $CONFIG_FILE"
     echo ""
-    echo "Create it with the following content:"
-    echo "  SSH_HOST=tes3mp-server"
-    echo "  MODS_DIR=/home/user/tes3mp-mods"
+    echo "Download the template:"
+    echo "  mkdir -p ~/.config/tes3mp"
+    echo "  wget -O $CONFIG_FILE \\"
+    echo "    https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/admin/admin.conf"
     echo ""
-    echo "Set up SSH alias in ~/.ssh/config first, e.g.:"
-    echo "  Host tes3mp-server"
-    echo "      HostName 1.2.3.4"
-    echo "      Port 22"
-    echo "      User root"
-    echo "      IdentityFile ~/.ssh/tes3mp_key"
+    echo "Then edit it: nano $CONFIG_FILE"
     exit 1
 fi
 

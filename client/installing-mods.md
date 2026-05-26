@@ -8,9 +8,28 @@ If the server provides a ready-made mod pack (as described in the [server admin 
 
 The `tes3mp-download-mods` script automates everything: it downloads the latest mods, replaces old ones, and configures `openmw.cfg`.
 
-### 1. Create the client config (one time)
+### 1. Install the script (one time)
 
-Create `~/.config/tes3mp/client.conf`:
+```bash
+# Download
+wget https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/player/tes3mp-download-mods
+
+# Make executable and install
+chmod +x tes3mp-download-mods
+sudo mv tes3mp-download-mods /usr/local/bin/
+```
+
+Or copy from the repository directly.
+
+### 2. Create the client config (one time)
+
+```bash
+mkdir -p ~/.config/tes3mp
+wget -O ~/.config/tes3mp/client.conf \
+  https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/tools/linux/player/client.conf
+```
+
+Edit the config with your actual paths:
 
 ```ini
 CLIENT_DEFAULT=/path/to/tes3mp-client-default.cfg
@@ -26,7 +45,7 @@ The mod archive is always downloaded from port `8085` — this is the default HT
 
 > **Note**: The `DATA_FILES` path may contain spaces. Write the path as-is (do **not** use quotes or backslashes).
 
-### 2. Install mods
+### 3. Install mods
 
 ```bash
 tes3mp-download-mods
@@ -40,6 +59,8 @@ The script will:
 5. Add `include = mods.cfg` to `openmw.cfg` if not already present
 
 To update mods later, just run `tes3mp-download-mods` again.
+
+> **Pro tip**: You can add `tes3mp-download-mods` as a **pre-launch command** in Steam (TES3MP) so mods update automatically every time you launch the game.
 
 ---
 
