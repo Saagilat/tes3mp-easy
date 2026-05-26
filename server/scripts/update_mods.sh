@@ -191,11 +191,21 @@ for file in "$DATA_DIR"/*.esp "$DATA_DIR"/*.ESP "$DATA_DIR"/*.esm "$DATA_DIR"/*.
     fi
 done
 
+rm -f "$DATA_DIR/mods.zip"
 if [ ${#mods_to_zip[@]} -gt 0 ]; then
-    rm -f "$DATA_DIR/mods.zip"
     zip -j "$DATA_DIR/mods.zip" "${mods_to_zip[@]}"
-    echo "  Created: $DATA_DIR/mods.zip (${#mods_to_zip[@]} files)"
-else
+    echo "  Added mods: ${#mods_to_zip[@]} files"
+fi
+
+# Include requiredDataFiles.json for client to know load order
+if [ -f "$DATA_DIR/requiredDataFiles.json" ]; then
+    cp "$DATA_DIR/requiredDataFiles.json" "$SCRIPT_DIR/tmp_req.json"
+    zip -j "$DATA_DIR/mods.zip" "$SCRIPT_DIR/tmp_req.json"
+    rm -f "$SCRIPT_DIR/tmp_req.json"
+    echo "  Added: requiredDataFiles.json"
+fi
+
+if [ ! -f "$DATA_DIR/mods.zip" ]; then
     echo "  No mods to archive"
 fi
 

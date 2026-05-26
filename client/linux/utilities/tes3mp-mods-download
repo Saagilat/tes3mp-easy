@@ -118,6 +118,7 @@ if [ -z "$SERVER_HOST" ]; then
 fi
 
 DOWNLOAD_URL="http://${SERVER_HOST}:${HTTP_PORT}/get-mods"
+REQ_DATA_URL="http://${SERVER_HOST}:${HTTP_PORT}/get-required-data"
 
 echo "=== TES3MP Mod Download ==="
 echo "  Server:   $SERVER_HOST:$HTTP_PORT"
@@ -195,63 +196,53 @@ ok "Extracted"
 rm -f "$TMP_ZIP"
 ok "Archive deleted"
 
-# --- Step 4: Update openmw.cfg with installed mods ---
+# --- Step 4: Update openmw.cfg with mod load order from server ---
 echo ""
-echo "[4/4] Updating openmw.cfg with installed mods..."
-MOD_BEGIN="# tes3mp-mod-begin"
-MOD_END="# tes3mp-mod-end"
+echo "[4/4] Updating openmw.cfg with mod load order..."
 
 if [ ! -f "$OPENMW_CFG" ]; then
     warn "openmw.cfg not found at $OPENMW_CFG — creating"
     touch "$OPENMW_CFG"
 fi
 
-# Remove old mod entries previously added by this script (between markers)
-if grep -qF "$MOD_BEGIN" "$OPENMW_CFG" 2>/dev/null; then
-    sed -i "/${MOD_BEGIN}/,/${MOD_END}/d" "$OPENMW_CFG"
-fi
-
-# Remove any orphaned trailing blank lines
+# Remove all existing content= entries
+sed -i '/^content=/d' "$OPENMW_CFG"
+# Remove any blank lines at the end
 sed -i '$ { /^$/d; }' "$OPENMW_CFG"
 
-# Add markers and new mod entries
-# (skip original Morrowind files)
-echo "$MOD_BEGIN" >> "$OPENMW_CFG"
-added=0
-for pattern in "*.esp" "*.ESP" "*.esm" "*.ESM" \
-               "*.omwaddon" "*.OMWADDON" \
-               "*.omwscripts" "*.OMWSCRIPTS" \
-               "*.omwgame" "*.OMWGAME"; do
-    for file in "$DATA_FILES"/$pattern; do
-        [ -f "$file" ] || continue
-        basename="$(basename "$file")"
+# Download requiredDataFiles.json from server for correct load order
+TMP_REQ="$TMP_DIR/requiredDataFiles.json"
+echo ""
+if curl -fsSL --max-time 10 "$REQ_DATA_URL" -o "$TMP_REQ" 2>/dev/null && [ -s "$TMP_REQ" ]; then
+    echo "  Using load order from server..."
 
-        # Skip original files
-        skip=0
-        for orig in "${ORIGINAL_FILES[@]}"; do
-            if [ "$basename" = "$orig" ]; then
-                skip=1
-                break
-            fi
+    # Parse JSON via python3 and write content= entries in server-defined order
+    python3 -c "
+import json
+with open('$TMP_REQ') as f:
+    data = json.load(f)
+for entry in data:
+    for name in entry:
+        print(f'content={name}')
+" >> "$OPENMW_CFG"
+
+    count=$(python3 -c "import json; print(len(json.load(open('$TMP_REQ'))))")
+    ok "openmw.cfg updated with $count entries in server load order"
+else
+    warn "Could not fetch requiredDataFiles.json — using files from Data Files in alphabetical order"
+    for pattern in "*.esp" "*.ESP" "*.esm" "*.ESM" \
+                   "*.omwaddon" "*.OMWADDON" \
+                   "*.omwscripts" "*.OMWSCRIPTS" \
+                   "*.omwgame" "*.OMWGAME"; do
+        for file in "$DATA_FILES"/$pattern; do
+            [ -f "$file" ] || continue
+            basename="$(basename "$file")"
+            echo "content=$basename" >> "$OPENMW_CFG"
+            echo "  - Added to openmw.cfg: $basename"
         done
-
-        if [ "$skip" -eq 1 ]; then
-            continue
-        fi
-
-        # Add clean content= entry (no inline comment — OpenMW doesn't support it)
-        echo "content=$basename" >> "$OPENMW_CFG"
-        echo "  - Added to openmw.cfg: $basename"
-        ((added++)) || true
     done
-done
-echo "$MOD_END" >> "$OPENMW_CFG"
-
-if [ "$added" -eq 0 ]; then
-    echo "  (no mod entries added)"
+    ok "openmw.cfg updated with files found in Data Files"
 fi
-
-ok "openmw.cfg updated with $added mod entries"
 
 echo ""
 echo "=== Done! ==="
