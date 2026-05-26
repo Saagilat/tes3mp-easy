@@ -1,42 +1,14 @@
-# TES3MP Easy setup
+# TES3MP Easy Setup
 
 Collection of guides and scripts for setting up and managing TES3MP servers with some QOL, and installing the TES3MP client.
 
-## 🎮 For Players
+## Contents
 
-### Installation
-
-#### 🐧 Linux
-
-- [Installation via Proton (recommended)](client/linux_proton/install.md)
-
----
-
-### Configuration
-
-- [Mod auto-installer script (tes3mp-download-mods)](tools/linux/modding/tes3mp-download-mods)
-
-- [Installing mods from the server](client/installing-mods.md)
-
-- [UI customization (fonts, scaling)](client/customization.md)
-
-<details>
-<summary>🌐 Localization</summary>
-
-- [Русская локализация](tools/linux/localization/russian/README.md)
-
-</details>
-
----
-
-## 🖥️ For Server Administrators
-
-### 🐧 Linux
-
-- [Server installation](server/install.md)
-- [Mod upload script (tes3mp-upload-mods)](tools/linux/modding/tes3mp-upload-mods)
-- [Server modding (mods and Lua plugins)](server/modding.md)
-- [Server management](server/management.md)
+| Directory | Description |
+|-----------|-------------|
+| [server/](server/README.md) | Documentation and files for server setup, management, and modding |
+| [client/](client/README.md) | Documentation for players: mod installation, customization, Proton setup |
+| [tools/](tools/README.md) | Platform-specific utilities: mod upload/download scripts, localization |
 
 ## Links
 
