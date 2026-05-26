@@ -6,7 +6,11 @@ If the server provides a ready-made mod pack (as described in the [server admin 
 
 ## Quick setup (automated)
 
-The [`tes3mp-download-mods`](../tools/linux/player/tes3mp-download-mods) script automates everything: it downloads the latest mods, replaces old ones, and configures `openmw.cfg`.
+The `tes3mp-download-mods` script automates everything: it downloads the latest mods, replaces old ones, and configures `openmw.cfg`.
+
+| Platform | Script |
+|----------|--------|
+| 🐧 Linux | [`tes3mp-download-mods`](../tools/linux/player/tes3mp-download-mods) |
 
 ### 1. Create the client config
 
