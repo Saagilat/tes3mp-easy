@@ -140,18 +140,15 @@ gather_options() {
     MAX_PLAYERS="${MAX_PLAYERS:-4}"
 
     echo ""
-    echo "--- Ports ---"
-    echo "(If unsure, leave the default values)"
+    echo "--- Port ---"
+    echo "(If unsure, leave the default value)"
     echo ""
 
     read -r -p "TES3MP server port (UDP) [default: 25565]: " TES3MP_PORT </dev/tty
     TES3MP_PORT="${TES3MP_PORT:-25565}"
 
-    read -r -p "HTTP endpoint port (TCP) [default: 8085]: " HTTP_PORT </dev/tty
-    HTTP_PORT="${HTTP_PORT:-8085}"
-
     echo ""
-    echo "--- Endpoints (HTTP port $HTTP_PORT) ---"
+    echo "--- Endpoints (HTTP port 8085) ---"
     echo ""
     echo "Endpoints are URLs that players can use from their browser to"
     echo "download mods, world state, or character data."
@@ -597,7 +594,7 @@ configure_endpoints() {
         sed -i 's/#\(nginx:\)/\1/' "$compose"
         sed -i 's/#\(  image: nginx:alpine\)/  image: nginx:alpine/' "$compose"
         sed -i 's/#\(  ports:\)/  ports:/' "$compose"
-        sed -i "s/#\(    - \"8085:80\"\)/    - \"$HTTP_PORT:80\"/" "$compose"
+        sed -i "s/#\(    - \"8085:80\"\)/    - \"8085:80\"/" "$compose"
         sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
         sed -i 's/#\(    - \.\/data:\/usr\/share\/nginx\/html:ro\)/    - .\/data:\/usr\/share\/nginx\/html:ro/' "$compose"
         sed -i 's/#\(    - \.\/nginx.conf:\/etc\/nginx\/conf\.d\/default\.conf:ro\)/    - .\/nginx.conf:\/etc\/nginx\/conf.d\/default.conf:ro/' "$compose"
@@ -683,13 +680,13 @@ configure_firewall() {
         ufw)
             ufw allow "$TES3MP_PORT/udp" comment "TES3MP"
             if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
-                ufw allow "$HTTP_PORT/tcp" comment "TES3MP HTTP endpoints"
+                ufw allow "8085/tcp" comment "TES3MP HTTP endpoints"
             fi
             ;;
         firewall-cmd)
             firewall-cmd --permanent --add-port="$TES3MP_PORT/udp"
             if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
-                firewall-cmd --permanent --add-port="$HTTP_PORT/tcp"
+                firewall-cmd --permanent --add-port="8085/tcp"
             fi
             firewall-cmd --reload
             ;;
@@ -750,7 +747,7 @@ EOF
     echo "    /get-characters:  $ENABLE_CHARACTERS"
     echo ""
     if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
-        echo "  HTTP port (endpoints): $HTTP_PORT"
+        echo "  HTTP port (endpoints): 8085"
     fi
     echo ""
     echo "  Lua config:"
