@@ -25,7 +25,7 @@ For server management see [management guide](docs/admin/management.md).
 
 ```
 server_setup/ — server setup (Docker, install/update scripts)
-tools/        — synchronisation utilities (Linux)
+tools/        — synchronisation utilities
 docs/         — admin and player documentation
 example/      — example Lua scripts (for testing)
 ```
