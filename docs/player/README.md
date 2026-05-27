@@ -8,9 +8,6 @@ Guides and scripts for players setting up TES3MP.
 |----|-------|
 | 🐧 Linux | [Steam Proton setup](linux/proton/install.md) |
 
-> **Note:** The client installation guides are being restructured.  
-> For now, see the `client/` directory in the repository history.
-
 ## Updating plugins from the server
 
 To auto-install server plugins on your client, use `tes3mp-client-update`:
