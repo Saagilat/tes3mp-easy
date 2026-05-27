@@ -472,23 +472,15 @@ setup_files() {
     fi
 
     if [[ "$ENABLE_EXAMPLES" == "yes" ]]; then
-        info "Creating example server script..."
-        cat > "$dest/server-scripts/test_server.lua" << 'EOF'
--- test_server.lua — проверка серверных скриптов
-local function onPlayerConnect(es, pid)
-    tes3mp.SendMessage(pid, "Server scripts are working.\n", true)
-    return es
-end
-customEventHooks.registerHandler("OnPlayerConnect", onPlayerConnect)
-EOF
+        info "Downloading example server script..."
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server_setup/example-content/server-scripts/test_server.lua" \
+            -O "$dest/server-scripts/test_server.lua"
 
-        info "Creating example client script..."
-        cat > "$dest/client-scripts/test_client.lua" << 'EOF'
--- test_client.lua — проверка клиентских скриптов
-tes3mp.MessageBox("Client scripts are working!")
-EOF
+        info "Downloading example client script..."
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server_setup/example-content/client-scripts/test_client.lua" \
+            -O "$dest/client-scripts/test_client.lua"
 
-        ok "Example scripts created"
+        ok "Example scripts downloaded"
     fi
 
     ok "All files installed — configs are in data/, edit them directly on the host"
