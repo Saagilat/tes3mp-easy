@@ -746,7 +746,7 @@ EOF
     echo ""
     echo "  Logs:        docker compose -f $dest/docker-compose.yml logs -f"
     echo "  Stop:        docker compose -f $dest/docker-compose.yml down"
-    echo "  Restart:     docker compose -f $dest/docker-compose.yml up -d --build"
+    echo "  Restart:     docker compose -f $dest/docker-compose.yml restart"
     echo ""
     echo "  Config:      nano $dest/data/tes3mp-server-default.cfg"
     echo "  Lua config:  nano $dest/data/server/scripts/config.lua"

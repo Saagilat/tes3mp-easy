@@ -312,11 +312,16 @@ if [ ! -f "$DATA_DIR/scripts.zip" ]; then
 fi
 
 echo ""
-echo "=== Done! ==="
-echo ""
-echo "Next steps:"
-echo "  1. Restart the Docker container: docker compose restart"
-echo "     (or rebuild if this is the first run: docker compose up -d --build)"
-echo ""
-echo "  Upload mods from a client machine:"
-echo "    admin/linux/utilities/tes3mp-mods-upload"
+echo "=== Restarting Docker container... ==="
+
+if command -v docker &>/dev/null && [ -f "$SCRIPT_DIR/docker-compose.yml" ]; then
+    cd "$SCRIPT_DIR"
+    docker compose restart
+    echo ""
+    echo "=== Done! ==="
+else
+    echo ""
+    echo "=== Done! ==="
+    echo "Restart the Docker container manually:"
+    echo "  cd $SCRIPT_DIR && docker compose restart"
+fi

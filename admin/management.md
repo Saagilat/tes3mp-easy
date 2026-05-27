@@ -4,30 +4,25 @@ All commands are run as root on the VPS from /opt/tes3mp.
 
 | Action | Command | Details |
 |--------|---------|---------|
-| Start | `cd /opt/tes3mp && docker compose up -d` | Use `--build` only after changing server scripts or the Docker image |
+| Start | `cd /opt/tes3mp && docker compose up -d` | First run only — builds and starts the container |
 | Restart | `cd /opt/tes3mp && docker compose restart` | Sends SIGTERM to TES3MP; with `stop_grace_period: 30s` the server saves before exit |
-| Rebuild (server scripts) | `cd /opt/tes3mp && docker compose up -d --build` | Only when you need to pick up changes to server scripts or the Docker image |
 | View live logs | `cd /opt/tes3mp && docker compose logs -f` | |
 | Stop | `cd /opt/tes3mp && docker compose down` | |
-| Edit config | `nano /opt/tes3mp/config/tes3mp-server-default.cfg` | Afterwards, run **Restart** to apply changes |
-| Edit Lua config | `nano /opt/tes3mp/config/server/scripts/config.lua` | Afterwards, run **Restart** to apply changes |
-| Edit ban list | `nano /opt/tes3mp/config/server/data/banlist.json` | Afterwards, run **Restart** to apply changes |
+| Edit config | `nano /opt/tes3mp/data/tes3mp-server-default.cfg` | Afterwards, run **Restart** to apply changes |
+| Edit Lua config | `nano /opt/tes3mp/data/server/scripts/config.lua` | Afterwards, run **Restart** to apply changes |
+| Edit ban list | `nano /opt/tes3mp/data/server/data/banlist.json` | Afterwards, run **Restart** to apply changes |
 | Change role | `nano /opt/tes3mp/data/players/<accountName>.json` change staff rank | 3 = owner, 2 = admin, 1 = moderator, 0 = player Afterwards, run **Restart** to apply changes |
 
-## Configuration (bind mounts)
+## Configuration (direct access via data/)
 
-Config files are now stored on the host filesystem at `/opt/tes3mp/config/` and bind-mounted into the container. This means you can edit them with any text editor and changes take effect after a **Restart** (no rebuild needed).
+All config files are stored in the `data/` directory on the host, which is bind-mounted into the container at `/tes3mp`. Edit them with any text editor and run **`docker compose restart`** for changes to take effect.
 
 | Host path | Container path |
 |-----------|----------------|
-| `/opt/tes3mp/config/tes3mp-server-default.cfg` | `/tes3mp/tes3mp-server-default.cfg` |
-| `/opt/tes3mp/config/server/scripts/config.lua` | `/tes3mp/server/scripts/config.lua` |
-| `/opt/tes3mp/config/server/data/banlist.json` | `/tes3mp/server/data/banlist.json` |
+| `/opt/tes3mp/data/tes3mp-server-default.cfg` | `/tes3mp/tes3mp-server-default.cfg` |
+| `/opt/tes3mp/data/server/scripts/config.lua` | `/tes3mp/server/scripts/config.lua` |
+| `/opt/tes3mp/data/server/data/banlist.json` | `/tes3mp/server/data/banlist.json` |
 | `/opt/tes3mp/data/requiredDataFiles.json` | `/tes3mp/server/data/requiredDataFiles.json` |
-
-Why `config/` and not `data/`? Because `data/` is reserved for TES3MP runtime data (players, cells, mod files, scripts). Putting config files there would cause them to be overwritten on server shutdown. The separate `config/` directory keeps configuration cleanly separated from runtime data.
-
-> **Note:** The entire `data/` directory is bind-mounted into the container at `/tes3mp`. This means all files in `data/` (server binary, scripts, mods, `serverCore.lua`, `requiredDataFiles.json`) are directly editable on the host and visible inside the container without rebuilding.
 
 After editing any config file, run:
 
@@ -139,14 +134,14 @@ Consider whether this fits your server's vision. For a co-op or roleplay server 
 1. **Uncomment the desired location blocks** in `/opt/tes3mp/nginx.conf`.
 2. For `/get-world` and `/get-characters` you also need to **uncomment the `export` service** in `/opt/tes3mp/docker-compose.yml`.
 3. Uncomment the **`nginx` service** in docker-compose.yml (required for all endpoints).
-4. Rebuild and restart:
+4. Start the container:
    ```bash
-   cd /opt/tes3mp && docker compose up -d --build
+   cd /opt/tes3mp && docker compose up -d
    ```
 
 ### To disable
 
-Reverse the steps above and rebuild.
+Reverse the steps above and restart: `docker compose restart`.
 
 ### Notes
 
