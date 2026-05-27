@@ -429,7 +429,7 @@ setup_files() {
     local dest="/opt/tes3mp"
     mkdir -p "$dest/data" "$dest/data/players" "$dest/data/cells" \
              "$dest/data/server/data" \
-             "$dest/plugins" "$dest/server-scripts"
+             "$dest/plugins" "$dest/server-scripts" "$dest/client-scripts"
     chown -R root:root "$dest"
 
     cd "$dest"
@@ -761,6 +761,8 @@ build_and_start() {
     echo "  After editing any config: docker compose restart"
     echo ""
     echo "  To sync plugins and scripts: bash $dest/update_mods.sh"
+    echo "  Place server scripts in: server-scripts/"
+    echo "  Place client scripts in: client-scripts/"
     echo ""
 }
 
