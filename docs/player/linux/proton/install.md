@@ -20,7 +20,7 @@ ln -s ~/.steam/steam/steamapps/common/Morrowind ~/morrowind
 The file browser inside Wine/Proton cannot see hidden folders (those starting with a dot). The Steam folder is hidden (`~/.steam`). Therefore you create a symlink to Morrowind in your home directory.
 </details>
 
-- Run `openmw-wizard.exe` through Steam. When the wizard asks for the path to Morrowind files, select `~/morrowind`
+- Run `openmw-wizard.exe` through Steam. When the wizard asks for the path to Morrowind files, select `~/morrowind/Data Files/Morrowind.esm`
 - Immediately create a symlink to the config folder so you don't have to navigate into compatdata every time:
 
 ```bash
