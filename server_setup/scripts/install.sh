@@ -230,6 +230,18 @@ gather_options() {
         read -r -p "  /get-characters rate limit (req/min) [default: 5]: " input </dev/tty
         CHARACTERS_RATE="${input:-5}"
     fi
+
+    # ---- Example content ----
+    echo ""
+    echo "--- Example content ---"
+    echo "Test server/client scripts to verify the setup works."
+    echo ""
+    read -r -p "Create example scripts? [Y/n]: " ENABLE_EXAMPLES </dev/tty
+    ENABLE_EXAMPLES="${ENABLE_EXAMPLES:-y}"
+    case "${ENABLE_EXAMPLES,,}" in
+        n|no)  ENABLE_EXAMPLES="no" ;;
+        *)     ENABLE_EXAMPLES="yes" ;;
+    esac
 }
 
 # ────────────────────────────────────────────────────────────
@@ -459,9 +471,28 @@ setup_files() {
         ok "TES3MP server installed"
     fi
 
+    if [[ "$ENABLE_EXAMPLES" == "yes" ]]; then
+        info "Creating example server script..."
+        cat > "$dest/server-scripts/test_server.lua" << 'EOF'
+-- test_server.lua — проверка серверных скриптов
+local function onPlayerConnect(es, pid)
+    tes3mp.SendMessage(pid, "Server scripts are working.\n", true)
+    return es
+end
+customEventHooks.registerHandler("OnPlayerConnect", onPlayerConnect)
+EOF
+
+        info "Creating example client script..."
+        cat > "$dest/client-scripts/test_client.lua" << 'EOF'
+-- test_client.lua — проверка клиентских скриптов
+tes3mp.MessageBox("Client scripts are working!")
+EOF
+
+        ok "Example scripts created"
+    fi
+
     ok "All files installed — configs are in data/, edit them directly on the host"
 }
-
 # ────────────────────────────────────────────────────────────
 # 5. Generate server config from answers
 # ────────────────────────────────────────────────────────────
