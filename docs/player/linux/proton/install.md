@@ -57,6 +57,30 @@ For `openmw-cs.exe` and other OpenMW utilities repeat step 3:
 - Symlink to the wizard's `pfx`
 </details>
 
+<details>
+<summary>📌 Also symlink Data Files into the prefix</summary>
+
+OpenMW looks for plugin files (`.esp`/`.esm`/`.omwaddon`) in two places:
+- Paths listed in `data=` in `openmw.cfg`
+- The folder `data/` next to `openmw.cfg` inside the prefix
+
+**The `data/` folder has higher priority.** If `openmw-cs` creates it later and puts different plugin versions there, TES3MP will refuse to connect due to CRC mismatch.
+
+To prevent this, replace that `data/` folder with a symlink **now** (before it gets created):
+
+```bash
+# Find the wizard's compatdata ID
+ls ~/.steam/steam/steamapps/compatdata/
+
+# Replace data/ with a symlink to your Data Files
+rm -rf ~/.steam/steam/steamapps/compatdata/{WIZARD_ID}/pfx/drive_c/users/steamuser/Documents/My\ Games/OpenMW/data
+ln -sf ~/morrowind/Data\ Files \
+  ~/.steam/steam/steamapps/compatdata/{WIZARD_ID}/pfx/drive_c/users/steamuser/Documents/My\ Games/OpenMW/data
+```
+
+Now `tes3mp-client-update` writes to `~/morrowind/Data Files/`, and TES3MP via Proton reads the exact same files through the symlink — no more CRC mismatches.
+</details>
+
 ## 4. Configure connection to the server
 
 TES3MP reads settings from `tes3mp-client-default.cfg`, which is located next to `tes3mp.exe`.
@@ -88,3 +112,6 @@ MANGOHUD_CONFIG=fps_limit=120,no_display mangohud %command%
 ## 6. Launch `tes3mp.exe` through Steam
 
 Everything should work.
+
+---
+
