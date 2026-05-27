@@ -416,7 +416,7 @@ setup_files() {
     cd "$dest"
 
     info "Downloading Dockerfile and configs from Saagilat/tes3mp-easy-setup..."
-    for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.py; do
+    for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server/docker/$f" -O "$dest/$f"
     done
     for f in update_mods.sh; do

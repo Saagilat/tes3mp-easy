@@ -1,7 +1,8 @@
-FROM python:3.12-alpine
+FROM alpine:latest
 
-COPY export_server.py /app/export_server.py
+RUN apk add --no-cache bash tar socat
 
-EXPOSE 5000
+COPY export_server.sh /app/export_server.sh
+RUN chmod +x /app/export_server.sh
 
-CMD ["python", "/app/export_server.py"]
+CMD ["bash", "/app/export_server.sh"]
