@@ -476,6 +476,11 @@ setup_files() {
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server_setup/example-mods/server-scripts/test_server.lua" \
             -O "$dest/server-scripts/test_server.lua"
 
+        info "Downloading example client script..."
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy-setup/master/server_setup/example-mods/client-scripts/test_client.lua" \
+            -O "$dest/client-scripts/test_client.lua"
+
+        ok "Example mods downloaded"
     fi
 
     ok "All files installed — configs are in data/, edit them directly on the host"
