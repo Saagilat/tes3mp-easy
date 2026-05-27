@@ -1,23 +1,23 @@
 #!/bin/bash
 #
-# tes3mp-client-update — Download and install plugins from a TES3MP server
+# tes3mp-client-update-mods — Download and install plugins from a TES3MP server
 #
-# This script reads the configuration from tes3mp-client-update.conf (next to this script),
+# This script reads the configuration from tes3mp-client-update-mods.conf (next to this script),
 # downloads the latest plugin pack from the server, replaces old mods in Data Files,
 # and updates openmw.cfg with the installed mods.
 #
 # Configuration:
-#   $(dirname "$0")/tes3mp-client-update.conf
+#   $(dirname "$0")/tes3mp-client-update-mods.conf
 #
 # Usage:
-#   tes3mp-client-update
+#   tes3mp-client-update-mods
 #
 # Dependencies: bash, curl, unzip
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONFIG_FILE="$SCRIPT_DIR/tes3mp-client-update.conf"
+CONFIG_FILE="$SCRIPT_DIR/tes3mp-client-update-mods.conf"
 
 # Colors
 RED='\033[0;31m'
@@ -268,4 +268,3 @@ fi
 echo ""
 echo "=== Done! ==="
 echo "Plugins are installed and ready."
-echo "Run tes3mp-client-update again to update when the server pack changes."
