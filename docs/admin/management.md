@@ -11,7 +11,7 @@ All commands are run as root on the VPS from /opt/tes3mp.
 | Edit config | `nano /opt/tes3mp/data/tes3mp-server-default.cfg` | Afterwards, run **Restart** to apply changes |
 | Edit Lua config | `nano /opt/tes3mp/data/server/scripts/config.lua` | Afterwards, run **Restart** to apply changes |
 | Edit ban list | `nano /opt/tes3mp/data/server/data/banlist.json` | Afterwards, run **Restart** to apply changes |
-| Change role | `nano /opt/tes3mp/data/players/<accountName>.json` change staff rank | 3 = owner, 2 = admin, 1 = moderator, 0 = player Afterwards, run **Restart** to apply changes |
+| Sync plugins & scripts | `bash /opt/tes3mp/update_mods.sh` | Copies files from `plugins/` and `server-scripts/` to the server data directories |
 
 ## Configuration (direct access via data/)
 
@@ -106,28 +106,58 @@ The auto-save interval (`config.autoSaveInterval` in `config.lua`) is your safet
    cd /opt/tes3mp && docker compose up -d
    ```
 
+## Plugin and script management
 
-## Enabling endpoints: /get-mods, /get-scripts, /get-world, /get-characters
+### Local plugins directory
 
-All four endpoints are **disabled by default**. Enabling them is **recommended** — they allow players to easily download mods and scripts, and give access to world/character data for debugging, backups, or community tools.
+Place `.esp`/`.esm`/`.omwaddon` files in `plugins/`.  
+Place Lua server scripts in `server-scripts/`.
+
+### tes3mp-server-update (from a client machine)
+
+If you develop plugins and scripts on another machine, use `tes3mp-server-update`:
+
+```bash
+# Edit the config
+nano tools/tes3mp-server-update.conf
+
+# Sync everything to the server
+bash tools/tes3mp-server-update
+```
+
+### update_mods.sh (on the server)
+
+Run this on the server after placing files in `plugins/` and `server-scripts/`:
+
+```bash
+bash /opt/tes3mp/update_mods.sh
+```
+
+The script:
+* Removes old plugins from `server/data/` (keeping original files: `Morrowind.esm`,
+  `Tribunal.esm`, `Bloodmoon.esm`)
+* Copies all plugins from `plugins/` to `server/data/`
+* Synchronises `.lua` scripts from `server-scripts/` to `server/scripts/custom/`
+  (removes files that no longer exist)
+* Generates `server/scripts/customScripts.lua` with `require()` for each script
+* Computes CRC32 and generates `server/data/requiredDataFiles.json`
+* Creates `plugins.zip` for the `/get-plugins` endpoint
+* Creates `server-scripts.zip` for the `/get-server-scripts` endpoint
+* Restarts the Docker container automatically
+
+## Enabling HTTP endpoints
+
+The server provides optional HTTP endpoints via port **8085**.
+All endpoints are disabled by default. See [tes3mp_settings.md](tes3mp_settings.md) for the full config.lua reference.
 
 ### Available endpoints
 
-| Endpoint | Description | Archive |
-|----------|-------------|---------|
-| `/get-mods` | Download all server mods (`.esp`/`.esm` files) | `mods.zip` |
-| `/get-scripts` | Download all custom Lua scripts | `scripts.zip` |
+| Endpoint | Description | File |
+|----------|-------------|------|
+| `/get-plugins` | Download all server plugins (`.esp`/`.esm`/`.omwaddon`) | `plugins.zip` |
+| `/get-server-scripts` | Download all custom Lua server scripts | `server-scripts.zip` |
 | `/get-world` | Download world state (all cell JSON files) | `world_state.tar.gz` |
 | `/get-characters` | Download all character data | `characters.tar.gz` |
-
-### Before enabling — understand the implications
-
-Enabling `/get-world` and `/get-characters` makes your server's data **publicly readable**:
-- **Character data**: anyone with the server IP can download all characters — their inventories, skills, spells, quest progress, etc.
-- **World state**: anyone can download every cell, every placed item, every modified object.
-- **This can affect gameplay** — players could inspect each other's progress, bases, or hidden stashes.
-
-Consider whether this fits your server's vision. For a co-op or roleplay server it can be a **valuable feature** (transparency, backups, community analytics). For a competitive server you may want to keep character data private.
 
 ### To enable
 
@@ -139,18 +169,11 @@ Consider whether this fits your server's vision. For a co-op or roleplay server 
    cd /opt/tes3mp && docker compose up -d
    ```
 
-### To disable
-
-Reverse the steps above and restart: `docker compose restart`.
-
 ### Notes
 
-- Rate limit: each endpoint has its own configurable limit (default: **5 requests per minute** per IP). Archive is cached for 10 minutes.
+- Rate limit: each endpoint has its own configurable limit (default: **5 requests per minute** per IP).
 - When enabled, endpoints are available at:
-  - `http://<server-IP>:8085/get-mods`
-  - `http://<server-IP>:8085/get-scripts`
+  - `http://<server-IP>:8085/get-plugins`
+  - `http://<server-IP>:8085/get-server-scripts`
   - `http://<server-IP>:8085/get-world`
   - `http://<server-IP>:8085/get-characters`
-
-See [tes3mp_settings.md](tes3mp_settings.md) for the full config.lua reference.
-

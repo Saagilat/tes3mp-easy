@@ -1,4 +1,4 @@
-# Client
+# Player guide
 
 Guides and scripts for players setting up TES3MP.
 
@@ -6,15 +6,29 @@ Guides and scripts for players setting up TES3MP.
 
 | OS | Guide |
 |----|-------|
-| 🐧 Linux | [Steam Proton setup](linux/proton/install.md) |
+| 🐧 Linux | [Steam Proton setup](../../client/linux/proton/install.md) |
 
-## Modding
+> **Note:** The client installation guides are being restructured.  
+> For now, see the `client/` directory in the repository history.
 
-To auto-install server mods on your client, download the appropriate script for your OS and follow the steps below.
+## Updating plugins from the server
 
-| OS | Script | Config |
-|----|--------|--------|
-| 🐧 Linux | [`tes3mp-mods-download`](linux/utilities/tes3mp-mods-download) | [`tes3mp-mods-download.conf`](linux/utilities/tes3mp-mods-download.conf) |
+To auto-install server plugins on your client, use `tes3mp-client-update`:
+
+| File | Description |
+|------|-------------|
+| [`tes3mp-client-update`](../../tools/tes3mp-client-update) | Download script |
+| [`tes3mp-client-update.conf`](../../tools/tes3mp-client-update.conf) | Configuration template |
+
+### Usage
+
+```bash
+# Edit the config with your paths
+nano tools/tes3mp-client-update.conf
+
+# Run the update
+bash tools/tes3mp-client-update
+```
 
 ## UI customization
 
