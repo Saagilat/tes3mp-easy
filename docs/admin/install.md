@@ -85,20 +85,22 @@ The script copies all files to the server and restarts the container.
 
 ---
 
-## 5. Create an admin account and run startup command
-
-First, make sure you have an admin account — see [Player role management](management.md#player-role-management).
-
-Once you have an admin character:
+## 5. Create an admin account and run the startup command
 
 1. **Join the server** through the TES3MP client ([Player guide](../player/install.md) — if you need to set up a client)
-2. **Run `/runstartup`** in the in-game chat (press **Y** to open the chat)
+2. **Register** — enter any username and password (the first registered account gets **ServerOwner** rank by default)
+3. **Exit the game**
+4. **Set the admin role (if you are not the first player)** — see [Player role management](management.md#player-role-management) for instructions
+5. **Log back into the server** as your admin character
+6. **Run `/runstartup`** in the in-game chat (press **Y** to open the chat)
    > This command must be executed **on every newly created world** (after world creation or reset) for the server to function correctly.
-3. **Restart the server:**
+7. **Restart the server:**
 
    ```bash
    ssh my-server "cd /tes3mp-easy && docker compose restart"
    ```
+
+Done — you are now a server administrator.
 
 ---
 
