@@ -4,11 +4,11 @@ Guides and scripts for setting up and managing TES3MP servers and installing the
 
 ## 🎮 Player
 
-[Step-by-step player guide](PLAYER.md) — from client installation to joining the server.
+[Step-by-step player guide](docs/player.md) — from client installation to joining the server.
 
 ## 🖥️ Server admin
 
-[Step-by-step admin guide](ADMIN.md) — from server setup to moderation.
+[Step-by-step admin guide](docs/admin.md) — from server setup to moderation.
 
 ---
 

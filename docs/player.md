@@ -13,7 +13,7 @@ cd tes3mp-easy-setup
 
 | OS | Guide |
 |----|-------|
-| Linux (Proton) | [Installation guide](docs/player/linux/proton/install.md) |
+| Linux (Proton) | [Installation guide](player/linux/proton/install.md) |
 
 ---
 
