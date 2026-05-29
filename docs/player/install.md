@@ -19,30 +19,30 @@ cd tes3mp-easy-setup
 
 ## 3. Configure fonts
 
-Create `settings.cfg` inside your `openmw-profile` folder.
-Copy the example file from the repository:
+Create `settings.cfg` inside your OpenMW profile folder and copy the example file:
 
 ```bash
-mkdir -p ~/openmw-profile
-cp tools/linux/example-settings.cfg ~/openmw-profile/settings.cfg
+cp tools/example-settings.cfg /path/to/openmw-profile/settings.cfg
 ```
 
-> **Note:** Replace `~/openmw-profile` with the actual path to your OpenMW profile.
-> Linux (Proton): the file is located next to `openmw.cfg` (see step 2).
+> The location of the OpenMW profile depends on your OS.
+> Linux (Proton): the folder is created at `~/openmw-profile` (see step 2).
+
+For more font options see the [OpenMW font documentation](https://openmw.readthedocs.io/en/openmw-0.47.0_a/reference/modding/font.html).
 
 ---
 
 ## 4. (optional) Install localization
 
-| Language | Command |
-|----------|---------|
+| Language | Instructions |
+|----------|-------------|
 | Russian | [Setup guide](../../tools/localization/russian/README.md) |
 
 ---
 
-## 5. Edit tes3mp-client-default.cfg
+## 5. Set the server address
 
-Open `tes3mp-client-default.cfg` (next to `tes3mp.exe`) and set the server address:
+Open `tes3mp-client-default.cfg` (next to your TES3MP client executable) and set the server address:
 
 ```
 destinationAddress = your-server-ip-or-host
@@ -84,6 +84,6 @@ The script downloads mods from the server, installs them into `Data Files/`, and
 
 ## 7. Join the server
 
-1. Launch `tes3mp.exe` through Steam
+1. Launch your TES3MP client and connect to the server
 2. Enter a username and password to register
 3. Done — you are on the server!
