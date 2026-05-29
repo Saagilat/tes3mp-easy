@@ -88,7 +88,7 @@ The script copies all files to the server and restarts the container.
 ## 5. Create an admin account and run the startup command
 
 1. **Join the server** through the TES3MP client ([Player guide](../player/install.md) — if you need to set up a client)
-2. **Register** — enter any username and password (the first registered account gets **ServerOwner** rank by default)
+2. **Register** — enter any username and password
 3. **Exit the game**
 4. **Set the admin role (if you are not the first player)** — see [Player role management](management.md#player-role-management) for instructions
 5. **Log back into the server** as your admin character
