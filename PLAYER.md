@@ -11,32 +11,16 @@ cd tes3mp-easy-setup
 
 ## 2. Install the client
 
-Choose your operating system:
-
-### Linux
-
-[Installation guide for Steam Proton](docs/player/linux/proton/install.md)
-
-### Windows
-
-> Coming soon
-
-### macOS
-
-> Coming soon
+| OS | Guide |
+|----|-------|
+| Linux (Proton) | [Installation guide](docs/player/linux/proton/install.md) |
 
 ---
 
 ## 3. Configure fonts
 
-After the first launch, a `settings.cfg` file will appear inside your `openmw-profile` folder.
+Create `settings.cfg` inside your `openmw-profile` folder.
 Copy the example file from the repository:
-
-```bash
-cp tools/linux/example-settings.cfg ~/openmw-profile/settings.cfg
-```
-
-If the `openmw-profile` folder does not exist yet, create it manually:
 
 ```bash
 mkdir -p ~/openmw-profile
@@ -50,17 +34,9 @@ cp tools/linux/example-settings.cfg ~/openmw-profile/settings.cfg
 
 ## 4. (optional) Install localization
 
-Choose your language:
-
-### Russian
-
-```bash
-bash tools/linux/localization/russian/install.sh
-```
-
-### Other languages
-
-> Will be added later
+| Language | Command |
+|----------|---------|
+| Russian | `bash tools/linux/localization/russian/install.sh` |
 
 ---
 
