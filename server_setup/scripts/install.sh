@@ -193,13 +193,6 @@ gather_options() {
         *)     ENABLE_WORLD="no" ;;
     esac
 
-    read -r -p "Enable /get-characters? [y/N]: " ENABLE_CHARACTERS </dev/tty
-    ENABLE_CHARACTERS="${ENABLE_CHARACTERS:-n}"
-    case "${ENABLE_CHARACTERS,,}" in
-        y|yes) ENABLE_CHARACTERS="yes" ;;
-        *)     ENABLE_CHARACTERS="no" ;;
-    esac
-
     # ---- Rate limits ----
     echo ""
     echo "--- Rate limiting ---"
@@ -223,12 +216,6 @@ gather_options() {
     if [[ "$ENABLE_WORLD" == "yes" ]]; then
         read -r -p "  /get-world rate limit (req/min) [default: 5]: " input </dev/tty
         WORLD_RATE="${input:-5}"
-    fi
-
-    CHARACTERS_RATE="5"
-    if [[ "$ENABLE_CHARACTERS" == "yes" ]]; then
-        read -r -p "  /get-characters rate limit (req/min) [default: 5]: " input </dev/tty
-        CHARACTERS_RATE="${input:-5}"
     fi
 
     # ---- Example content ----
@@ -614,7 +601,7 @@ configure_endpoints() {
     sed -i "s/\"25565:25565\/udp\"/\"$TES3MP_PORT:25565\/udp\"/" "$compose"
 
     # Uncomment nginx service if at least one endpoint is enabled
-    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_SERVER_SCRIPTS" == "yes" || "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
+    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_SERVER_SCRIPTS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
         sed -i 's/#\(nginx:\)/\1/' "$compose"
         sed -i 's/#\(  image: nginx:alpine\)/  image: nginx:alpine/' "$compose"
         sed -i 's/#\(  ports:\)/  ports:/' "$compose"
@@ -625,8 +612,8 @@ configure_endpoints() {
         sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
     fi
 
-    # Uncomment export service if /get-world or /get-characters are enabled
-    if [[ "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
+    # Uncomment export service if /get-world is enabled
+    if [[ "$ENABLE_WORLD" == "yes" ]]; then
         sed -i 's/#\(export:\)/\1/' "$compose"
         sed -i 's/#\(  build:\)/  build:/' "$compose"
         sed -i 's/#\(    context: \.\)/    context: ./' "$compose"
@@ -655,7 +642,6 @@ configure_endpoints() {
     sed -i "s/^limit_req_zone.*zone=mods:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=mods:10m rate=${MODS_RATE}r\/m;/" "$nginx"
     sed -i "s/^limit_req_zone.*zone=server-scripts:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=server-scripts:10m rate=${SERVER_SCRIPTS_RATE}r\/m;/" "$nginx"
     sed -i "s/^limit_req_zone.*zone=world:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=world:10m rate=${WORLD_RATE}r\/m;/" "$nginx"
-    sed -i "s/^limit_req_zone.*zone=characters:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=characters:10m rate=${CHARACTERS_RATE}r\/m;/" "$nginx"
 
     if [[ "$ENABLE_MODS" == "yes" ]]; then
         uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_MODS"
@@ -667,10 +653,6 @@ configure_endpoints() {
 
     if [[ "$ENABLE_WORLD" == "yes" ]]; then
         uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_WORLD"
-    fi
-
-    if [[ "$ENABLE_CHARACTERS" == "yes" ]]; then
-        uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_CHARACTERS"
     fi
 }
 
@@ -706,13 +688,13 @@ configure_firewall() {
     case "$fw" in
         ufw)
             ufw allow "$TES3MP_PORT/udp" comment "TES3MP"
-            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_SERVER_SCRIPTS" == "yes" || "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_SERVER_SCRIPTS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
                 ufw allow "8085/tcp" comment "TES3MP HTTP endpoints"
             fi
             ;;
         firewall-cmd)
             firewall-cmd --permanent --add-port="$TES3MP_PORT/udp"
-            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_SERVER_SCRIPTS" == "yes" || "$ENABLE_WORLD" == "yes" || "$ENABLE_CHARACTERS" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_SERVER_SCRIPTS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
                 firewall-cmd --permanent --add-port="8085/tcp"
             fi
             firewall-cmd --reload
