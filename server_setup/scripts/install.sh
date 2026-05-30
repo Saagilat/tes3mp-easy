@@ -179,6 +179,20 @@ gather_options() {
         *)     ENABLE_MODS="no" ;;
     esac
 
+    read -r -p "Enable /get-players? [y/N]: " ENABLE_PLAYERS </dev/tty
+    ENABLE_PLAYERS="${ENABLE_PLAYERS:-n}"
+    case "${ENABLE_PLAYERS,,}" in
+        y|yes) ENABLE_PLAYERS="yes" ;;
+        *)     ENABLE_PLAYERS="no" ;;
+    esac
+
+    read -r -p "Enable /get-cells? [y/N]: " ENABLE_CELLS </dev/tty
+    ENABLE_CELLS="${ENABLE_CELLS:-n}"
+    case "${ENABLE_CELLS,,}" in
+        y|yes) ENABLE_CELLS="yes" ;;
+        *)     ENABLE_CELLS="no" ;;
+    esac
+
     # ---- Rate limits ----
     echo ""
     echo "--- Rate limiting ---"
@@ -190,6 +204,18 @@ gather_options() {
     if [[ "$ENABLE_MODS" == "yes" ]]; then
         read -r -p "  /get-mods rate limit (req/min) [default: 5]: " input </dev/tty
         MODS_RATE="${input:-5}"
+    fi
+
+    PLAYERS_RATE="5"
+    if [[ "$ENABLE_PLAYERS" == "yes" ]]; then
+        read -r -p "  /get-players rate limit (req/min) [default: 5]: " input </dev/tty
+        PLAYERS_RATE="${input:-5}"
+    fi
+
+    CELLS_RATE="5"
+    if [[ "$ENABLE_CELLS" == "yes" ]]; then
+        read -r -p "  /get-cells rate limit (req/min) [default: 5]: " input </dev/tty
+        CELLS_RATE="${input:-5}"
     fi
 
     # ---- Example content ----
@@ -408,7 +434,7 @@ setup_files() {
     cd "$dest"
 
     info "Downloading Dockerfile and configs from Saagilat/tes3mp-easy..."
-    for f in tes3mp.dockerfile docker-compose.yml nginx.conf; do
+    for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/docker/$f" -O "$dest/$f"
     done
     for f in package.sh import_mods.sh import_players.sh import_cells.sh; do
@@ -574,8 +600,8 @@ configure_endpoints() {
     # Set TES3MP port
     sed -i "s/\"25565:25565\/udp\"/\"$TES3MP_PORT:25565\/udp\"/" "$compose"
 
-    # Uncomment nginx service if endpoint is enabled
-    if [[ "$ENABLE_MODS" == "yes" ]]; then
+    # Uncomment nginx service if at least one endpoint is enabled
+    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
         sed -i 's/#\(nginx:\)/\1/' "$compose"
         sed -i 's/#\(  image: nginx:alpine\)/  image: nginx:alpine/' "$compose"
         sed -i 's/#\(  ports:\)/  ports:/' "$compose"
@@ -586,11 +612,23 @@ configure_endpoints() {
         sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
     fi
 
+    # Uncomment export service if /get-players or /get-cells is enabled
+    if [[ "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
+        sed -i 's/#\(export:\)/\1/' "$compose"
+        sed -i 's/#\(  build:\)/  build:/' "$compose"
+        sed -i 's/#\(    context: \.\)/    context: ./' "$compose"
+        sed -i 's/#\(    dockerfile: export\.dockerfile\)/    dockerfile: export.dockerfile/' "$compose"
+        sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
+        sed -i 's/#\(    - \.\/container-data\/server\/data\/player:\/mnt\/characters:ro\)/    - .\/container-data\/server\/data\/player:\/mnt\/characters:ro/' "$compose"
+        sed -i 's/#\(    - \.\/container-data\/server\/data\/cell:\/mnt\/cells:ro\)/    - .\/container-data\/server\/data\/cell:\/mnt\/cells:ro/' "$compose"
+        sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
+    fi
+
     # nginx.conf — uncomment the required location blocks
     local nginx="$dest/nginx.conf"
 
     # Helper: uncomment a block that starts with a marker comment
-    # Usage: uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_MODS"
+    # Usage: uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_..."
     uncomment_nginx_block() {
         local file="$1"
         local marker="$2"
@@ -602,9 +640,19 @@ configure_endpoints() {
 
     # Update rate limits in zone declarations
     sed -i "s/^limit_req_zone.*zone=mods:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=mods:10m rate=${MODS_RATE}r\/m;/" "$nginx"
+    sed -i "s/^limit_req_zone.*zone=players:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=players:10m rate=${PLAYERS_RATE}r\/m;/" "$nginx"
+    sed -i "s/^limit_req_zone.*zone=cells:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=cells:10m rate=${CELLS_RATE}r\/m;/" "$nginx"
 
     if [[ "$ENABLE_MODS" == "yes" ]]; then
         uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_MODS"
+    fi
+
+    if [[ "$ENABLE_PLAYERS" == "yes" ]]; then
+        uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_PLAYERS"
+    fi
+
+    if [[ "$ENABLE_CELLS" == "yes" ]]; then
+        uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_CELLS"
     fi
 }
 
@@ -640,13 +688,13 @@ configure_firewall() {
     case "$fw" in
         ufw)
             ufw allow "$TES3MP_PORT/udp" comment "TES3MP"
-            if [[ "$ENABLE_MODS" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
                 ufw allow "8085/tcp" comment "TES3MP HTTP endpoints"
             fi
             ;;
         firewall-cmd)
             firewall-cmd --permanent --add-port="$TES3MP_PORT/udp"
-            if [[ "$ENABLE_MODS" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
                 firewall-cmd --permanent --add-port="8085/tcp"
             fi
             firewall-cmd --reload
@@ -750,8 +798,10 @@ build_and_start() {
     echo ""
     echo "  Endpoints:"
     echo "    /get-mods:           $ENABLE_MODS"
+    echo "    /get-players:        $ENABLE_PLAYERS"
+    echo "    /get-cells:          $ENABLE_CELLS"
     echo ""
-    if [[ "$ENABLE_MODS" == "yes" ]]; then
+    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
         echo "  HTTP port (endpoints): 8085"
     fi
     echo ""

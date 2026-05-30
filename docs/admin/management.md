@@ -30,19 +30,25 @@ It is disabled by default.
 | Endpoint | Description | Backend |
 |----------|-------------|---------|
 | `/get-mods` | Download all server mods + scripts (`mods.tar.gz`) | nginx (static file) |
+| `/get-players` | Download current player data (cached 5 min) | export service |
+| `/get-cells` | Download current cell data (cached 5 min) | export service |
 
 To enable:
 
-1. **Uncomment the location block** in `/tes3mp-easy/nginx.conf`
-2. **Uncomment the `nginx` service** in `/tes3mp-easy/docker-compose.yml`
+1. **Uncomment the desired location blocks** in `/tes3mp-easy/nginx.conf`
+2. **Uncomment the `nginx` and/or `export` services** in `/tes3mp-easy/docker-compose.yml`
+   - `nginx` service is required for all endpoints
+   - `export` service is required for `/get-players` and `/get-cells`
 3. Restart the container:
 
    ```bash
    ssh my-server "cd /tes3mp-easy && docker compose restart"
    ```
 
-When enabled, the endpoint is available at:
+When enabled, endpoints are available at:
 - `http://<server-ip>:8085/get-mods`
+- `http://<server-ip>:8085/get-players`
+- `http://<server-ip>:8085/get-cells`
 
 ## Player role management
 
