@@ -1,20 +1,23 @@
 #!/bin/bash
 #
-# import_world.sh — Import world data (players + cells) from a world.tar.gz archive
+# import_cells.sh — Import cell data from a cells.tar.gz archive
 #
 # What it does:
-#   1. Checks for archive at /tes3mp-easy/import-world/world.tar.gz
-#   2. Backs up current world via package.sh
+#   1. Checks for archive at /tes3mp-easy/import-cells/cells.tar.gz
+#   2. Backs up current cells via package.sh
 #   3. Stops TES3MP container
-#   4. Extracts world.tar.gz to container-data/server/data/
+#   4. Extracts cells.tar.gz to container-data/server/data/cell/
 #   5. Starts TES3MP container
 #   6. Cleans up import directory
 #
 # Usage:
-#   Place world.tar.gz in /tes3mp-easy/import-world/
-#   Run: bash import_world.sh
+#   Place cells.tar.gz in /tes3mp-easy/import-cells/
+#   Run: bash import_cells.sh
 #
 # Requirements: bash, tar, docker, docker compose
+#
+# Note: TES3MP is stopped before extracting cells because
+#       changing cell data at runtime is unsafe/risky.
 
 set -euo pipefail
 
@@ -22,11 +25,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE_DIR="$(dirname "$SCRIPT_DIR")"
 DATA_DIR="$BASE_DIR/container-data"
 
-IMPORT_DIR="$BASE_DIR/import-world"
-ARCHIVE="$IMPORT_DIR/world.tar.gz"
+IMPORT_DIR="$BASE_DIR/import-cells"
+ARCHIVE="$IMPORT_DIR/cells.tar.gz"
 
 SERVER_DATA_DIR="$DATA_DIR/server/data"
-PLAYER_DIR="$SERVER_DATA_DIR/player"
 CELL_DIR="$SERVER_DATA_DIR/cell"
 
 # Backup directory
@@ -44,16 +46,14 @@ ok()   { echo -e "${GREEN}[OK]${NC}   $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 
-# --- Source the shared packaging library for package_world() ---
-export PLAYER_DIR
+# --- Source the shared packaging library for package_cells() ---
 export CELL_DIR
 
 source "$SCRIPT_DIR/package.sh"
 
-echo "=== TES3MP Import World ==="
-echo "Archive:       $ARCHIVE"
-echo "Player dir:    $PLAYER_DIR"
-echo "Cell dir:      $CELL_DIR"
+echo "=== TES3MP Import Cells ==="
+echo "Archive:    $ARCHIVE"
+echo "Cell dir:   $CELL_DIR"
 echo ""
 
 # --- Dependency check ---
@@ -68,20 +68,20 @@ done
 echo "[1/6] Checking archive..."
 if [ ! -f "$ARCHIVE" ]; then
     err "Archive not found: $ARCHIVE"
-    err "Place world.tar.gz in $IMPORT_DIR/ and re-run."
+    err "Place cells.tar.gz in $IMPORT_DIR/ and re-run."
     exit 1
 fi
 ok "Archive found: $ARCHIVE"
 
-# --- Step 2: Backup current world ---
+# --- Step 2: Backup current cells ---
 echo ""
-echo "[2/6] Backing up current world..."
+echo "[2/6] Backing up current cells..."
 
 TIMESTAMP=$(date +%F_%H-%M-%S)
 mkdir -p "$BACKUPS_DIR"
-package_world "$BACKUPS_DIR/world_${TIMESTAMP}.tar.gz"
+package_cells "$BACKUPS_DIR/cells_${TIMESTAMP}.tar.gz"
 
-ok "World backup saved to: $BACKUPS_DIR"
+ok "Cell backup saved to: $BACKUPS_DIR"
 
 # --- Step 3: Stop TES3MP ---
 echo ""
@@ -95,14 +95,14 @@ else
     warn "Docker compose not found — stop TES3MP manually"
 fi
 
-# --- Step 4: Extract world archive ---
+# --- Step 4: Extract cells archive ---
 echo ""
-echo "[4/6] Extracting world data to $SERVER_DATA_DIR..."
+echo "[4/6] Extracting cell data to $CELL_DIR..."
 
-mkdir -p "$PLAYER_DIR" "$CELL_DIR"
+mkdir -p "$CELL_DIR"
 tar xzf "$ARCHIVE" -C "$SERVER_DATA_DIR"
 
-ok "World data extracted"
+ok "Cell data extracted"
 
 # --- Step 5: Start TES3MP ---
 echo ""

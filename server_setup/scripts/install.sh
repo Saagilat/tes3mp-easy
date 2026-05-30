@@ -179,13 +179,6 @@ gather_options() {
         *)     ENABLE_MODS="no" ;;
     esac
 
-    read -r -p "Enable /get-world? [y/N]: " ENABLE_WORLD </dev/tty
-    ENABLE_WORLD="${ENABLE_WORLD:-n}"
-    case "${ENABLE_WORLD,,}" in
-        y|yes) ENABLE_WORLD="yes" ;;
-        *)     ENABLE_WORLD="no" ;;
-    esac
-
     # ---- Rate limits ----
     echo ""
     echo "--- Rate limiting ---"
@@ -197,12 +190,6 @@ gather_options() {
     if [[ "$ENABLE_MODS" == "yes" ]]; then
         read -r -p "  /get-mods rate limit (req/min) [default: 5]: " input </dev/tty
         MODS_RATE="${input:-5}"
-    fi
-
-    WORLD_RATE="5"
-    if [[ "$ENABLE_WORLD" == "yes" ]]; then
-        read -r -p "  /get-world rate limit (req/min) [default: 5]: " input </dev/tty
-        WORLD_RATE="${input:-5}"
     fi
 
     # ---- Example content ----
@@ -421,13 +408,13 @@ setup_files() {
     cd "$dest"
 
     info "Downloading Dockerfile and configs from Saagilat/tes3mp-easy..."
-    for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.sh; do
+    for f in tes3mp.dockerfile docker-compose.yml nginx.conf; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/docker/$f" -O "$dest/$f"
     done
-    for f in package.sh import_mods.sh import_world.sh; do
+    for f in package.sh import_mods.sh import_players.sh import_cells.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/scripts/$f" -O "$dest/$f"
     done
-    chmod +x "$dest/import_mods.sh" "$dest/import_world.sh"
+    chmod +x "$dest/import_mods.sh" "$dest/import_players.sh" "$dest/import_cells.sh"
 
     # Download management reference
     wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/docs/admin/management.md" -O "$dest/management.md"
@@ -587,8 +574,8 @@ configure_endpoints() {
     # Set TES3MP port
     sed -i "s/\"25565:25565\/udp\"/\"$TES3MP_PORT:25565\/udp\"/" "$compose"
 
-    # Uncomment nginx service if at least one endpoint is enabled
-    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
+    # Uncomment nginx service if endpoint is enabled
+    if [[ "$ENABLE_MODS" == "yes" ]]; then
         sed -i 's/#\(nginx:\)/\1/' "$compose"
         sed -i 's/#\(  image: nginx:alpine\)/  image: nginx:alpine/' "$compose"
         sed -i 's/#\(  ports:\)/  ports:/' "$compose"
@@ -596,18 +583,6 @@ configure_endpoints() {
         sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
         sed -i 's/#\(    - \.\/container-data:\/usr\/share\/nginx\/html:ro\)/    - .\/container-data:\/usr\/share\/nginx\/html:ro/' "$compose"
         sed -i 's/#\(    - \.\/nginx.conf:\/etc\/nginx\/conf\.d\/default\.conf:ro\)/    - .\/nginx.conf:\/etc\/nginx\/conf.d\/default.conf:ro/' "$compose"
-        sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
-    fi
-
-    # Uncomment export service if /get-world is enabled
-    if [[ "$ENABLE_WORLD" == "yes" ]]; then
-        sed -i 's/#\(export:\)/\1/' "$compose"
-        sed -i 's/#\(  build:\)/  build:/' "$compose"
-        sed -i 's/#\(    context: \.\)/    context: ./' "$compose"
-        sed -i 's/#\(    dockerfile: export\.dockerfile\)/    dockerfile: export.dockerfile/' "$compose"
-        sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
-        sed -i 's/#\(    - \.\/container-data\/server\/data\/player:\/mnt\/characters:ro\)/    - .\/container-data\/server\/data\/player:\/mnt\/characters:ro/' "$compose"
-        sed -i 's/#\(    - \.\/container-data\/server\/data\/cell:\/mnt\/cells:ro\)/    - .\/container-data\/server\/data\/cell:\/mnt\/cells:ro/' "$compose"
         sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
     fi
 
@@ -627,14 +602,9 @@ configure_endpoints() {
 
     # Update rate limits in zone declarations
     sed -i "s/^limit_req_zone.*zone=mods:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=mods:10m rate=${MODS_RATE}r\/m;/" "$nginx"
-    sed -i "s/^limit_req_zone.*zone=world:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=world:10m rate=${WORLD_RATE}r\/m;/" "$nginx"
 
     if [[ "$ENABLE_MODS" == "yes" ]]; then
         uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_MODS"
-    fi
-
-    if [[ "$ENABLE_WORLD" == "yes" ]]; then
-        uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_WORLD"
     fi
 }
 
@@ -670,13 +640,13 @@ configure_firewall() {
     case "$fw" in
         ufw)
             ufw allow "$TES3MP_PORT/udp" comment "TES3MP"
-            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" ]]; then
                 ufw allow "8085/tcp" comment "TES3MP HTTP endpoints"
             fi
             ;;
         firewall-cmd)
             firewall-cmd --permanent --add-port="$TES3MP_PORT/udp"
-            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" ]]; then
                 firewall-cmd --permanent --add-port="8085/tcp"
             fi
             firewall-cmd --reload
@@ -780,9 +750,8 @@ build_and_start() {
     echo ""
     echo "  Endpoints:"
     echo "    /get-mods:           $ENABLE_MODS"
-    echo "    /get-world:          $ENABLE_WORLD"
     echo ""
-    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
+    if [[ "$ENABLE_MODS" == "yes" ]]; then
         echo "  HTTP port (endpoints): 8085"
     fi
     echo ""

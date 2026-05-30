@@ -6,11 +6,14 @@
 #
 # Variable requirements per function:
 #   package_mods_and_scripts()    — PLUGINS_DIR, SERVER_SCRIPTS_DIR, ORIGINAL_FILES
-#   package_world()               — PLAYER_DIR, CELL_DIR
+#   package_players()             — PLAYER_DIR
+#   package_cells()               — CELL_DIR
+#   (package_world removed — use package_players + package_cells separately)
 #
 # Functions provided:
 #   package_mods_and_scripts(output_file)           — plugins + scripts + requiredDataFiles.json
-#   package_world(output_file)                      — player/ + cell/
+#   package_players(output_file)                    — player/ only
+#   package_cells(output_file)                      — cell/ only
 #
 
 # ────────────────────────────────────────────────────────────────
@@ -205,25 +208,39 @@ package_mods_and_scripts() {
 }
 
 # ────────────────────────────────────────────────────────────────
-# Package world (players + cells) into a tar.gz archive
-#   Usage: package_world <output_file>
+# Internal: Create tar.gz archive from a staged directory
+#   Usage: _package_stage <output_file> <stage_dir>
+# ────────────────────────────────────────────────────────────────
+_package_stage() {
+    local output_file="$1"
+    local stage_dir="$2"
+
+    local parent_dir
+    parent_dir="$(dirname "$output_file")"
+    mkdir -p "$parent_dir"
+
+    tar czf "$output_file" -C "$stage_dir" .
+    echo "[package.sh] Created: $output_file"
+}
+
+# ────────────────────────────────────────────────────────────────
+# Package only players into a tar.gz archive
+#   Usage: package_players <output_file>
 #   Archive structure:
 #     output.tar.gz
-#     ├── player/
-#     │   └── AccountName1.json
-#     └── cell/
-#         └── -1_-2.json
+#     └── player/
+#         └── AccountName1.json
 # ────────────────────────────────────────────────────────────────
-package_world() {
+package_players() {
     local output_file="$1"
 
     if [ -z "$output_file" ]; then
-        echo "[package.sh] ERROR: package_world requires an output file path" >&2
+        echo "[package.sh] ERROR: package_players requires an output file path" >&2
         return 1
     fi
 
     # Check disk space before proceeding
-    _check_disk_space "$output_file" "$PLAYER_DIR" "$CELL_DIR"
+    _check_disk_space "$output_file" "$PLAYER_DIR"
 
     local stage_dir
     stage_dir=$(mktemp -d)
@@ -233,19 +250,49 @@ package_world() {
     if [ -d "$PLAYER_DIR" ] && [ -n "$(ls -A "$PLAYER_DIR" 2>/dev/null)" ]; then
         mkdir -p "$stage_dir/player"
         cp -r "$PLAYER_DIR"/* "$stage_dir/player/"
+        echo "[package.sh]   players: $(ls -1 "$stage_dir/player" | wc -l)"
+    else
+        echo "[package.sh]   players: 0 (empty or missing)"
     fi
+
+    # Create the archive
+    _package_stage "$output_file" "$stage_dir"
+}
+
+# ────────────────────────────────────────────────────────────────
+# Package only cells into a tar.gz archive
+#   Usage: package_cells <output_file>
+#   Archive structure:
+#     output.tar.gz
+#     └── cell/
+#         └── -1_-2.json
+# ────────────────────────────────────────────────────────────────
+package_cells() {
+    local output_file="$1"
+
+    if [ -z "$output_file" ]; then
+        echo "[package.sh] ERROR: package_cells requires an output file path" >&2
+        return 1
+    fi
+
+    # Check disk space before proceeding
+    _check_disk_space "$output_file" "$CELL_DIR"
+
+    local stage_dir
+    stage_dir=$(mktemp -d)
+    trap 'rm -rf "${stage_dir:-}"' RETURN
 
     # Copy cells to staging/cell/
     if [ -d "$CELL_DIR" ] && [ -n "$(ls -A "$CELL_DIR" 2>/dev/null)" ]; then
         mkdir -p "$stage_dir/cell"
         cp -r "$CELL_DIR"/* "$stage_dir/cell/"
+        echo "[package.sh]   cells: $(ls -1 "$stage_dir/cell" | wc -l)"
+    else
+        echo "[package.sh]   cells: 0 (empty or missing)"
     fi
 
-    local parent_dir
-    parent_dir="$(dirname "$output_file")"
-    mkdir -p "$parent_dir"
-
-    tar czf "$output_file" -C "$stage_dir" .
-
-    echo "[package.sh] Created: $output_file"
+    # Create the archive
+    _package_stage "$output_file" "$stage_dir"
 }
+
+# (package_world is removed — use package_players + package_cells instead)

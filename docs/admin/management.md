@@ -14,36 +14,35 @@ All commands are run on the server via SSH. Replace `my-server` with your SSH ho
 | Edit Lua config | `ssh my-server "nano /tes3mp-easy/container-data/server/scripts/config.lua"` |
 | Edit ban list | `ssh my-server "nano /tes3mp-easy/container-data/server/data/banlist.json"` |
 | Export mods | `tes3mp-easy-export-mods` |
-| Export world | `tes3mp-easy-export-world` |
+| Export players only | `tes3mp-easy-export-players` |
+| Export cells only | `tes3mp-easy-export-cells` |
 | Import mods (client) | `tes3mp-easy-import-mods` |
 | Generate required data files | `tes3mp-easy-generate-required-data` |
 | Import mods (server-side) | `ssh my-server "bash /tes3mp-easy/scripts/import_mods.sh"` |
-| Import world (server-side) | `ssh my-server "bash /tes3mp-easy/scripts/import_world.sh"` |
+| Import players only (hot-add, no restart) | `ssh my-server "bash /tes3mp-easy/scripts/import_players.sh"` |
+| Import cells only (restarts TES3MP) | `ssh my-server "bash /tes3mp-easy/scripts/import_cells.sh"` |
 
 ## HTTP endpoints
 
-The server can provide optional HTTP endpoints on port **8085**.
-All endpoints are disabled by default.
+The server can provide an optional HTTP endpoint on port **8085**.
+It is disabled by default.
 
 | Endpoint | Description | Backend |
 |----------|-------------|---------|
 | `/get-mods` | Download all server mods + scripts (`mods.tar.gz`) | nginx (static file) |
-| `/get-world` | Download players + cells for world recovery (combined tar.gz) | export service |
 
-To enable endpoints:
+To enable:
 
-1. **Uncomment the desired location blocks** in `/tes3mp-easy/nginx.conf`
-2. For `/get-world` — also **uncomment the `export` service** in `/tes3mp-easy/docker-compose.yml`
-3. **Uncomment the `nginx` service** in `docker-compose.yml` (required for all endpoints)
-4. Restart the container:
+1. **Uncomment the location block** in `/tes3mp-easy/nginx.conf`
+2. **Uncomment the `nginx` service** in `/tes3mp-easy/docker-compose.yml`
+3. Restart the container:
 
    ```bash
    ssh my-server "cd /tes3mp-easy && docker compose restart"
    ```
 
-When enabled, endpoints are available at:
+When enabled, the endpoint is available at:
 - `http://<server-ip>:8085/get-mods`
-- `http://<server-ip>:8085/get-world`
 
 ## Player role management
 

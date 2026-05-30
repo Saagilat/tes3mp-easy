@@ -1,20 +1,20 @@
 #!/bin/bash
 #
-# tes3mp-easy-export-world — Package and export world data to a TES3MP server
+# tes3mp-easy-export-cells — Package and export cell data to a TES3MP server
 #
 # Algorithm:
-#   1. Reads [world] section from tes3mp-easy-export.conf
+#   1. Reads [world] section from tes3mp-easy-export.conf (CELL_DIR)
 #   2. Reads [export] section for SSH_HOST
-#   3. Packages world via package.sh (source) → world.tar.gz
-#   4. SCPs to server:/tes3mp-easy/import-world/
-#   5. Runs import_world.sh on server via SSH
+#   3. Packages cells via package.sh (source) → cells.tar.gz
+#   4. SCPs to server:/tes3mp-easy/import-cells/
+#   5. Runs import_cells.sh on server via SSH
 #   6. Cleans up local archive
 #
 # Configuration:
 #   $(dirname "$0")/tes3mp-easy-export.conf
 #
 # Usage:
-#   tes3mp-easy-export-world
+#   tes3mp-easy-export-cells
 #
 # Dependencies: bash, tar, ssh, scp
 
@@ -83,13 +83,13 @@ if [ -z "${CFG_SSH_HOST:-}" ]; then
     exit 1
 fi
 
-if [ -z "${CFG_WORLD_DIR:-}" ]; then
-    err "WORLD_DIR is not set in [world] section of $CONFIG_FILE"
+if [ -z "${CFG_CELL_DIR:-}" ]; then
+    err "CELL_DIR is not set in [world] section of $CONFIG_FILE"
     exit 1
 fi
 
-if [ ! -d "$CFG_WORLD_DIR" ]; then
-    err "World directory does not exist: $CFG_WORLD_DIR"
+if [ ! -d "$CFG_CELL_DIR" ]; then
+    err "Cell directory does not exist: $CFG_CELL_DIR"
     exit 1
 fi
 
@@ -101,28 +101,24 @@ for cmd in tar ssh scp; do
     fi
 done
 
-echo "=== TES3MP Export World ==="
+echo "=== TES3MP Export Cells ==="
 echo "  SSH host:            $CFG_SSH_HOST"
-echo "  World dir:           $CFG_WORLD_DIR"
+echo "  Cell dir:            $CFG_CELL_DIR"
 echo ""
 
-# --- Step 1: Package world ---
-echo "[1/4] Packaging world data..."
+# --- Step 1: Package cells ---
+echo "[1/4] Packaging cell data..."
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-OUTPUT_ARCHIVE="$TMP_DIR/world.tar.gz"
+OUTPUT_ARCHIVE="$TMP_DIR/cells.tar.gz"
 
-# Source package.sh and create archive
-# The world archive expects player/ and cell/ subdirectories at the root
-# The source directory should contain them directly
-export PLAYER_DIR="$CFG_WORLD_DIR/player"
-export CELL_DIR="$CFG_WORLD_DIR/cell"
+export CELL_DIR="$CFG_CELL_DIR"
 
 source "$SCRIPT_DIR/../../server_setup/scripts/package.sh"
 
-package_world "$OUTPUT_ARCHIVE"
+package_cells "$OUTPUT_ARCHIVE"
 
 if [ ! -f "$OUTPUT_ARCHIVE" ]; then
     err "Failed to create archive"
@@ -134,23 +130,24 @@ ok "Archive created: $OUTPUT_ARCHIVE"
 echo ""
 echo "[2/4] Transferring to server..."
 
-ssh "$CFG_SSH_HOST" "mkdir -p /tes3mp-easy/import-world" || {
+ssh "$CFG_SSH_HOST" "mkdir -p /tes3mp-easy/import-cells" || {
     err "Failed to create remote directory"
     exit 1
 }
 
-scp "$OUTPUT_ARCHIVE" "$CFG_SSH_HOST":/tes3mp-easy/import-world/world.tar.gz || {
+scp "$OUTPUT_ARCHIVE" "$CFG_SSH_HOST":/tes3mp-easy/import-cells/cells.tar.gz || {
     err "Failed to transfer archive to server"
     exit 1
 }
-ok "Archive transferred to $CFG_SSH_HOST:/tes3mp-easy/import-world/"
+ok "Archive transferred to $CFG_SSH_HOST:/tes3mp-easy/import-cells/"
 
-# --- Step 3: Run import_world.sh on server ---
+# --- Step 3: Run import_cells.sh on server ---
 echo ""
-echo "[3/4] Running import_world.sh on server..."
+echo "[3/4] Running import_cells.sh on server..."
+echo "  (This will stop TES3MP, import cells, and restart)"
 
-ssh "$CFG_SSH_HOST" "cd /tes3mp-easy && bash scripts/import_world.sh" || {
-    err "import_world.sh failed on server — check server logs"
+ssh "$CFG_SSH_HOST" "cd /tes3mp-easy && bash scripts/import_cells.sh" || {
+    err "import_cells.sh failed on server — check server logs"
     exit 1
 }
 ok "Server import completed"
