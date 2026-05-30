@@ -95,7 +95,7 @@ ok "Player data extracted"
 # --- Step 4: Verify extraction ---
 echo ""
 echo "[4/5] Verifying player data..."
-local player_count=0
+player_count=0
 if [ -d "$PLAYER_DIR" ]; then
     player_count=$(ls -1 "$PLAYER_DIR" 2>/dev/null | wc -l)
 fi
