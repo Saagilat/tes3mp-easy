@@ -165,6 +165,15 @@ if [ ! -f "$TMP_TGZ" ] || [ ! -s "$TMP_TGZ" ]; then
     exit 1
 fi
 
+# Verify it's a real gzip archive by checking magic bytes (0x1f 0x8b)
+if [ "$(head -c 2 "$TMP_TGZ")" != $'\x1f\x8b' ]; then
+    err "Downloaded file is not a valid gzip archive"
+    err "The server endpoint /get-mods returned an invalid response."
+    err "Make sure the server has mods.tar.gz in the nginx data directory."
+    err "Try running 'bash /tes3mp-easy/scripts/import_mods.sh' on the server first."
+    exit 1
+fi
+
 ok "Downloaded ($(du -h "$TMP_TGZ" | cut -f1))"
 
 # --- Step 2: Remove old mods ---
