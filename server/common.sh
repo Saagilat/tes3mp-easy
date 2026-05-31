@@ -73,10 +73,10 @@ read_input() {
 
     # Try /dev/tty first (works with SSH -t, curl | bash)
     if [[ -c /dev/tty ]]; then
-        read -r -p "$prompt" input </dev/tty 2>/dev/null || true
+        read -r -p "$prompt" input </dev/tty || true
     # Fallback to stdin (works when run directly)
     elif [[ -t 0 ]]; then
-        read -r -p "$prompt" input 2>/dev/null || true
+        read -r -p "$prompt" input || true
     else
         echo ""
         err "Interactive input required but no TTY available."

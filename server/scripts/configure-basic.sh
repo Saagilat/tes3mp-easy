@@ -239,18 +239,24 @@ LUAEOF
     write_config
     configure_endpoints
 
-    # Start containers
-    info "Starting containers..."
-    local compose_cmd="docker compose -f \"$DEST/docker-compose.yml\""
-    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
-        compose_cmd="$compose_cmd --profile enable-endpoints"
+    # Start containers (skip if already running)
+    if docker compose -f "$DEST/docker-compose.yml" ps --services --filter "status=running" 2>/dev/null | grep -q tes3mp; then
+        info "Container already running — restarting to apply config changes..."
+        docker compose -f "$DEST/docker-compose.yml" restart tes3mp 2>&1 || true
+        ok "Docker container restarted"
+    else
+        info "Starting containers..."
+        local compose_cmd="docker compose -f \"$DEST/docker-compose.yml\""
+        if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
+            compose_cmd="$compose_cmd --profile enable-endpoints"
+        fi
+        eval "$compose_cmd up -d 2>&1" || {
+            err "Failed to start the container."
+            popd >/dev/null || true
+            exit 1
+        }
+        ok "Docker container started"
     fi
-    eval "$compose_cmd up -d 2>&1" || {
-        err "Failed to start the container."
-        popd >/dev/null || true
-        exit 1
-    }
-    ok "Docker container started"
 
     # Create init archives
     if [[ -f "$DEST/scripts/package.sh" ]]; then
