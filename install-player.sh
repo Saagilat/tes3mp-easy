@@ -67,7 +67,7 @@ echo ""
 
 # Configuration — keep existing unless user says overwrite
 answer=""
-if [[ -f "$PLAYER_CONFIG" ]]; then
+if [[ -t 0 ]] && [[ -f "$PLAYER_CONFIG" ]]; then
     printf "Overwrite configuration? [y/N]: "
     read -r answer
 fi
