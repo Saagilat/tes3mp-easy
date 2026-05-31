@@ -18,6 +18,11 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install
 curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-player.sh | bash
 ```
 
+> **Windows users**: run the commands above in **Git Bash** (comes with
+> [Git for Windows](https://git-scm.com/download/win)).
+> Automated client installation (Proton) is Linux-only for now.
+> On Windows, download TES3MP manually from the [releases page](https://github.com/TES3MP/TES3MP/releases).
+
 On first run the script will:
 1. Download all necessary scripts to `~/.local/share/tes3mp-easy/`
 2. Guide you through initial setup (SSH host, paths, etc.)
