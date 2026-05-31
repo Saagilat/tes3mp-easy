@@ -56,42 +56,38 @@ download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 # Language files (en, ru)
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
-ok=true
-curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || ok=false
-curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || ok=false
-if $ok; then echo "✓"; else echo "✗"; fi
+err=false
+curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || err=true
+curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || err=true
+if $err; then echo "✗"; else echo "✓"; fi
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
-# Configuration — keep existing unless user says overwrite
-answer=""
-if [[ -t 0 ]] && [[ -f "$PLAYER_CONFIG" ]]; then
-    printf "Overwrite configuration? [y/N]: "
-    read -r answer
+# Configuration — keep existing unless user says overwrite via /dev/tty
+overwrite=false
+if [[ -f "$PLAYER_CONFIG" ]]; then
+    user_input=""
+    if read -r user_input < /dev/tty 2>/dev/null; then
+        case "${user_input:-}" in
+            y|Y|yes|YES) overwrite=true ;;
+        esac
+    fi
+else
+    overwrite=true
 fi
 
-case "${answer:-}" in
-    y|Y|yes|YES)
-        {
-            echo "# TES3MP Easy player configuration"
-            echo "ROLE = player"
-            echo "LANG_CODE = en"
-        } > "$PLAYER_CONFIG"
-        ;;
-    *)
-        if [[ ! -f "$PLAYER_CONFIG" ]]; then
-            {
-                echo "# TES3MP Easy player configuration"
-                echo "ROLE = player"
-                echo "LANG_CODE = en"
-            } > "$PLAYER_CONFIG"
-        else
-            echo "Keeping existing configuration."
-        fi
-        ;;
-esac
+if $overwrite; then
+    {
+        echo "# TES3MP Easy player configuration"
+        echo "ROLE = player"
+        echo "LANG_CODE = en"
+    } > "$PLAYER_CONFIG"
+    echo "Configuration created."
+else
+    echo "Keeping existing configuration."
+fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

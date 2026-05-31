@@ -64,42 +64,39 @@ download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 # Language files (en, ru)
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
-ok=true
-curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || ok=false
-curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || ok=false
-if $ok; then echo "✓"; else echo "✗"; fi
+err=false
+curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || err=true
+curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || err=true
+if $err; then echo "✗"; else echo "✓"; fi
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
-# Configuration — keep existing unless user says overwrite
-answer=""
-if [[ -t 0 ]] && [[ -f "$ADMIN_CONFIG" ]]; then
-    printf "Overwrite configuration? [y/N]: "
-    read -r answer
+# Configuration — keep existing unless user says overwrite on TTY
+overwrite=false
+if [[ -f "$ADMIN_CONFIG" ]]; then
+    # Try reading from /dev/tty — works with curl|bash
+    user_input=""
+    if read -r user_input < /dev/tty 2>/dev/null; then
+        case "${user_input:-}" in
+            y|Y|yes|YES) overwrite=true ;;
+        esac
+    fi
+else
+    overwrite=true
 fi
 
-case "${answer:-}" in
-    y|Y|yes|YES)
-        {
-            echo "# TES3MP Easy admin configuration"
-            echo "ROLE = admin"
-            echo "LANG_CODE = en"
-        } > "$ADMIN_CONFIG"
-        ;;
-    *)
-        if [[ ! -f "$ADMIN_CONFIG" ]]; then
-            {
-                echo "# TES3MP Easy admin configuration"
-                echo "ROLE = admin"
-                echo "LANG_CODE = en"
-            } > "$ADMIN_CONFIG"
-        else
-            echo "Keeping existing configuration."
-        fi
-        ;;
-esac
+if $overwrite; then
+    {
+        echo "# TES3MP Easy admin configuration"
+        echo "ROLE = admin"
+        echo "LANG_CODE = en"
+    } > "$ADMIN_CONFIG"
+    echo "Configuration created."
+else
+    echo "Keeping existing configuration."
+fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
