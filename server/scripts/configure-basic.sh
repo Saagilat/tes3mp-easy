@@ -222,7 +222,7 @@ apply_and_start() {
     pushd "$DEST" >/dev/null || { err "Cannot cd to $DEST"; exit 1; }
 
     # Extract missing config files from Docker image
-    extract_configs || true
+    extract_configs >/dev/null 2>&1 || true
 
     # Generate banlist.json and customScripts.lua if missing
     [ ! -f "$DEST/configs/banlist.json" ] && cat > "$DEST/configs/banlist.json" << 'BANEOF'
@@ -293,6 +293,9 @@ LUAEOF
     echo ""
 
     popd >/dev/null || true
+
+    # Always exit cleanly — non-zero RC can happen from non-fatal operations
+    return 0
 }
 
 # ────────────────────────────────────────────────────────────
