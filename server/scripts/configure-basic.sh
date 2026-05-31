@@ -222,7 +222,7 @@ apply_and_start() {
     pushd "$DEST" >/dev/null || { err "Cannot cd to $DEST"; exit 1; }
 
     # Extract missing config files from Docker image
-    extract_configs
+    extract_configs || true
 
     # Generate banlist.json and customScripts.lua if missing
     [ ! -f "$DEST/configs/banlist.json" ] && cat > "$DEST/configs/banlist.json" << 'BANEOF'
