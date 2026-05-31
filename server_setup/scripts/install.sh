@@ -218,17 +218,6 @@ gather_options() {
         WORLD_RATE="${input:-5}"
     fi
 
-    # ---- Example content ----
-    echo ""
-    echo "--- Example content ---"
-    echo "Test server scripts to verify the setup works."
-    echo ""
-    read -r -p "Create example server script to verify setup? [Y/n]: " ENABLE_EXAMPLE_MODS </dev/tty
-    ENABLE_EXAMPLE_MODS="${ENABLE_EXAMPLE_MODS:-y}"
-    case "${ENABLE_EXAMPLE_MODS,,}" in
-        n|no)  ENABLE_EXAMPLE_MODS="no" ;;
-        *)     ENABLE_EXAMPLE_MODS="yes" ;;
-    esac
 }
 
 # ────────────────────────────────────────────────────────────
@@ -540,21 +529,6 @@ return {
 }
 LUAEOF
     }
-
-    # If example mods requested, download test server script
-    if [[ "$ENABLE_EXAMPLE_MODS" == "yes" ]]; then
-        info "Downloading example server script..."
-        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/modding-test/server-scripts/test_server.lua" \
-            -O "$dest/mods/scripts/test_server.lua" 2>/dev/null || {
-            # Create a minimal test script
-            cat > "$dest/mods/scripts/test_server.lua" << 'LUAEOF'
--- Test server script for tes3mp-easy
--- This script is a simple placeholder
-print("[TES3MP-EASY] Test server script loaded successfully!")
-LUAEOF
-        }
-        ok "Example script downloaded to mods/scripts/"
-    fi
 
     ok "All files installed — mount points are in $dest/"
 }
