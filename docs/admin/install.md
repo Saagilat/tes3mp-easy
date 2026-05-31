@@ -134,7 +134,7 @@ and Lua scripts in your server scripts directory.
 Set the paths via the admin menu (Settings → SSH host, paths) or directly:
 
 ```bash
-nano ~/.tes3mp-easy-admin.conf
+nano ~/.tes3mp-easy-admin.ini
 ```
 
 Then run:

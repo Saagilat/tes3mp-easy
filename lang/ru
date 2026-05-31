@@ -74,7 +74,7 @@ WIZARD_PLUGINS_PROMPT="Директория плагинов"
 WIZARD_SCRIPTS="--- Директория серверных скриптов ---
 Путь к вашим Lua скриптам для сервера."
 WIZARD_SCRIPTS_PROMPT="Директория скриптов"
-WIZARD_ADMIN_DONE="Конфигурация админа сохранена. Вы можете отредактировать её: nano ~/.tes3mp-easy-admin.conf"
+WIZARD_ADMIN_DONE="Конфигурация админа сохранена. Вы можете отредактировать её: nano ~/.tes3mp-easy-admin.ini"
 
 # ─── Wizard (игрок) ───
 WIZARD_PLAYER_WELCOME="Добро пожаловать в TES3MP Easy! Профиль игрока — давайте настроим."
@@ -91,7 +91,7 @@ WIZARD_OPENMW_PROMPT="Путь к openmw.cfg"
 WIZARD_CLIENT_CFG="--- TES3MP клиент ---
 Путь к вашему tes3mp-client-default.cfg файлу."
 WIZARD_CLIENT_PROMPT="Путь к client config"
-WIZARD_PLAYER_DONE="Конфигурация игрока сохранена. Вы можете отредактировать её: nano ~/.tes3mp-easy-player.conf"
+WIZARD_PLAYER_DONE="Конфигурация игрока сохранена. Вы можете отредактировать её: nano ~/.tes3mp-easy-player.ini"
 
 # ─── Подменю конфигов ───
 CFG_MENU_TITLE="Выберите файл для редактирования:"

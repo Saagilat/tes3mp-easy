@@ -11,7 +11,7 @@
 set -euo pipefail
 
 UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
-ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.conf"
+ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
 GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
 
 if ! command -v curl &>/dev/null; then
@@ -27,8 +27,7 @@ total=20
 count=0
 
 download() {
-    local src="$1"
-    local dst="$2"
+    local src="$1" dst="$2"
     count=$((count + 1))
     printf "  [%2d/%d] %s " "$count" "$total" "$(basename "$src")"
     if curl -fsSL "$GITHUB_RAW/$src" -o "$dst" 2>/dev/null; then
@@ -56,28 +55,40 @@ download "lib/client-configs.sh"  "$UPDATE_DIR/lib/client-configs.sh"
 download "lib/localization.sh"    "$UPDATE_DIR/lib/localization.sh"
 download "lib/player-roles.sh"    "$UPDATE_DIR/lib/player-roles.sh"
 download "lib/self-update.sh"     "$UPDATE_DIR/lib/self-update.sh"
-
 download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 
-# Language files
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
 err=false
 curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || err=true
 curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || err=true
-if $err; then echo "✗"; else echo "✓"; fi
+$err && echo "✗" || echo "✓"
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 
 # Create config only if it doesn't exist
 if [[ ! -f "$ADMIN_CONFIG" ]]; then
-    {
-        echo "# TES3MP Easy admin configuration"
-        echo "ROLE = admin"
-        echo "LANG_CODE = en"
-    } > "$ADMIN_CONFIG"
+    cat > "$ADMIN_CONFIG" << 'INI'
+# TES3MP Easy admin configuration
+# Edit with: s) Settings in the menu
+
+; Language: en or ru
+LANG_CODE = en
+
+; SSH host from ~/.ssh/config
+SSH_HOST = 
+
+; Path to your Morrowind Data Files
+PLUGINS_DIR = 
+
+; Path to your Lua server scripts
+SERVER_SCRIPTS_DIR = 
+
+; Editor for configs (auto-detected: nano/vim/vi)
+EDITOR = 
+INI
     echo "✓ Admin config created: $ADMIN_CONFIG"
 fi
 

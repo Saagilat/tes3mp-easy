@@ -11,7 +11,7 @@
 set -euo pipefail
 
 UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
-PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.conf"
+PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
 GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
 
 if ! command -v curl &>/dev/null; then
@@ -27,8 +27,7 @@ total=12
 count=0
 
 download() {
-    local src="$1"
-    local dst="$2"
+    local src="$1" dst="$2"
     count=$((count + 1))
     printf "  [%2d/%d] %s " "$count" "$total" "$(basename "$src")"
     if curl -fsSL "$GITHUB_RAW/$src" -o "$dst" 2>/dev/null; then
@@ -48,28 +47,43 @@ download "lib/client-configs.sh"  "$UPDATE_DIR/lib/client-configs.sh"
 download "lib/localization.sh"    "$UPDATE_DIR/lib/localization.sh"
 download "lib/required-data.sh"   "$UPDATE_DIR/lib/required-data.sh"
 download "lib/self-update.sh"     "$UPDATE_DIR/lib/self-update.sh"
-
 download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 
-# Language files
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
 err=false
 curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || err=true
 curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || err=true
-if $err; then echo "✗"; else echo "✓"; fi
+$err && echo "✗" || echo "✓"
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 
 # Create config only if it doesn't exist
 if [[ ! -f "$PLAYER_CONFIG" ]]; then
-    {
-        echo "# TES3MP Easy player configuration"
-        echo "ROLE = player"
-        echo "LANG_CODE = en"
-    } > "$PLAYER_CONFIG"
+    cat > "$PLAYER_CONFIG" << 'INI'
+# TES3MP Easy player configuration
+# Edit with: s) Settings in the menu
+
+; Language: en or ru
+LANG_CODE = en
+
+; Server URL (e.g. http://192.168.1.100:8085)
+SERVER_URL = 
+
+; Path to your Morrowind Data Files
+DATA_FILES = 
+
+; Path to your openmw.cfg
+OPENMW_CFG = 
+
+; Path to your tes3mp-client-default.cfg
+CLIENT_DEFAULT = 
+
+; Editor for configs (auto-detected: nano/vim/vi)
+EDITOR = 
+INI
     echo "✓ Player config created: $PLAYER_CONFIG"
 fi
 

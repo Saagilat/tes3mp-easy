@@ -74,7 +74,7 @@ WIZARD_PLUGINS_PROMPT="Plugins dir"
 WIZARD_SCRIPTS="--- Server Scripts Directory ---
 Path to your Lua server scripts directory."
 WIZARD_SCRIPTS_PROMPT="Server scripts dir"
-WIZARD_ADMIN_DONE="Admin configuration saved. You can edit these settings later with: nano ~/.tes3mp-easy-admin.conf"
+WIZARD_ADMIN_DONE="Admin configuration saved. You can edit these settings later with: nano ~/.tes3mp-easy-admin.ini"
 
 # ─── Wizard (player) ───
 WIZARD_PLAYER_WELCOME="Welcome to TES3MP Easy! Player profile — let's configure."
@@ -91,7 +91,7 @@ WIZARD_OPENMW_PROMPT="openmw.cfg path"
 WIZARD_CLIENT_CFG="--- TES3MP Client Config ---
 Path to your tes3mp-client-default.cfg file."
 WIZARD_CLIENT_PROMPT="Client config path"
-WIZARD_PLAYER_DONE="Player configuration saved. You can edit these settings later with: nano ~/.tes3mp-easy-player.conf"
+WIZARD_PLAYER_DONE="Player configuration saved. You can edit these settings later with: nano ~/.tes3mp-easy-player.ini"
 
 # ─── Edit config submenu ───
 CFG_MENU_TITLE="Select configuration file to edit:"

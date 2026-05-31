@@ -2,12 +2,7 @@
 #
 # menu-player.sh — interactive menu for TES3MP players
 #
-# Usage: bash menu-player.sh
-#
 
-# ────────────────────────────────────────────────────────────
-# Ensure we're being sourced from tes3mp-easy or have deps
-# ────────────────────────────────────────────────────────────
 if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
@@ -22,12 +17,9 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/self-update.sh"
 fi
 
-PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.conf"
+PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
 CONFIG_FILE="$PLAYER_CONFIG"
 
-# ────────────────────────────────────────────────────────────
-# Show Player Menu
-# ────────────────────────────────────────────────────────────
 show_player_menu() {
     local choice
 
@@ -56,16 +48,16 @@ show_player_menu() {
         read -r -p "  ${MSG_PROMPT:-Select option:} " choice
 
         case "$choice" in
-            1) install_client ;;
-            2) setup_fonts ;;
-            3) set_server_address ;;
-            4|5) download_mods ;;
-            6) download_players ;;
-            7) download_world ;;
-            8) generate_required_data ;;
-            9) install_localization ;;
-            s|S) edit_config ; show_config ;;
-            u|U) self_update ;;
+            1) install_client || true ;;
+            2) setup_fonts || true ;;
+            3) set_server_address || true ;;
+            4|5) download_mods || true ;;
+            6) download_players || true ;;
+            7) download_world || true ;;
+            8) generate_required_data || true ;;
+            9) install_localization || true ;;
+            s|S) edit_config "$PLAYER_CONFIG" || true ; show_config "$PLAYER_CONFIG" || true ;;
+            u|U) self_update || true ;;
             q|Q)
                 echo ""
                 info "${MSG_BYE:-Bye!}"
@@ -73,36 +65,20 @@ show_player_menu() {
                 ;;
             *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
         esac
-
-        echo ""
     done
 }
 
-# ────────────────────────────────────────────────────────────
-# Helpers
-# ────────────────────────────────────────────────────────────
-clear_screen() {
-    printf "\033c" 2>/dev/null || clear 2>/dev/null || true
-}
+clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
 
 print_header() {
-    local title="$1"
-    local width=60
+    local title="$1" width=60
     local padding=$(( (width - ${#title} - 2) / 2 ))
-
     echo ""
-    printf "╔"
-    printf '═%.0s' $(seq 1 $width)
-    printf "╗\n"
+    printf "╔"; printf '═%.0s' $(seq 1 $width); printf "╗\n"
     printf "║%*s %s %*s║\n" $padding "" "$title" $padding ""
-    printf "╚"
-    printf '═%.0s' $(seq 1 $width)
-    printf "╝\n"
+    printf "╚"; printf '═%.0s' $(seq 1 $width); printf "╝\n"
 }
 
-# ────────────────────────────────────────────────────────────
-# Subcommand dispatcher
-# ────────────────────────────────────────────────────────────
 dispatch_player() {
     case "${1:-}" in
         download-mods) download_mods ;;
@@ -138,21 +114,8 @@ dispatch_player() {
     esac
 }
 
-# ────────────────────────────────────────────────────────────
-# Entry point
-# ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [[ $# -gt 0 ]]; then
-        load_config 2>/dev/null || true
-        load_lang "${LANG_CODE:-en}"
-        dispatch_player "$@"
-    else
-        load_config "$PLAYER_CONFIG" || {
-            load_lang "en"
-            wizard_player true
-            load_config "$PLAYER_CONFIG"
-        }
-        load_lang "${LANG_CODE:-en}"
-        dispatch_player "$@"
-    fi
+    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_lang "${LANG_CODE:-en}"
+    dispatch_player "$@"
 fi

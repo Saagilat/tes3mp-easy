@@ -21,7 +21,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/self-update.sh"
 fi
 
-ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.conf"
+ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
 CONFIG_FILE="$ADMIN_CONFIG"
 
 show_admin_menu() {
@@ -90,7 +90,7 @@ show_admin_menu() {
                 fi
                 ;;
             u|U) self_update || true ;;
-            s|S) edit_config "$ADMIN_CONFIG" || true ; show_config || true ;;
+            s|S) edit_config "$ADMIN_CONFIG" || true ; show_config "$ADMIN_CONFIG" || true ;;
             q|Q)
                 echo ""
                 info "${MSG_BYE:-Bye!}"
@@ -98,8 +98,6 @@ show_admin_menu() {
                 ;;
             *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
         esac
-
-        echo ""
     done
 }
 
@@ -109,13 +107,9 @@ print_header() {
     local title="$1" width=60
     local padding=$(( (width - ${#title} - 2) / 2 ))
     echo ""
-    printf "╔"
-    printf '═%.0s' $(seq 1 $width)
-    printf "╗\n"
+    printf "╔"; printf '═%.0s' $(seq 1 $width); printf "╗\n"
     printf "║%*s %s %*s║\n" $padding "" "$title" $padding ""
-    printf "╚"
-    printf '═%.0s' $(seq 1 $width)
-    printf "╝\n"
+    printf "╚"; printf '═%.0s' $(seq 1 $width); printf "╝\n"
 }
 
 dispatch_admin() {
@@ -159,17 +153,7 @@ dispatch_admin() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [[ $# -gt 0 ]]; then
-        load_config "$ADMIN_CONFIG" 2>/dev/null || true
-        load_lang "${LANG_CODE:-en}"
-        dispatch_admin "$@"
-    else
-        load_config "$ADMIN_CONFIG" || {
-            load_lang "en"
-            wizard_admin true
-            load_config "$ADMIN_CONFIG"
-        }
-        load_lang "${LANG_CODE:-en}"
-        dispatch_admin "$@"
-    fi
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_lang "${LANG_CODE:-en}"
+    dispatch_admin "$@"
 fi
