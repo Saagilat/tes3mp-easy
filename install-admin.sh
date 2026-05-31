@@ -74,22 +74,32 @@ echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
 # Configuration — keep existing unless user says overwrite
+answer=""
 if [[ -f "$ADMIN_CONFIG" ]]; then
     printf "Overwrite configuration? [y/N]: "
     read -r answer
-    case "${answer,,}" in
-        y|yes) ;;
-        *) echo "Keeping existing configuration." ; unset answer ;;
-    esac
 fi
 
-if [[ ! -f "$ADMIN_CONFIG" || "${answer,,}" =~ ^(y|yes)$ ]]; then
-    {
-        echo "# TES3MP Easy admin configuration"
-        echo "ROLE = admin"
-        echo "LANG_CODE = en"
-    } > "$ADMIN_CONFIG"
-fi
+case "${answer:-}" in
+    y|Y|yes|YES)
+        {
+            echo "# TES3MP Easy admin configuration"
+            echo "ROLE = admin"
+            echo "LANG_CODE = en"
+        } > "$ADMIN_CONFIG"
+        ;;
+    *)
+        if [[ ! -f "$ADMIN_CONFIG" ]]; then
+            {
+                echo "# TES3MP Easy admin configuration"
+                echo "ROLE = admin"
+                echo "LANG_CODE = en"
+            } > "$ADMIN_CONFIG"
+        else
+            echo "Keeping existing configuration."
+        fi
+        ;;
+esac
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
