@@ -63,9 +63,9 @@ export_players() {
     export PLAYER_DIR="$player_dir"
 
     local package_script
-    package_script=$(find_project_file "server_setup/scripts/package.sh")
+    package_script=$(find_project_file "server/scripts/package.sh")
     if [[ -z "$package_script" ]]; then
-        err "Could not find server_setup/scripts/package.sh"
+        err "Could not find server/scripts/package.sh"
         return 1
     fi
 

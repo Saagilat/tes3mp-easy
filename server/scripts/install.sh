@@ -193,7 +193,7 @@ setup_files() {
 
     info "Downloading Dockerfile and configs from Saagilat/tes3mp-easy..."
     for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.sh entrypoint.sh; do
-        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/docker/$f" -O "$dest/$f" || {
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/docker/$f" -O "$dest/$f" || {
             err "Failed to download $f"
             exit 1
         }
@@ -202,7 +202,7 @@ setup_files() {
 
     for f in package.sh import_mods.sh import_players.sh import_world.sh \
              deploy_mods.sh deploy_players.sh deploy_world.sh configure.sh; do
-        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/scripts/$f" -O "$dest/scripts/$f" || {
+        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/$f" -O "$dest/scripts/$f" || {
             err "Failed to download $f"
             exit 1
         }
@@ -212,7 +212,7 @@ setup_files() {
 
     # Download TES3MP version file and extract URL
     local TES3MP_URL=""
-    local version_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/tes3mp-version.txt"
+    local version_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/tes3mp-version.txt"
     local version_file
     version_file=$(mktemp)
     if wget -q --show-progress "$version_url" -O "$version_file" 2>/dev/null; then

@@ -36,7 +36,7 @@ install_server() {
     esac
 
     # Construct the install command
-    local install_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/scripts/install.sh"
+    local install_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/install.sh"
     local cmd="curl -fsSL '$install_url' | bash${install_flags:+ -s -- $install_flags}"
 
     echo ""

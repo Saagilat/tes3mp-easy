@@ -10,8 +10,8 @@
 # Ensure we're being sourced from tes3mp-easy or have deps
 # ────────────────────────────────────────────────────────────
 if [[ -z "${LIB_DIR:-}" ]]; then
-    # Running standalone — source libraries
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    # Running standalone — source libraries (menu/ is one level down)
+    SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
     source "$LIB_DIR/config.sh"
@@ -97,13 +97,13 @@ show_admin_menu() {
             15) generate_required_data ;;
             p|P)
                 # Switch to player menu
-                local player_menu="$SCRIPT_DIR/menu-player.sh"
+                local player_menu="$SCRIPT_DIR/menu/player.sh"
                 if [[ -f "$player_menu" ]]; then
                     info "Переход в меню игрока..."
                     sleep 1
                     exec bash "$player_menu"
                 else
-                    err "menu-player.sh not found at $player_menu"
+                    err "menu/player.sh not found at $player_menu"
                 fi
                 ;;
             u|U) self_update ;;

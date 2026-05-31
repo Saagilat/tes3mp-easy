@@ -128,9 +128,9 @@ export_mods() {
     export ORIGINAL_FILES
 
     local package_script
-    package_script=$(find_project_file "server_setup/scripts/package.sh")
+    package_script=$(find_project_file "server/scripts/package.sh")
     if [[ -z "$package_script" ]]; then
-        err "Could not find server_setup/scripts/package.sh"
+        err "Could not find server/scripts/package.sh"
         err "Make sure you're running from the tes3mp-easy repository."
         return 1
     fi

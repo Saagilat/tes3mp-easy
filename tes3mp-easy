@@ -67,7 +67,7 @@ first_time_download() {
 
     # Download menu files
     echo "  [2/3] Downloading menu scripts..."
-    for file in "menu-player.sh" "menu-admin.sh"; do
+    for file in "menu/player.sh" "menu/admin.sh"; do
         wget -q "$GITHUB_RAW/$file" -O "$UPDATE_DIR/$file" 2>/dev/null || true
         chmod +x "$UPDATE_DIR/$file" 2>/dev/null || true
     done
@@ -210,16 +210,16 @@ dispatch() {
         self-update) self_update ;;
         player-menu)
             if [[ "$LOCAL_MODE" == "true" ]]; then
-                exec bash "$SCRIPT_DIR/menu-player.sh"
+                exec bash "$SCRIPT_DIR/menu/player.sh"
             else
-                exec bash "$UPDATE_DIR/menu-player.sh"
+                exec bash "$UPDATE_DIR/menu/player.sh"
             fi
             ;;
         menu)
             if [[ "$LOCAL_MODE" == "true" ]]; then
-                exec bash "$SCRIPT_DIR/menu-admin.sh"
+                exec bash "$SCRIPT_DIR/menu/admin.sh"
             else
-                exec bash "$UPDATE_DIR/menu-admin.sh"
+                exec bash "$UPDATE_DIR/menu/admin.sh"
             fi
             ;;
         help|--help|-h)
@@ -235,9 +235,9 @@ dispatch() {
             [[ "$LOCAL_MODE" != "true" ]] && menu_dir="$UPDATE_DIR"
 
             if [[ "${ROLE:-}" == "admin" ]]; then
-                exec bash "$menu_dir/menu-admin.sh"
+                exec bash "$menu_dir/menu/admin.sh"
             else
-                exec bash "$menu_dir/menu-player.sh"
+                exec bash "$menu_dir/menu/player.sh"
             fi
             ;;
         *)

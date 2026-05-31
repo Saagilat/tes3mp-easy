@@ -33,8 +33,8 @@ self_update() {
     # Files to update
     local files_to_update=(
         "tes3mp-easy"
-        "menu-player.sh"
-        "menu-admin.sh"
+        "menu/player.sh"
+        "menu/admin.sh"
         "lib/common.sh"
         "lib/config.sh"
         "lib/server-install.sh"
@@ -72,7 +72,7 @@ self_update() {
             # Some files may not exist yet (client-install, etc. are new)
             # Only error if it's a core file
             case "$file" in
-                tes3mp-easy|menu-player.sh|menu-admin.sh|lib/common.sh|lib/config.sh)
+                tes3mp-easy|menu/player.sh|menu/admin.sh|lib/common.sh|lib/config.sh)
                     warn "  Failed to download $file"
                     failed=$((failed + 1))
                     ;;
@@ -108,7 +108,7 @@ first_time_download() {
 
     mkdir -p "$UPDATE_DIR"
     mkdir -p "$UPDATE_DIR/lib"
-    mkdir -p "$UPDATE_DIR/menu-player.sh" 2>/dev/null || true  # touch? no, it's a file
+    mkdir -p "$UPDATE_DIR/menu"
 
     info "Downloading tes3mp-easy scripts to $UPDATE_DIR..."
 
@@ -120,7 +120,7 @@ first_time_download() {
     chmod +x "$UPDATE_DIR/tes3mp-easy"
 
     # Download menu files
-    for file in "menu-player.sh" "menu-admin.sh"; do
+    for file in "menu/player.sh" "menu/admin.sh"; do
         wget -q "$GITHUB_RAW/$file" -O "$UPDATE_DIR/$file" 2>/dev/null || true
         chmod +x "$UPDATE_DIR/$file" 2>/dev/null || true
     done

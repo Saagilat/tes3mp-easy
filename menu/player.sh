@@ -10,8 +10,8 @@
 # Ensure we're being sourced from tes3mp-easy or have deps
 # ────────────────────────────────────────────────────────────
 if [[ -z "${LIB_DIR:-}" ]]; then
-    # Running standalone — source libraries
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    # Running standalone — source libraries (menu/ is one level down)
+    SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
     source "$LIB_DIR/config.sh"

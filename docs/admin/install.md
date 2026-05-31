@@ -16,7 +16,7 @@ Run the install script on your server (VPS).
 ### Interactive installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/install.sh | bash
 ```
 
 The script installs Docker and utilities, downloads server files,
@@ -26,7 +26,7 @@ to set up the server.
 ### Non-interactive (automatic) installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/scripts/install.sh | bash -s -- --default
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/install.sh | bash -s -- --default
 ```
 
 | Flag | Description |

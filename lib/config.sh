@@ -217,7 +217,7 @@ wizard_admin() {
     echo ""
 
     # SERVER_SCRIPTS_DIR
-    local scripts_default="$PWD/server_setup/mods/scripts"
+    local scripts_default="$PWD/server/mods/scripts"
     if [[ ! -d "$scripts_default" ]]; then
         scripts_default="$PWD/mods/scripts"
     fi
