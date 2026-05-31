@@ -277,7 +277,7 @@ LUAEOF
         latest=$(ls -t "$DEST/backups/world"/init-*-world.tar.gz 2>/dev/null | head -1)
         [ -n "$latest" ] && sha256sum "$latest" | awk '{print $1, $2}' > "$DEST/backups/world/current.txt"
         latest=$(ls -t "$DEST/backups/players"/init-*-players.tar.gz 2>/dev/null | head -1)
-        [ -n "$latest" ] && sha256sum "$latest" | awk '{print $1, $2}' > "$DEST/backups/players/current.txt'
+        [ -n "$latest" ] && sha256sum "$latest" | awk '{print $1, $2}' > "$DEST/backups/players/current.txt"
 
         bash "$DEST/scripts/deploy_mods.sh" --latest 2>/dev/null || true
         bash "$DEST/scripts/deploy_world.sh" --latest 2>/dev/null || true
