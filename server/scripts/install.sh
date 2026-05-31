@@ -199,7 +199,8 @@ setup_files() {
     }
 
     for f in package.sh import_mods.sh import_players.sh import_world.sh \
-             deploy_mods.sh deploy_players.sh deploy_world.sh configure.sh; do
+             deploy_mods.sh deploy_players.sh deploy_world.sh configure.sh \
+             configure-basic.sh configure-lua.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/$f" -O "$dest/scripts/$f" || {
             err "Failed to download $f"
             exit 1
