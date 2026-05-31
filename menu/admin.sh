@@ -30,8 +30,9 @@ show_admin_menu() {
     while true; do
         clear_screen
         print_header "$MENU_TITLE_ADMIN"
-        local host_display="${SSH_HOST:-${MSG_HOST_UNSET:-Host: <not set>}}"
-        echo "  $host_display"
+        local host_display="${SSH_HOST:-<not set>}"
+        local modpack_display="${MODPACK_DIR:--}"
+        echo "  Host: $host_display | Modpack: $modpack_display"
         echo ""
 
         echo "  $ADMIN_INSTALL_INTER"

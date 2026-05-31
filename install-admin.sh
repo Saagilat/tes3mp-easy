@@ -80,12 +80,9 @@ LANG_CODE = en
 SSH_HOST = 
 
 ; --- Server modpack ---
-
-; Directory containing .esp/.esm/.omwaddon files
-PLUGINS_DIR = 
-
-; Directory containing Lua server scripts
-SERVER_SCRIPTS_DIR = 
+; Root directory of your server modpack.
+; Must contain: plugins/ (for .esp/.esm files) and scripts/ (for Lua scripts)
+MODPACK_DIR = 
 
 ; Preferred editor (auto-detected)
 EDITOR = 

@@ -18,12 +18,15 @@ fi
 # Usage: generate_required_data [plugin_dir]
 # ────────────────────────────────────────────────────────────
 generate_required_data() {
-    local plugin_dir="${1:-${PLUGINS_DIR:-}}"
+    local plugin_dir="${1:-}"
+    if [[ -z "$plugin_dir" ]]; then
+        plugin_dir="${MODPACK_DIR}/plugins"
+    fi
 
     if [[ -z "$plugin_dir" ]]; then
-        err "PLUGINS_DIR is not set."
+        err "MODPACK_DIR is not set."
         err "Usage: generate_required_data [path-to-plugins]"
-        err "Or set PLUGINS_DIR in config."
+        err "Or set MODPACK_DIR in config."
         return 1
     fi
 

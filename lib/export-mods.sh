@@ -28,15 +28,21 @@ export_mods() {
         return 1
     fi
 
-    if [[ -z "${PLUGINS_DIR:-}" || ! -d "${PLUGINS_DIR:-}" ]]; then
-        err "PLUGINS_DIR is not set or does not exist: ${PLUGINS_DIR:-}"
-        err "Run './tes3mp-easy config' to set it."
+    if [[ -z "${MODPACK_DIR:-}" || ! -d "${MODPACK_DIR:-}" ]]; then
+        err "MODPACK_DIR is not set or does not exist: ${MODPACK_DIR:-}"
+        err "Set it via 's) Settings' in the menu."
         return 1
     fi
 
-    if [[ -z "${SERVER_SCRIPTS_DIR:-}" || ! -d "${SERVER_SCRIPTS_DIR:-}" ]]; then
-        err "SERVER_SCRIPTS_DIR is not set or does not exist: ${SERVER_SCRIPTS_DIR:-}"
-        err "Run './tes3mp-easy config' to set it."
+    local plugins_dir="$MODPACK_DIR/plugins"
+    local scripts_dir="$MODPACK_DIR/scripts"
+
+    if [[ ! -d "$plugins_dir" ]]; then
+        err "plugins/ subdirectory not found in $MODPACK_DIR"
+        return 1
+    fi
+    if [[ ! -d "$scripts_dir" ]]; then
+        err "scripts/ subdirectory not found in $MODPACK_DIR"
         return 1
     fi
 
@@ -48,16 +54,17 @@ export_mods() {
     echo "═══════════════════════════════════════════════"
     echo ""
     echo "  SSH host:            $SSH_HOST"
-    echo "  Plugins dir:         $PLUGINS_DIR"
-    echo "  Server scripts:      $SERVER_SCRIPTS_DIR"
+    echo "  Modpack dir:         $MODPACK_DIR"
+    echo "  Plugins:             $plugins_dir"
+    echo "  Scripts:             $scripts_dir"
     echo ""
 
     # ─── Step 1: Check requiredDataFiles.json ───
     echo "[1/5] Checking requiredDataFiles.json..."
-    local req_json="$PLUGINS_DIR/requiredDataFiles.json"
+    local req_json="$plugins_dir/requiredDataFiles.json"
     if [[ ! -f "$req_json" ]]; then
-        err "requiredDataFiles.json not found in $PLUGINS_DIR"
-        err "Run './tes3mp-easy generate-required-data' first."
+        err "requiredDataFiles.json not found in $plugins_dir"
+        err "Run 'generate-required-data' first."
         return 1
     fi
     ok "Found requiredDataFiles.json"
@@ -82,7 +89,7 @@ export_mods() {
             done
             [[ "$skip" -eq 1 ]] && continue
 
-            local filepath="$PLUGINS_DIR/$filename"
+            local filepath="$plugins_dir/$filename"
 
             if [[ ! -f "$filepath" ]]; then
                 err "Plugin \"$filename\" not found at $filepath"
@@ -123,8 +130,8 @@ export_mods() {
 
     local output_archive="$tmp_dir/mods.tar.gz"
 
-    export PLUGINS_DIR
-    export SERVER_SCRIPTS_DIR
+    export PLUGINS_DIR="$plugins_dir"
+    export SERVER_SCRIPTS_DIR="$scripts_dir"
     export ORIGINAL_FILES
 
     local package_script
