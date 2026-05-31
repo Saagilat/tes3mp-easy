@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # entrypoint.sh — TES3MP container entrypoint
 #

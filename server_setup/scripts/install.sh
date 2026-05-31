@@ -465,6 +465,7 @@ setup_files() {
         -O "$dest/configs/tes3mp-server-default.cfg" 2>/dev/null || {
         # Fallback: generate minimal config
         cat > "$dest/configs/tes3mp-server-default.cfg" << 'CFGEOF'
+[General]
 hostname = tes3mp
 password =
 serverPort = 25565
