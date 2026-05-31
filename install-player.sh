@@ -4,8 +4,9 @@
 #
 # Usage:  curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-player.sh | bash
 #
-# Downloads all scripts to ~/.local/share/tes3mp-easy/ and exits.
-# Then run:  bash ~/.local/share/tes3mp-easy/menu/player.sh
+# Downloads all scripts to ~/.local/share/tes3mp-easy/.
+# Existing configuration is never overwritten.
+# Full uninstall via: tes3mp-easy-player uninstall
 
 set -euo pipefail
 
@@ -38,7 +39,6 @@ download() {
     fi
 }
 
-# Player-related lib files (9)
 download "lib/common.sh"          "$UPDATE_DIR/lib/common.sh"
 download "lib/lang.sh"            "$UPDATE_DIR/lib/lang.sh"
 download "lib/config.sh"          "$UPDATE_DIR/lib/config.sh"
@@ -49,11 +49,10 @@ download "lib/localization.sh"    "$UPDATE_DIR/lib/localization.sh"
 download "lib/required-data.sh"   "$UPDATE_DIR/lib/required-data.sh"
 download "lib/self-update.sh"     "$UPDATE_DIR/lib/self-update.sh"
 
-# Menu files (2)
 download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 
-# Language files (en, ru)
+# Language files
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
 err=false
@@ -63,45 +62,18 @@ if $err; then echo "✗"; else echo "✓"; fi
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
-echo ""
 
-# ─── Configuration ───
-need_config=false
-lang_choice="en"
-
-if [[ -f "$PLAYER_CONFIG" ]]; then
-    # Existing config — ask to overwrite if TTY available
-    if [[ -t 0 ]]; then
-        printf "Overwrite configuration? [y/N]: " > /dev/tty
-        read -r user_input < /dev/tty || true
-        case "${user_input:-}" in
-            y|Y|yes|YES) need_config=true ;;
-        esac
-    fi
-else
-    need_config=true
-fi
-
-if $need_config; then
-    # Ask language if TTY available
-    if [[ -t 0 ]]; then
-        printf "Language (en/ru) [en]: " > /dev/tty
-        read -r lang_input < /dev/tty || true
-        case "${lang_input:-}" in
-            ru|RU|рус|Рус) lang_choice="ru" ;;
-        esac
-    fi
-
+# Create config only if it doesn't exist
+if [[ ! -f "$PLAYER_CONFIG" ]]; then
     {
         echo "# TES3MP Easy player configuration"
         echo "ROLE = player"
-        echo "LANG_CODE = $lang_choice"
+        echo "LANG_CODE = en"
     } > "$PLAYER_CONFIG"
-    echo "Configuration created."
-else
-    echo "Keeping existing configuration."
+    echo "✓ Player config created: $PLAYER_CONFIG"
 fi
 
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  To start the player menu:"
@@ -114,6 +86,6 @@ echo "  All commands:"
 echo "    tes3mp-easy-player help"
 echo ""
 echo "  To remove completely:"
-echo "    rm -rf $UPDATE_DIR $PLAYER_CONFIG"
+echo "    tes3mp-easy-player uninstall"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
