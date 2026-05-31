@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# install-admin.sh — download and start TES3MP admin menu
+# install-admin.sh — download TES3MP Easy admin tools
 #
 # Usage:  curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-admin.sh | bash
 #
-# Downloads all scripts to ~/.local/share/tes3mp-easy/ and opens
-# the admin menu.
+# Downloads all scripts to ~/.local/share/tes3mp-easy/ and exits.
+# Then run:  bash ~/.local/share/tes3mp-easy/menu/admin.sh
 
 set -euo pipefail
 
@@ -70,7 +70,18 @@ echo ""
     echo "ROLE=admin"
 } > "$ADMIN_CONFIG"
 
-echo "Starting admin menu..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-
-exec bash "$UPDATE_DIR/menu/admin.sh"
+echo "  To start the admin menu:"
+echo "    bash $UPDATE_DIR/menu/admin.sh"
+echo ""
+echo "  Alias (add to ~/.bashrc):"
+echo "    alias tes3mp-easy-admin='bash $UPDATE_DIR/menu/admin.sh'"
+echo ""
+echo "  All commands:"
+echo "    tes3mp-easy-admin help"
+echo ""
+echo "  To remove completely:"
+echo "    tes3mp-easy-admin uninstall"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -23,10 +23,15 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install
 > Automated client installation (Proton) is Linux-only for now.
 > On Windows, download TES3MP manually from the [releases page](https://github.com/TES3MP/TES3MP/releases).
 
-On first run the script will:
-1. Download all necessary scripts to `~/.local/share/tes3mp-easy/`
-2. Guide you through initial setup (SSH host, paths, etc.)
-3. Open the appropriate menu
+After download:
+
+```bash
+# Admin: start the menu
+bash ~/.local/share/tes3mp-easy/menu/admin.sh
+
+# Player: start the menu
+bash ~/.local/share/tes3mp-easy/menu/player.sh
+```
 
 ### Recommended aliases
 
@@ -41,33 +46,30 @@ alias tes3mp-easy-player='bash ~/.local/share/tes3mp-easy/menu/player.sh'
 
 ```bash
 # Admin
-tes3mp-easy-admin install-server         # Install server on VPS
 tes3mp-easy-admin start                  # docker compose up -d
 tes3mp-easy-admin stop                   # docker compose down
 tes3mp-easy-admin restart                # docker compose restart
 tes3mp-easy-admin logs                   # follow logs
 tes3mp-easy-admin export-mods            # push mods to server
-tes3mp-easy-admin export-players         # push players to server
-tes3mp-easy-admin export-world           # push world to server
+tes3mp-easy-admin install-server         # install server on VPS
 tes3mp-easy-admin self-update            # update scripts
+tes3mp-easy-admin uninstall              # remove tes3mp-easy completely
 
 # Player
 tes3mp-easy-player download-mods         # download mods from server
 tes3mp-easy-player install-client        # install TES3MP client
 tes3mp-easy-player install-localization  # install localization
+tes3mp-easy-player uninstall             # remove tes3mp-easy completely
 ```
 
 ---
 
-## 🎮 Player documentation
+## 📖 Documentation
 
-- [Step-by-step player guide](docs/player/install.md) — from client installation to joining the server.
-- [Linux / Proton guide](docs/player/linux/proton/install.md) — detailed Proton setup.
-
-## 🖥️ Server admin documentation
-
+- [Player guide](docs/player/install.md) — from client installation to joining the server.
 - [Admin guide](docs/admin/install.md) — from server setup to management.
 - [Server management reference](docs/admin/management.md) — commands, endpoints, configs.
+- [Linux / Proton guide](docs/player/linux/proton/install.md) — detailed Proton setup.
 - [Modding](docs/admin/modding.md) — what works and what doesn't.
 - [TES3MP settings reference](docs/admin/tes3mp_settings.md) — full config.lua docs.
 
@@ -88,6 +90,16 @@ On Windows, use **Git Bash** (comes with Git for Windows).
 - The script **never touches** `~/.ssh/config` without explicit permission.
 - Every SSH command is displayed before execution.
 - Works from a regular user account, no root required.
+
+## Uninstall
+
+```bash
+tes3mp-easy-admin uninstall
+# or
+tes3mp-easy-player uninstall
+```
+
+Also remove the alias from `~/.bashrc` if you added one.
 
 ## Resources
 

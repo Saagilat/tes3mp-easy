@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# install-player.sh — download and start TES3MP player menu
+# install-player.sh — download TES3MP Easy player tools
 #
 # Usage:  curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-player.sh | bash
 #
-# Downloads all scripts to ~/.local/share/tes3mp-easy/ and opens
-# the player menu.
+# Downloads all scripts to ~/.local/share/tes3mp-easy/ and exits.
+# Then run:  bash ~/.local/share/tes3mp-easy/menu/player.sh
 
 set -euo pipefail
 
@@ -62,7 +62,18 @@ echo ""
     echo "ROLE=player"
 } > "$PLAYER_CONFIG"
 
-echo "Starting player menu..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-
-exec bash "$UPDATE_DIR/menu/player.sh"
+echo "  To start the player menu:"
+echo "    bash $UPDATE_DIR/menu/player.sh"
+echo ""
+echo "  Alias (add to ~/.bashrc):"
+echo "    alias tes3mp-easy-player='bash $UPDATE_DIR/menu/player.sh'"
+echo ""
+echo "  All commands:"
+echo "    tes3mp-easy-player help"
+echo ""
+echo "  To remove completely:"
+echo "    rm -rf $UPDATE_DIR $PLAYER_CONFIG"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

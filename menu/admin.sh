@@ -175,13 +175,28 @@ dispatch_admin() {
             local pm="${SCRIPT_DIR}/menu/player.sh"
             [[ -f "$pm" ]] && exec bash "$pm" || err "menu/player.sh not found"
             ;;
+        uninstall)
+            echo ""
+            echo "This will remove all tes3mp-easy files:"
+            echo "  - $UPDATE_DIR"
+            echo "  - $ADMIN_CONFIG"
+            echo ""
+            if confirm "Remove tes3mp-easy completely?"; then
+                rm -rf "$UPDATE_DIR" "$ADMIN_CONFIG"
+                echo ""
+                ok "tes3mp-easy removed."
+                echo "Also remove the alias from ~/.bashrc if you added it."
+            else
+                info "Cancelled."
+            fi
+            ;;
         self-update)
             self_update
             ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, configure-server, start, stop, restart,"
             echo "  logs, export-mods, export-players, export-world, import-server,"
-            echo "  generate-required-data, config, player-menu, self-update, menu"
+            echo "  generate-required-data, config, player-menu, self-update, uninstall, menu"
             ;;
         menu|"")
             show_admin_menu
