@@ -35,7 +35,7 @@ ADMIN_GENERATE_DATA="15) 🔑 Generate requiredDataFiles.json"
 # ─── Generic menu items ───
 MENU_SWITCH_PLAYER="p) 🎮 Switch to player menu →"
 MENU_UPDATE="u) 🔄 Update tes3mp-easy"
-MENU_SETTINGS="s) ⚙  Settings"
+MENU_SETTINGS="s) ⚙  Settings (SSH host, paths)"
 MENU_QUIT="q) Exit"
 
 # ─── Player menu ───

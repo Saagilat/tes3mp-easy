@@ -35,7 +35,7 @@ ADMIN_GENERATE_DATA="15) 🔑 Сгенерировать requiredDataFiles.json"
 # ─── Общие пункты меню ───
 MENU_SWITCH_PLAYER="p) 🎮 Перейти в меню игрока →"
 MENU_UPDATE="u) 🔄 Обновить tes3mp-easy"
-MENU_SETTINGS="s) ⚙  Настройки"
+MENU_SETTINGS="s) ⚙  Настройки (SSH, пути)"
 MENU_QUIT="q) Выход"
 
 # ─── Меню игрока ───
