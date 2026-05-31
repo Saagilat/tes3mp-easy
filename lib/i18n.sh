@@ -25,9 +25,10 @@ LANG_DIR="${PROJECT_DIR:-$LIB_DIR/..}/lang"
 lang_available() {
     local langs=()
     if [[ -d "$LANG_DIR" ]]; then
-        for f in "$LANG_DIR"/*.sh; do
+        for f in "$LANG_DIR"/*; do
+            [[ -f "$f" ]] || continue
             local basename
-            basename=$(basename "$f" .sh)
+            basename=$(basename "$f")
             langs+=("$basename")
         done
     fi
@@ -41,7 +42,7 @@ lang_available() {
 # ────────────────────────────────────────────────────────────
 load_lang() {
     local lang="${1:-en}"
-    local lang_file="$LANG_DIR/$lang.sh"
+    local lang_file="$LANG_DIR/$lang"
 
     if [[ -f "$lang_file" ]]; then
         source "$lang_file"
@@ -50,7 +51,7 @@ load_lang() {
 
     # Fallback to English
     if [[ "$lang" != "en" ]]; then
-        lang_file="$LANG_DIR/en.sh"
+        lang_file="$LANG_DIR/en"
         if [[ -f "$lang_file" ]]; then
             source "$lang_file"
             return 0
@@ -58,6 +59,6 @@ load_lang() {
     fi
 
     # Last resort — empty fallback
-    warn "Language file not found: $LANG_DIR/$lang.sh"
+    warn "Language file not found: $LANG_DIR/$lang"
     return 1
 }

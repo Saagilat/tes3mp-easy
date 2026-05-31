@@ -54,8 +54,8 @@ download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 
 # Language files (2)
-download "lang/en.sh"             "$UPDATE_DIR/lang/en.sh"
-download "lang/ru.sh"             "$UPDATE_DIR/lang/ru.sh"
+download "lang/en"             "$UPDATE_DIR/lang/en"
+download "lang/ru"             "$UPDATE_DIR/lang/ru"
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"

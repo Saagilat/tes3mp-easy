@@ -42,9 +42,9 @@ parse_ini() {
 
         # Skip empty lines and comments
         [[ -z "$line" ]] && continue
-        [[ "$line" =~ ^[#;] ]] && continue
+        [[ "$line" == \#* || "$line" == \;* ]] && continue
         # Skip section headers
-        [[ "$line" =~ ^\[ ]] && continue
+        [[ "$line" == \[* ]] && continue
 
         if [[ "$line" =~ ^([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
             key="${BASH_REMATCH[1]}"
@@ -163,7 +163,7 @@ show_config() {
     echo ""
     while IFS= read -r line; do
         line="${line#"${line%%[![:space:]]*}"}"
-        [[ -z "$line" || "$line" =~ ^[#;] || "$line" =~ ^\[ ]] && continue
+        [[ -z "$line" || "$line" == \#* || "$line" == \;* || "$line" == \[* ]] && continue
         echo "  $line"
     done < "$file"
     echo ""

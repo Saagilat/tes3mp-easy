@@ -52,8 +52,8 @@ self_update() {
         "lib/localization.sh"
         "lib/player-roles.sh"
         "lib/self-update.sh"
-        "lang/en.sh"
-        "lang/ru.sh"
+        "lang/en"
+        "lang/ru"
     )
 
     info "Downloading updates from $GITHUB_RAW"
