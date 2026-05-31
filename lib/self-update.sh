@@ -32,7 +32,6 @@ self_update() {
 
     # Files to update
     local files_to_update=(
-        "tes3mp-easy"
         "menu/player.sh"
         "menu/admin.sh"
         "lib/common.sh"
@@ -75,12 +74,15 @@ self_update() {
             # Some files may not exist yet (client-install, etc. are new)
             # Only error if it's a core file
             case "$file" in
-                tes3mp-easy|menu/player.sh|menu/admin.sh|lib/common.sh|lib/lang.sh|lib/config.sh)
+                menu/player.sh|menu/admin.sh|lib/common.sh|lib/lang.sh|lib/config.sh)
+                    warn "  Failed to download $file"
+                    failed=$((failed + 1))
+                    ;;
+                lang/en|lang/ru)
                     warn "  Failed to download $file"
                     failed=$((failed + 1))
                     ;;
                 *)
-                    # New files — warn but don't fail
                     info "  (skipping new/non-existent: $file)"
                     ;;
             esac
