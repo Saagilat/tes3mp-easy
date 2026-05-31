@@ -16,10 +16,9 @@
 set -euo pipefail
 
 # ────────────────────────────────────────────────────────────
-# Source shared library
+# Source shared library (installed at /tes3mp-easy by install.sh)
 # ────────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/common.sh"
+source /tes3mp-easy/common.sh
 
 # ────────────────────────────────────────────────────────────
 # Argument parsing

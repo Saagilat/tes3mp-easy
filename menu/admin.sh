@@ -65,8 +65,8 @@ show_admin_menu() {
         read -r -p "  ${MSG_PROMPT:-Select option:} " choice
 
         case "$choice" in
-            1) install_server interactive || true ;;
-            2) install_server --default || true ;;
+            1) install_server || true ;;
+            2) install_server || true ;;
             3) configure_server || true ;;
             4) server_start || true ;;
             5) server_stop || true ;;
@@ -125,8 +125,8 @@ print_header() {
 
 dispatch_admin() {
     case "${1:-}" in
-        install-server) shift; install_server "${1:-interactive}" ;;
-        configure-server) shift; configure_server "${1:-interactive}" ;;
+        install-server) install_server ;;
+        configure-server) configure_server "${2:-interactive}" ;;
         start) server_start ;;
         stop) server_stop ;;
         restart) server_restart ;;

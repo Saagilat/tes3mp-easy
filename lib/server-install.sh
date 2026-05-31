@@ -21,24 +21,15 @@ fi
 # Usage: install_server [--default | --test]
 # ────────────────────────────────────────────────────────────
 install_server() {
-    local mode="${1:-interactive}"
-
     if [[ -z "${SSH_HOST:-}" ]]; then
         err "SSH_HOST is not set."
         err "Run './tes3mp-easy config' to set it."
         return 1
     fi
 
-    # Determine install flags
-    local install_flags=""
-    case "$mode" in
-        --default) install_flags="--default" ;;
-        --test)    install_flags="--test" ;;
-    esac
-
     # Construct the install command
     local install_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/install.sh"
-    local cmd="curl -fsSL '$install_url' | bash${install_flags:+ -s -- $install_flags}"
+    local cmd="curl -fsSL '$install_url' | bash"
 
     echo ""
     echo "═══════════════════════════════════════════════"
@@ -57,14 +48,8 @@ install_server() {
     echo "    - Builds the Docker image"
     echo ""
 
-    if [[ "$mode" == "interactive" ]]; then
-        info "Running in INTERACTIVE mode."
-        info "Make sure your SSH connection supports TTY (-t flag)."
-        echo ""
-    else
-        info "Running in NON-INTERACTIVE mode (--default or --test)."
-        echo ""
-    fi
+    info "Running with SSH -t (TTY required for sudo prompts)."
+    echo ""
 
     # Confirm
     if ! confirm "Proceed with installation?"; then
@@ -75,23 +60,12 @@ install_server() {
     echo ""
 
     # Run the install
-    if [[ "$mode" == "interactive" ]]; then
-        # Interactive: need -t flag for TTY
-        info "Starting interactive installation (SSH -t)..."
-        ssh -t "$SSH_HOST" "$cmd" || {
-            err "Installation failed on $SSH_HOST"
-            err "Check the output above for details."
-            return 1
-        }
-    else
-        # Non-interactive
-        info "Starting non-interactive installation..."
-        ssh "$SSH_HOST" "$cmd" || {
-            err "Installation failed on $SSH_HOST"
-            err "Check the output above for details."
-            return 1
-        }
-    fi
+    info "Starting installation on $SSH_HOST..."
+    ssh -t "$SSH_HOST" "$cmd" || {
+        err "Installation failed on $SSH_HOST"
+        err "Check the output above for details."
+        return 1
+    }
 
     ok "Infrastructure installation completed on $SSH_HOST"
     echo ""
