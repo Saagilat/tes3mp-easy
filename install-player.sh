@@ -17,24 +17,42 @@ if ! command -v curl &>/dev/null; then
     exit 1
 fi
 
-echo "Downloading TES3MP Easy player scripts to $UPDATE_DIR..."
+echo ""
+echo "Downloading TES3MP Easy player scripts..."
 mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu"
 
-# Download player-related lib files
-for f in common.sh config.sh import-client.sh client-install.sh \
-         client-configs.sh localization.sh required-data.sh self-update.sh; do
-    curl -fsSL "$GITHUB_RAW/lib/$f" -o "$UPDATE_DIR/lib/$f" 2>/dev/null || true
-    chmod +x "$UPDATE_DIR/lib/$f" 2>/dev/null || true
-done
+total=10
+count=0
 
-# Download both menus (player main, admin for switch)
-curl -fsSL "$GITHUB_RAW/menu/player.sh" -o "$UPDATE_DIR/menu/player.sh"
-chmod +x "$UPDATE_DIR/menu/player.sh"
-curl -fsSL "$GITHUB_RAW/menu/admin.sh" -o "$UPDATE_DIR/menu/admin.sh" 2>/dev/null || true
-chmod +x "$UPDATE_DIR/menu/admin.sh" 2>/dev/null || true
+download() {
+    local src="$1"
+    local dst="$2"
+    count=$((count + 1))
+    printf "  [%2d/%d] %s " "$count" "$total" "$(basename "$src")"
+    if curl -fsSL "$GITHUB_RAW/$src" -o "$dst" 2>/dev/null; then
+        chmod +x "$dst" 2>/dev/null || true
+        echo "✓"
+    else
+        echo "✗"
+    fi
+}
 
-echo "✓ Scripts downloaded"
-echo "Starting player menu..."
+# Player-related lib files (8)
+download "lib/common.sh"          "$UPDATE_DIR/lib/common.sh"
+download "lib/config.sh"          "$UPDATE_DIR/lib/config.sh"
+download "lib/import-client.sh"   "$UPDATE_DIR/lib/import-client.sh"
+download "lib/client-install.sh"  "$UPDATE_DIR/lib/client-install.sh"
+download "lib/client-configs.sh"  "$UPDATE_DIR/lib/client-configs.sh"
+download "lib/localization.sh"    "$UPDATE_DIR/lib/localization.sh"
+download "lib/required-data.sh"   "$UPDATE_DIR/lib/required-data.sh"
+download "lib/self-update.sh"     "$UPDATE_DIR/lib/self-update.sh"
+
+# Menu files (2)
+download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
+download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
+
+echo ""
+echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
 exec bash "$UPDATE_DIR/menu/player.sh"
