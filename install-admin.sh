@@ -10,6 +10,7 @@
 set -euo pipefail
 
 UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
+ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.conf"
 GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
 
 if ! command -v curl &>/dev/null; then
@@ -61,6 +62,15 @@ download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
+echo ""
+
+# Preset admin config
+{
+    echo "# TES3MP Easy admin configuration"
+    echo "ROLE=admin"
+} > "$ADMIN_CONFIG"
+
+echo "Starting admin menu..."
 echo ""
 
 exec bash "$UPDATE_DIR/menu/admin.sh"

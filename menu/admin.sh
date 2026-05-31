@@ -10,7 +10,6 @@
 # Ensure we're being sourced from tes3mp-easy or have deps
 # ────────────────────────────────────────────────────────────
 if [[ -z "${LIB_DIR:-}" ]]; then
-    # Running standalone — source libraries (menu/ is one level down)
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
@@ -26,6 +25,9 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/required-data.sh"
     source "$LIB_DIR/self-update.sh"
 fi
+
+ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.conf"
+CONFIG_FILE="$ADMIN_CONFIG"
 
 # ────────────────────────────────────────────────────────────
 # Show Admin Menu
@@ -196,14 +198,13 @@ dispatch_admin() {
 # Entry point when called directly
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # If a subcommand is given, dispatch immediately without wizard
     if [[ $# -gt 0 ]]; then
         load_config 2>/dev/null || true
         dispatch_admin "$@"
     else
-        load_config || {
-            first_run_wizard
-            load_config
+        load_config "$ADMIN_CONFIG" || {
+            wizard_admin true
+            load_config "$ADMIN_CONFIG"
         }
         dispatch_admin "$@"
     fi

@@ -10,7 +10,6 @@
 # Ensure we're being sourced from tes3mp-easy or have deps
 # ────────────────────────────────────────────────────────────
 if [[ -z "${LIB_DIR:-}" ]]; then
-    # Running standalone — source libraries (menu/ is one level down)
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
@@ -22,6 +21,9 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/required-data.sh"
     source "$LIB_DIR/self-update.sh"
 fi
+
+PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.conf"
+CONFIG_FILE="$PLAYER_CONFIG"
 
 # ────────────────────────────────────────────────────────────
 # Show Player Menu
@@ -144,9 +146,14 @@ dispatch_player() {
 # Entry point when called directly
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    load_config || {
-        first_run_wizard
-        load_config
-    }
-    dispatch_player "$@"
+    if [[ $# -gt 0 ]]; then
+        load_config 2>/dev/null || true
+        dispatch_player "$@"
+    else
+        load_config "$PLAYER_CONFIG" || {
+            wizard_player true
+            load_config "$PLAYER_CONFIG"
+        }
+        dispatch_player "$@"
+    fi
 fi
