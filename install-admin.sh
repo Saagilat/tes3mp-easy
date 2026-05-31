@@ -73,12 +73,23 @@ echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
-# Preset admin config (INI format)
-{
-    echo "# TES3MP Easy admin configuration"
-    echo "ROLE = admin"
-    echo "LANG_CODE = en"
-} > "$ADMIN_CONFIG"
+# Configuration — keep existing unless user says overwrite
+if [[ -f "$ADMIN_CONFIG" ]]; then
+    printf "Overwrite configuration? [y/N]: "
+    read -r answer
+    case "${answer,,}" in
+        y|yes) ;;
+        *) echo "Keeping existing configuration." ; unset answer ;;
+    esac
+fi
+
+if [[ ! -f "$ADMIN_CONFIG" || "${answer,,}" =~ ^(y|yes)$ ]]; then
+    {
+        echo "# TES3MP Easy admin configuration"
+        echo "ROLE = admin"
+        echo "LANG_CODE = en"
+    } > "$ADMIN_CONFIG"
+fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
