@@ -36,6 +36,7 @@ self_update() {
         "menu/player.sh"
         "menu/admin.sh"
         "lib/common.sh"
+        "lib/i18n.sh"
         "lib/config.sh"
         "lib/server-install.sh"
         "lib/server-control.sh"
@@ -51,6 +52,8 @@ self_update() {
         "lib/localization.sh"
         "lib/player-roles.sh"
         "lib/self-update.sh"
+        "lang/en.sh"
+        "lang/ru.sh"
     )
 
     info "Downloading updates from $GITHUB_RAW"
@@ -72,7 +75,7 @@ self_update() {
             # Some files may not exist yet (client-install, etc. are new)
             # Only error if it's a core file
             case "$file" in
-                tes3mp-easy|menu/player.sh|menu/admin.sh|lib/common.sh|lib/config.sh)
+                tes3mp-easy|menu/player.sh|menu/admin.sh|lib/common.sh|lib/i18n.sh|lib/config.sh)
                     warn "  Failed to download $file"
                     failed=$((failed + 1))
                     ;;

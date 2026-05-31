@@ -13,6 +13,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
+    source "$LIB_DIR/i18n.sh"
     source "$LIB_DIR/config.sh"
     source "$LIB_DIR/server-install.sh"
     source "$LIB_DIR/server-control.sh"
@@ -37,49 +38,39 @@ show_admin_menu() {
 
     while true; do
         clear_screen
-        print_header "TES3MP Easy — Admin"
-        echo "  Host: ${SSH_HOST:-<not set>}"
+        print_header "$MENU_TITLE_ADMIN"
+
+        local host_display="${SSH_HOST:-${MSG_HOST_UNSET:-Host: <not set>}}"
+        echo "  $host_display"
         echo ""
 
-        echo "  ── Установка / Настройка ──"
+        echo "  $ADMIN_INSTALL_INTER"
+        echo "  $ADMIN_INSTALL_DEFAULT"
+        echo "  $ADMIN_CONFIGURE"
         echo ""
-        echo "  1. 📦 Установить сервер на VPS (интерактивно)"
-        echo "  2. 🤖 Установить сервер (--default, авто)"
-        echo "  3. 🛠  Перенастроить сервер"
+        echo "  $ADMIN_START"
+        echo "  $ADMIN_STOP"
+        echo "  $ADMIN_RESTART"
+        echo "  $ADMIN_LOGS"
+        echo "  $ADMIN_STATUS"
         echo ""
-        echo "  ── Управление сервером ──"
+        echo "  $ADMIN_EDIT_CONFIGS"
         echo ""
-        echo "  4. ▶  Запустить сервер"
-        echo "  5. ■  Остановить сервер"
-        echo "  6. ↻  Перезапустить сервер"
-        echo "  7. 📜 Логи сервера"
-        echo "  8. 📊 Статус сервера"
+        echo "  $ADMIN_EXPORT_MODS"
+        echo "  $ADMIN_EXPORT_PLAYERS"
+        echo "  $ADMIN_EXPORT_WORLD"
+        echo "  $ADMIN_MANAGE_ROLES"
         echo ""
-        echo "  ── Конфигурация ──"
+        echo "  $ADMIN_IMPORT_SERVER"
         echo ""
-        echo "  9. ✎  Редактировать конфиги сервера"
+        echo "  $ADMIN_GENERATE_DATA"
         echo ""
-        echo "  ── Моды / Игроки / Мир ──"
+        echo "  $MENU_SWITCH_PLAYER"
+        echo "  $MENU_UPDATE"
+        echo "  $MENU_SETTINGS"
+        echo "  $MENU_QUIT"
         echo ""
-        echo "  10. 📦 Экспорт модов на сервер"
-        echo "  11. 👥 Экспорт игроков"
-        echo "  12. 🌍 Экспорт мира"
-        echo "  13. 🛡  Управление ролями игроков"
-        echo ""
-        echo "  ── Импорт на сервер ──"
-        echo ""
-        echo "  14. 📥 Импорт на сервер (моды/игроки/мир)"
-        echo ""
-        echo "  ── Инструменты ──"
-        echo ""
-        echo "  15. 🔑 Сгенерировать requiredDataFiles.json"
-        echo ""
-        echo "  p. 🎮 Перейти в меню игрока →"
-        echo "  u. 🔄 Обновить tes3mp-easy"
-        echo "  s. ⚙  Настройки (SSH, пути)"
-        echo "  q.  Выход"
-        echo ""
-        read -r -p "  Выберите пункт: " choice
+        read -r -p "  ${MSG_PROMPT:-Select option:} " choice
 
         case "$choice" in
             1) install_server interactive ;;
@@ -98,10 +89,9 @@ show_admin_menu() {
             14) import_server_menu ;;
             15) generate_required_data ;;
             p|P)
-                # Switch to player menu
                 local player_menu="$SCRIPT_DIR/menu/player.sh"
                 if [[ -f "$player_menu" ]]; then
-                    info "Переход в меню игрока..."
+                    info "${MSG_SWITCHING_PLAYER:-Switching to player menu...}"
                     sleep 1
                     exec bash "$player_menu"
                 else
@@ -109,20 +99,17 @@ show_admin_menu() {
                 fi
                 ;;
             u|U) self_update ;;
-            s|S)
-                edit_config
-                show_config
-                ;;
+            s|S) edit_config ; show_config ;;
             q|Q)
                 echo ""
-                info "Bye!"
+                info "${MSG_BYE:-Bye!}"
                 exit 0
                 ;;
-            *) echo "Неверный пункт." ;;
+            *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
         esac
 
         echo ""
-        read -r -p "Нажмите Enter чтобы продолжить..."
+        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
     done
 }
 
@@ -149,18 +136,12 @@ print_header() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Subcommand dispatcher (for direct calls like: menu/admin.sh start)
+# Subcommand dispatcher
 # ────────────────────────────────────────────────────────────
 dispatch_admin() {
     case "${1:-}" in
-        install-server)
-            shift
-            install_server "${1:-interactive}"
-            ;;
-        configure-server)
-            shift
-            configure_server "${1:-interactive}"
-            ;;
+        install-server) shift; install_server "${1:-interactive}" ;;
+        configure-server) shift; configure_server "${1:-interactive}" ;;
         start) server_start ;;
         stop) server_stop ;;
         restart) server_restart ;;
@@ -170,57 +151,48 @@ dispatch_admin() {
         export-world) export_world ;;
         import-server) import_server_menu ;;
         generate-required-data) generate_required_data ;;
-        config) edit_config ;;
+        config) edit_config "$ADMIN_CONFIG" ;;
         player-menu)
             local pm="${SCRIPT_DIR}/menu/player.sh"
             [[ -f "$pm" ]] && exec bash "$pm" || err "menu/player.sh not found"
             ;;
         uninstall)
             echo ""
-            echo "This will remove all tes3mp-easy files:"
-            echo "  - $UPDATE_DIR"
-            echo "  - $ADMIN_CONFIG"
-            echo ""
-            if confirm "Remove tes3mp-easy completely?"; then
+            echo "This will remove: $ADMIN_CONFIG and $UPDATE_DIR"
+            if confirm "${MSG_UNINSTALL_CONFIRM:-Remove tes3mp-easy completely?}"; then
                 rm -rf "$UPDATE_DIR" "$ADMIN_CONFIG"
-                echo ""
-                ok "tes3mp-easy removed."
+                ok "${MSG_UNINSTALL_DONE:-tes3mp-easy removed.}"
                 echo "Also remove the alias from ~/.bashrc if you added it."
             else
-                info "Cancelled."
+                info "${MSG_UNINSTALL_CANCELLED:-Cancelled.}"
             fi
             ;;
-        self-update)
-            self_update
-            ;;
+        self-update) self_update ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, configure-server, start, stop, restart,"
             echo "  logs, export-mods, export-players, export-world, import-server,"
             echo "  generate-required-data, config, player-menu, self-update, uninstall, menu"
             ;;
-        menu|"")
-            show_admin_menu
-            ;;
-        *)
-            echo "Unknown command: $1"
-            echo "Run 'menu/admin.sh help' for available commands."
-            exit 1
-            ;;
+        menu|"") show_admin_menu ;;
+        *) echo "Unknown command: $1"; echo "Run 'menu/admin.sh help' for available commands."; exit 1 ;;
     esac
 }
 
 # ────────────────────────────────────────────────────────────
-# Entry point when called directly
+# Entry point
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if [[ $# -gt 0 ]]; then
         load_config 2>/dev/null || true
+        load_lang "${LANG_CODE:-en}"
         dispatch_admin "$@"
     else
         load_config "$ADMIN_CONFIG" || {
+            load_lang "en"
             wizard_admin true
             load_config "$ADMIN_CONFIG"
         }
+        load_lang "${LANG_CODE:-en}"
         dispatch_admin "$@"
     fi
 fi

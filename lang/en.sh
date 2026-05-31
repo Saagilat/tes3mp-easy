@@ -1,0 +1,117 @@
+# TES3MP Easy — English localization
+# Format: KEY="value"
+
+# ─── Menu titles ───
+MENU_TITLE_ADMIN="TES3MP Easy — Admin"
+MENU_TITLE_PLAYER="TES3MP Easy — Player"
+
+# ─── Install / Configure ───
+ADMIN_INSTALL_INTER="1) 📦 Install server on VPS (interactive)"
+ADMIN_INSTALL_DEFAULT="2) 🤖 Install server (--default, auto)"
+ADMIN_CONFIGURE="3) 🛠  Reconfigure server"
+
+# ─── Server control ───
+ADMIN_START="4) ▶  Start server"
+ADMIN_STOP="5) ■  Stop server"
+ADMIN_RESTART="6) ↻  Restart server"
+ADMIN_LOGS="7) 📜 Server logs"
+ADMIN_STATUS="8) 📊 Server status"
+
+# ─── Config ───
+ADMIN_EDIT_CONFIGS="9) ✎  Edit server configs"
+
+# ─── Mods / Players / World ───
+ADMIN_EXPORT_MODS="10) 📦 Export mods to server"
+ADMIN_EXPORT_PLAYERS="11) 👥 Export players"
+ADMIN_EXPORT_WORLD="12) 🌍 Export world"
+ADMIN_MANAGE_ROLES="13) 🛡  Manage player roles"
+
+# ─── Import ───
+ADMIN_IMPORT_SERVER="14) 📥 Import to server (mods/players/world)"
+
+# ─── Tools ───
+ADMIN_GENERATE_DATA="15) 🔑 Generate requiredDataFiles.json"
+
+# ─── Generic menu items ───
+MENU_SWITCH_PLAYER="p) 🎮 Switch to player menu →"
+MENU_UPDATE="u) 🔄 Update tes3mp-easy"
+MENU_SETTINGS="s) ⚙  Settings"
+MENU_QUIT="q) Exit"
+
+# ─── Player menu ───
+PLAYER_INSTALL_CLIENT="1) 🎮 Install TES3MP client (Proton)"
+PLAYER_SETUP_FONTS="2) 🔤 Configure fonts (TrueType)"
+PLAYER_SET_ADDRESS="3) 🌐 Set server address"
+PLAYER_DOWNLOAD_MODS="4) 📥 Download and install mods"
+PLAYER_UPDATE_MODS="5) 🔄 Update mods"
+PLAYER_DOWNLOAD_PLAYERS="6) 👥 Download player data"
+PLAYER_DOWNLOAD_WORLD="7) 🌍 Download world data"
+PLAYER_GENERATE_DATA="8) 🔑 Generate requiredDataFiles.json"
+PLAYER_INSTALL_LANG="9) 🌐 Install localization"
+
+# ─── Messages ───
+MSG_PROMPT="Select option:"
+MSG_PRESS_ENTER="Press Enter to continue..."
+MSG_INVALID="Invalid option."
+MSG_BYE="Bye!"
+MSG_HOST_UNSET="Host: <not set>"
+MSG_SWITCHING_PLAYER="Switching to player menu..."
+MSG_SWITCHING_ADMIN="Switching to admin menu..."
+MSG_UNINSTALL_CONFIRM="Remove tes3mp-easy completely?"
+MSG_UNINSTALL_DONE="tes3mp-easy removed. Also remove the alias from ~/.bashrc if you added it."
+MSG_UNINSTALL_CANCELLED="Cancelled."
+
+# ─── Wizard (admin) ───
+WIZARD_ADMIN_WELCOME="Welcome to TES3MP Easy! Admin profile — let's configure."
+WIZARD_SSH_HOST="--- SSH Host ---
+Enter the SSH host for your VPS (as configured in ~/.ssh/config).
+Example: my-server"
+WIZARD_SSH_PROMPT="SSH host:"
+WIZARD_SSH_EMPTY="SSH host is empty. You can set it later in the config."
+WIZARD_PLUGINS="--- Plugins Directory ---
+Path to your Morrowind Data Files (where .esp/.esm files are stored)."
+WIZARD_PLUGINS_PROMPT="Plugins dir"
+WIZARD_SCRIPTS="--- Server Scripts Directory ---
+Path to your Lua server scripts directory."
+WIZARD_SCRIPTS_PROMPT="Server scripts dir"
+WIZARD_ADMIN_DONE="Admin configuration saved. You can edit these settings later with: nano ~/.tes3mp-easy-admin.conf"
+
+# ─── Wizard (player) ───
+WIZARD_PLAYER_WELCOME="Welcome to TES3MP Easy! Player profile — let's configure."
+WIZARD_SERVER_URL="--- Server URL ---
+Enter the URL of the TES3MP server (with port if non-standard).
+Example: http://192.168.1.100:8085"
+WIZARD_URL_PROMPT="Server URL:"
+WIZARD_DATA_FILES="--- Data Files Directory ---
+Path to your Morrowind Data Files (where .esp/.esm files are stored)."
+WIZARD_DATA_PROMPT="Data Files dir"
+WIZARD_OPENMW="--- OpenMW Config ---
+Path to your openmw.cfg file."
+WIZARD_OPENMW_PROMPT="openmw.cfg path"
+WIZARD_CLIENT_CFG="--- TES3MP Client Config ---
+Path to your tes3mp-client-default.cfg file."
+WIZARD_CLIENT_PROMPT="Client config path"
+WIZARD_PLAYER_DONE="Player configuration saved. You can edit these settings later with: nano ~/.tes3mp-easy-player.conf"
+
+# ─── Edit config submenu ───
+CFG_MENU_TITLE="Select configuration file to edit:"
+CFG_SERVER="1) tes3mp-server-default.cfg — main server config"
+CFG_LUA="2) config.lua — Lua game settings"
+CFG_BANLIST="3) banlist.json — player/IP ban list"
+CFG_BACK="b) Back to main menu"
+
+# ─── Import submenu ───
+IMPORT_TITLE="Import backup to server"
+IMPORT_MODS="1) Import mods (validate + save archive)"
+IMPORT_PLAYERS="2) Import players (hot-add, no restart)"
+IMPORT_WORLD="3) Import world (saves archive, restarts TES3MP)"
+IMPORT_BACK="b) Back to main menu"
+
+# ─── Player roles submenu ───
+ROLES_TITLE="Player Role Management"
+ROLES_LIST="1) List players on server"
+ROLES_SET="2) Set player role"
+ROLES_BACK="b) Back to main menu"
+
+# ─── Language ───
+LANG_SELECT="Select language / Выберите язык:"

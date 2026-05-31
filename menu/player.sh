@@ -3,7 +3,6 @@
 # menu-player.sh — interactive menu for TES3MP players
 #
 # Usage: bash menu-player.sh
-# Can be called directly or via tes3mp-easy (bootstrap)
 #
 
 # ────────────────────────────────────────────────────────────
@@ -13,6 +12,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
+    source "$LIB_DIR/i18n.sh"
     source "$LIB_DIR/config.sh"
     source "$LIB_DIR/import-client.sh"
     source "$LIB_DIR/client-install.sh"
@@ -33,35 +33,27 @@ show_player_menu() {
 
     while true; do
         clear_screen
-        print_header "TES3MP Easy — Player"
+        print_header "$MENU_TITLE_PLAYER"
 
         echo ""
-        echo "  ── Установка клиента ──"
+        echo "  $PLAYER_INSTALL_CLIENT"
+        echo "  $PLAYER_SETUP_FONTS"
+        echo "  $PLAYER_SET_ADDRESS"
         echo ""
-        echo "  1. 🎮 Установить TES3MP клиент (Proton)"
-        echo "  2. 🔤 Настроить шрифты (TrueType)"
-        echo "  3. 🌐 Настроить адрес сервера"
+        echo "  $PLAYER_DOWNLOAD_MODS"
+        echo "  $PLAYER_UPDATE_MODS"
         echo ""
-        echo "  ── Моды с сервера ──"
+        echo "  $PLAYER_DOWNLOAD_PLAYERS"
+        echo "  $PLAYER_DOWNLOAD_WORLD"
         echo ""
-        echo "  4. 📥 Скачать и установить моды"
-        echo "  5. 🔄 Обновить моды (перекачать)"
+        echo "  $PLAYER_GENERATE_DATA"
+        echo "  $PLAYER_INSTALL_LANG"
         echo ""
-        echo "  ── Данные с сервера ──"
+        echo "  $MENU_SETTINGS"
+        echo "  $MENU_UPDATE"
+        echo "  $MENU_QUIT"
         echo ""
-        echo "  6. 👥 Скачать данные игроков"
-        echo "  7. 🌍 Скачать данные мира"
-        echo ""
-        echo "  ── Инструменты ──"
-        echo ""
-        echo "  8. 🔑 Сгенерировать requiredDataFiles.json"
-        echo "  9. 🌐 Установить локализацию"
-        echo ""
-        echo "  s. ⚙  Настройки"
-        echo "  u. 🔄 Обновить tes3mp-easy"
-        echo "  q.  Выход"
-        echo ""
-        read -r -p "  Выберите пункт: " choice
+        read -r -p "  ${MSG_PROMPT:-Select option:} " choice
 
         case "$choice" in
             1) install_client ;;
@@ -76,14 +68,14 @@ show_player_menu() {
             u|U) self_update ;;
             q|Q)
                 echo ""
-                info "Bye!"
+                info "${MSG_BYE:-Bye!}"
                 exit 0
                 ;;
-            *) echo "Неверный пункт." ;;
+            *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
         esac
 
         echo ""
-        read -r -p "Нажмите Enter чтобы продолжить..."
+        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
     done
 }
 
@@ -110,7 +102,7 @@ print_header() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Subcommand dispatcher (for direct calls like: menu/player.sh download-mods)
+# Subcommand dispatcher
 # ────────────────────────────────────────────────────────────
 dispatch_player() {
     case "${1:-}" in
@@ -120,24 +112,20 @@ dispatch_player() {
         install-client) install_client ;;
         install-localization) install_localization ;;
         generate-required-data) generate_required_data ;;
-        config) edit_config ;;
+        config) edit_config "$PLAYER_CONFIG" ;;
         admin-menu)
             local am="${SCRIPT_DIR}/menu/admin.sh"
             [[ -f "$am" ]] && exec bash "$am" || err "menu/admin.sh not found"
             ;;
         uninstall)
             echo ""
-            echo "This will remove all tes3mp-easy files:"
-            echo "  - $UPDATE_DIR"
-            echo "  - $PLAYER_CONFIG"
-            echo ""
-            if confirm "Remove tes3mp-easy completely?"; then
+            echo "This will remove: $PLAYER_CONFIG and $UPDATE_DIR"
+            if confirm "${MSG_UNINSTALL_CONFIRM:-Remove tes3mp-easy completely?}"; then
                 rm -rf "$UPDATE_DIR" "$PLAYER_CONFIG"
-                echo ""
-                ok "tes3mp-easy removed."
+                ok "${MSG_UNINSTALL_DONE:-tes3mp-easy removed.}"
                 echo "Also remove the alias from ~/.bashrc if you added it."
             else
-                info "Cancelled."
+                info "${MSG_UNINSTALL_CANCELLED:-Cancelled.}"
             fi
             ;;
         self-update) self_update ;;
@@ -146,29 +134,26 @@ dispatch_player() {
             echo "  install-client, install-localization, generate-required-data,"
             echo "  config, admin-menu, self-update, uninstall, menu"
             ;;
-        menu|"")
-            show_player_menu
-            ;;
-        *)
-            echo "Unknown command: $1"
-            echo "Run 'menu/player.sh help' for available commands."
-            exit 1
-            ;;
+        menu|"") show_player_menu ;;
+        *) echo "Unknown command: $1"; echo "Run 'menu/player.sh help' for available commands."; exit 1 ;;
     esac
 }
 
 # ────────────────────────────────────────────────────────────
-# Entry point when called directly
+# Entry point
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if [[ $# -gt 0 ]]; then
         load_config 2>/dev/null || true
+        load_lang "${LANG_CODE:-en}"
         dispatch_player "$@"
     else
         load_config "$PLAYER_CONFIG" || {
+            load_lang "en"
             wizard_player true
             load_config "$PLAYER_CONFIG"
         }
+        load_lang "${LANG_CODE:-en}"
         dispatch_player "$@"
     fi
 fi

@@ -20,9 +20,9 @@ fi
 
 echo ""
 echo "Downloading TES3MP Easy player scripts..."
-mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu"
+mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu" "$UPDATE_DIR/lang"
 
-total=10
+total=11
 count=0
 
 download() {
@@ -38,8 +38,9 @@ download() {
     fi
 }
 
-# Player-related lib files (8)
+# Player-related lib files (9)
 download "lib/common.sh"          "$UPDATE_DIR/lib/common.sh"
+download "lib/i18n.sh"            "$UPDATE_DIR/lib/i18n.sh"
 download "lib/config.sh"          "$UPDATE_DIR/lib/config.sh"
 download "lib/import-client.sh"   "$UPDATE_DIR/lib/import-client.sh"
 download "lib/client-install.sh"  "$UPDATE_DIR/lib/client-install.sh"
@@ -52,14 +53,19 @@ download "lib/self-update.sh"     "$UPDATE_DIR/lib/self-update.sh"
 download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 
+# Language files (2)
+download "lang/en.sh"             "$UPDATE_DIR/lang/en.sh"
+download "lang/ru.sh"             "$UPDATE_DIR/lang/ru.sh"
+
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
-# Preset player config
+# Preset player config (INI format)
 {
     echo "# TES3MP Easy player configuration"
-    echo "ROLE=player"
+    echo "ROLE = player"
+    echo "LANG_CODE = en"
 } > "$PLAYER_CONFIG"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
