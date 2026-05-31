@@ -6,32 +6,31 @@ MENU_TITLE_ADMIN="TES3MP Easy — Admin"
 MENU_TITLE_PLAYER="TES3MP Easy — Player"
 
 # ─── Install / Configure ───
-ADMIN_INSTALL_INTER="1) 📦 Install server on VPS (interactive)"
-ADMIN_INSTALL_DEFAULT="2) 🤖 Install server (--default, auto)"
-ADMIN_CONFIGURE="3) 🛠  Reconfigure server"
+ADMIN_INSTALL_SERVER="1) 📦 Install server on VPS"
+ADMIN_CONFIGURE="2) 🛠  Reconfigure server"
 
 # ─── Server control ───
-ADMIN_START="4) ▶  Start server"
-ADMIN_STOP="5) ■  Stop server"
-ADMIN_RESTART="6) ↻  Restart server"
-ADMIN_LOGS="7) 📜 Server logs"
-ADMIN_STATUS="8) 📊 Server status"
+ADMIN_START="3) ▶  Start server"
+ADMIN_STOP="4) ■  Stop server"
+ADMIN_RESTART="5) ↻  Restart server"
+ADMIN_LOGS="6) 📜 Server logs"
+ADMIN_STATUS="7) 📊 Server status"
 
 # ─── Config ───
-ADMIN_EDIT_CONFIGS="9) ✎  Edit server configs"
+ADMIN_EDIT_CONFIGS="8) ✎  Edit server configs"
 
 # ─── Mods / Players / World ───
-ADMIN_EXPORT_MODS="10) 📦 Export mods to server"
-ADMIN_EXPORT_PLAYERS="11) 👥 Export players"
-ADMIN_EXPORT_WORLD="12) 🌍 Export world"
-ADMIN_MANAGE_ROLES="13) 🛡  Manage player roles"
+ADMIN_EXPORT_MODS="9) 📦 Export mods to server"
+ADMIN_EXPORT_PLAYERS="10) 👥 Export players"
+ADMIN_EXPORT_WORLD="11) 🌍 Export world"
+ADMIN_MANAGE_ROLES="12) 🛡  Manage player roles"
 
 # ─── Import ───
-ADMIN_IMPORT_SERVER="14) 📥 Import to server (mods/players/world)"
+ADMIN_IMPORT_SERVER="13) 📥 Import to server (mods/players/world)"
 
 # ─── Tools ───
-ADMIN_GENERATE_DATA="15) 🔑 Generate requiredDataFiles.json"
-ADMIN_UNINSTALL_SERVER="16) 🗑  Uninstall server from VPS"
+ADMIN_GENERATE_DATA="14) 🔑 Generate requiredDataFiles.json"
+ADMIN_UNINSTALL_SERVER="15) 🗑  Uninstall server from VPS"
 
 # ─── Generic menu items ───
 MENU_SWITCH_PLAYER="p) 🎮 Switch to player menu →"

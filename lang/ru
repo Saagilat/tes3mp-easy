@@ -6,32 +6,31 @@ MENU_TITLE_ADMIN="TES3MP Easy — Админ"
 MENU_TITLE_PLAYER="TES3MP Easy — Игрок"
 
 # ─── Установка / Настройка ───
-ADMIN_INSTALL_INTER="1) 📦 Установить сервер на VPS (интерактивно)"
-ADMIN_INSTALL_DEFAULT="2) 🤖 Установить сервер (--default, авто)"
-ADMIN_CONFIGURE="3) 🛠  Перенастроить сервер"
+ADMIN_INSTALL_SERVER="1) 📦 Установить сервер на VPS"
+ADMIN_CONFIGURE="2) 🛠  Перенастроить сервер"
 
 # ─── Управление сервером ───
-ADMIN_START="4) ▶  Запустить сервер"
-ADMIN_STOP="5) ■  Остановить сервер"
-ADMIN_RESTART="6) ↻  Перезапустить сервер"
-ADMIN_LOGS="7) 📜 Логи сервера"
-ADMIN_STATUS="8) 📊 Статус сервера"
+ADMIN_START="3) ▶  Запустить сервер"
+ADMIN_STOP="4) ■  Остановить сервер"
+ADMIN_RESTART="5) ↻  Перезапустить сервер"
+ADMIN_LOGS="6) 📜 Логи сервера"
+ADMIN_STATUS="7) 📊 Статус сервера"
 
 # ─── Конфигурация ───
-ADMIN_EDIT_CONFIGS="9) ✎  Редактировать конфиги сервера"
+ADMIN_EDIT_CONFIGS="8) ✎  Редактировать конфиги сервера"
 
 # ─── Моды / Игроки / Мир ───
-ADMIN_EXPORT_MODS="10) 📦 Экспорт модов на сервер"
-ADMIN_EXPORT_PLAYERS="11) 👥 Экспорт игроков"
-ADMIN_EXPORT_WORLD="12) 🌍 Экспорт мира"
-ADMIN_MANAGE_ROLES="13) 🛡  Управление ролями игроков"
+ADMIN_EXPORT_MODS="9) 📦 Экспорт модов на сервер"
+ADMIN_EXPORT_PLAYERS="10) 👥 Экспорт игроков"
+ADMIN_EXPORT_WORLD="11) 🌍 Экспорт мира"
+ADMIN_MANAGE_ROLES="12) 🛡  Управление ролями игроков"
 
 # ─── Импорт ───
-ADMIN_IMPORT_SERVER="14) 📥 Импорт на сервер (моды/игроки/мир)"
+ADMIN_IMPORT_SERVER="13) 📥 Импорт на сервер (моды/игроки/мир)"
 
 # ─── Инструменты ───
-ADMIN_GENERATE_DATA="15) 🔑 Сгенерировать requiredDataFiles.json"
-ADMIN_UNINSTALL_SERVER="16) 🗑  Удалить сервер с VPS"
+ADMIN_GENERATE_DATA="14) 🔑 Сгенерировать requiredDataFiles.json"
+ADMIN_UNINSTALL_SERVER="15) 🗑  Удалить сервер с VPS"
 
 # ─── Общие пункты меню ───
 MENU_SWITCH_PLAYER="p) 🎮 Перейти в меню игрока →"

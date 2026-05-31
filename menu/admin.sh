@@ -35,8 +35,7 @@ show_admin_menu() {
         echo "  Host: $host_display | Modpack: $modpack_display"
         echo ""
 
-        echo "  $ADMIN_INSTALL_INTER"
-        echo "  $ADMIN_INSTALL_DEFAULT"
+        echo "  $ADMIN_INSTALL_SERVER"
         echo "  $ADMIN_CONFIGURE"
         echo ""
         echo "  $ADMIN_START"
@@ -66,21 +65,20 @@ show_admin_menu() {
 
         case "$choice" in
             1) install_server || true ;;
-            2) install_server || true ;;
-            3) configure_server || true ;;
-            4) server_start || true ;;
-            5) server_stop || true ;;
-            6) server_restart || true ;;
-            7) server_logs || true ;;
-            8) server_status || true ;;
-            9) edit_configs_menu || true ;;
-            10) export_mods || true ;;
-            11) export_players || true ;;
-            12) export_world || true ;;
-            13) player_roles_menu || true ;;
-            14) import_server_menu || true ;;
-            15) generate_required_data || true ;;
-            16) uninstall_server || true ;;
+            2) configure_server || true ;;
+            3) server_start || true ;;
+            4) server_stop || true ;;
+            5) server_restart || true ;;
+            6) server_logs || true ;;
+            7) server_status || true ;;
+            8) edit_configs_menu || true ;;
+            9) export_mods || true ;;
+            10) export_players || true ;;
+            11) export_world || true ;;
+            12) player_roles_menu || true ;;
+            13) import_server_menu || true ;;
+            14) generate_required_data || true ;;
+            15) uninstall_server || true ;;
             p|P)
                 local player_menu="$SCRIPT_DIR/menu/player.sh"
                 if [[ -f "$player_menu" ]]; then
