@@ -198,7 +198,7 @@ extract_configs() {
         return 1
     }
 
-    grep -E '^\s+- \.\/' "$DEST/docker-compose.yml" | while IFS= read -r line; do
+    grep -E '^\s+- \.\/' "$DEST/docker-compose.yml" 2>/dev/null || true | while IFS= read -r line; do
         local host_container
         host_container=$(echo "$line" | sed 's/^[[:space:]]*- //')
         local host_path="${host_container%%:*}"
