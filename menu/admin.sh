@@ -2,13 +2,7 @@
 #
 # menu-admin.sh — interactive menu for TES3MP server administrators
 #
-# Usage: bash menu-admin.sh
-# Can be called directly or via tes3mp-easy (bootstrap)
-#
 
-# ────────────────────────────────────────────────────────────
-# Ensure we're being sourced from tes3mp-easy or have deps
-# ────────────────────────────────────────────────────────────
 if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
@@ -30,9 +24,6 @@ fi
 ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.conf"
 CONFIG_FILE="$ADMIN_CONFIG"
 
-# ────────────────────────────────────────────────────────────
-# Show Admin Menu
-# ────────────────────────────────────────────────────────────
 show_admin_menu() {
     local choice
 
@@ -73,21 +64,21 @@ show_admin_menu() {
         read -r -p "  ${MSG_PROMPT:-Select option:} " choice
 
         case "$choice" in
-            1) install_server interactive ;;
-            2) install_server --default ;;
-            3) configure_server ;;
-            4) server_start ;;
-            5) server_stop ;;
-            6) server_restart ;;
-            7) server_logs ;;
-            8) server_status ;;
-            9) edit_configs_menu ;;
-            10) export_mods ;;
-            11) export_players ;;
-            12) export_world ;;
-            13) player_roles_menu ;;
-            14) import_server_menu ;;
-            15) generate_required_data ;;
+            1) install_server interactive || true ;;
+            2) install_server --default || true ;;
+            3) configure_server || true ;;
+            4) server_start || true ;;
+            5) server_stop || true ;;
+            6) server_restart || true ;;
+            7) server_logs || true ;;
+            8) server_status || true ;;
+            9) edit_configs_menu || true ;;
+            10) export_mods || true ;;
+            11) export_players || true ;;
+            12) export_world || true ;;
+            13) player_roles_menu || true ;;
+            14) import_server_menu || true ;;
+            15) generate_required_data || true ;;
             p|P)
                 local player_menu="$SCRIPT_DIR/menu/player.sh"
                 if [[ -f "$player_menu" ]]; then
@@ -98,8 +89,8 @@ show_admin_menu() {
                     err "menu/player.sh not found at $player_menu"
                 fi
                 ;;
-            u|U) self_update ;;
-            s|S) edit_config ; show_config ;;
+            u|U) self_update || true ;;
+            s|S) edit_config "$ADMIN_CONFIG" || true ; show_config || true ;;
             q|Q)
                 echo ""
                 info "${MSG_BYE:-Bye!}"
@@ -113,18 +104,11 @@ show_admin_menu() {
     done
 }
 
-# ────────────────────────────────────────────────────────────
-# Helpers
-# ────────────────────────────────────────────────────────────
-clear_screen() {
-    printf "\033c" 2>/dev/null || clear 2>/dev/null || true
-}
+clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
 
 print_header() {
-    local title="$1"
-    local width=60
+    local title="$1" width=60
     local padding=$(( (width - ${#title} - 2) / 2 ))
-
     echo ""
     printf "╔"
     printf '═%.0s' $(seq 1 $width)
@@ -135,9 +119,6 @@ print_header() {
     printf "╝\n"
 }
 
-# ────────────────────────────────────────────────────────────
-# Subcommand dispatcher
-# ────────────────────────────────────────────────────────────
 dispatch_admin() {
     case "${1:-}" in
         install-server) shift; install_server "${1:-interactive}" ;;
@@ -178,12 +159,9 @@ dispatch_admin() {
     esac
 }
 
-# ────────────────────────────────────────────────────────────
-# Entry point
-# ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if [[ $# -gt 0 ]]; then
-        load_config 2>/dev/null || true
+        load_config "$ADMIN_CONFIG" 2>/dev/null || true
         load_lang "${LANG_CODE:-en}"
         dispatch_admin "$@"
     else
