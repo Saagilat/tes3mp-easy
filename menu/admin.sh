@@ -30,7 +30,6 @@ show_admin_menu() {
     while true; do
         clear_screen
         print_header "$MENU_TITLE_ADMIN"
-
         local host_display="${SSH_HOST:-${MSG_HOST_UNSET:-Host: <not set>}}"
         echo "  $host_display"
         echo ""
@@ -98,6 +97,9 @@ show_admin_menu() {
                 ;;
             *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
         esac
+
+        echo ""
+        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
     done
 }
 

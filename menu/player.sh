@@ -26,7 +26,6 @@ show_player_menu() {
     while true; do
         clear_screen
         print_header "$MENU_TITLE_PLAYER"
-
         echo ""
         echo "  $PLAYER_INSTALL_CLIENT"
         echo "  $PLAYER_SETUP_FONTS"
@@ -65,6 +64,9 @@ show_player_menu() {
                 ;;
             *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
         esac
+
+        echo ""
+        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
     done
 }
 
