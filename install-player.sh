@@ -63,25 +63,24 @@ echo "✓ Scripts downloaded to $UPDATE_DIR"
 # Create config only if it doesn't exist
 if [[ ! -f "$PLAYER_CONFIG" ]]; then
     cat > "$PLAYER_CONFIG" << 'INI'
-# TES3MP Easy player configuration
-# Edit with: s) Settings in the menu
+; TES3MP Easy player configuration
 
-; Language: en or ru
+; Language (available: en, ru)
 LANG_CODE = en
 
-; Server URL (e.g. http://192.168.1.100:8085)
+; Server URL of the TES3MP server (e.g. http://192.168.1.100:8085)
 SERVER_URL = 
 
-; Path to your Morrowind Data Files
+; Directory containing your Morrowind Data Files
 DATA_FILES = 
 
-; Path to your openmw.cfg
+; Path to your openmw.cfg (in openmw-profile)
 OPENMW_CFG = 
 
-; Path to your tes3mp-client-default.cfg
+; Path to your tes3mp-client-default.cfg (in tes3mp folder)
 CLIENT_DEFAULT = 
 
-; Editor for configs (auto-detected: nano/vim/vi)
+; Preferred editor (auto-detected)
 EDITOR = 
 INI
     echo "✓ Player config created: $PLAYER_CONFIG"

@@ -71,22 +71,23 @@ echo "✓ Scripts downloaded to $UPDATE_DIR"
 # Create config only if it doesn't exist
 if [[ ! -f "$ADMIN_CONFIG" ]]; then
     cat > "$ADMIN_CONFIG" << 'INI'
-# TES3MP Easy admin configuration
-# Edit with: s) Settings in the menu
+; TES3MP Easy admin configuration
 
-; Language: en or ru
+; Language (available: en, ru)
 LANG_CODE = en
 
-; SSH host from ~/.ssh/config
+; SSH host of your VPS (from ~/.ssh/config)
 SSH_HOST = 
 
-; Path to your Morrowind Data Files
+; --- Server modpack ---
+
+; Directory containing .esp/.esm/.omwaddon files
 PLUGINS_DIR = 
 
-; Path to your Lua server scripts
+; Directory containing Lua server scripts
 SERVER_SCRIPTS_DIR = 
 
-; Editor for configs (auto-detected: nano/vim/vi)
+; Preferred editor (auto-detected)
 EDITOR = 
 INI
     echo "✓ Admin config created: $ADMIN_CONFIG"
