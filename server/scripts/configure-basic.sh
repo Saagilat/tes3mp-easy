@@ -169,17 +169,17 @@ configure_endpoints() {
     local compose="$DEST/docker-compose.yml"
     local nginx="$DEST/nginx.conf"
 
-    sed -i "s/\"25565:25565\/udp\"/\"$TES3MP_PORT:25565\/udp\"/" "$compose"
+    sed -i "s/\"25565:25565\/udp\"/\"$TES3MP_PORT:25565\/udp\"/" "$compose" 2>/dev/null || true
 
-    sed -i "s/^limit_req_zone.*zone=mods:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=mods:10m rate=${MODS_RATE}r\/m;/" "$nginx"
-    sed -i "s/^limit_req_zone.*zone=players:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=players:10m rate=${PLAYERS_RATE}r\/m;/" "$nginx"
-    sed -i "s/^limit_req_zone.*zone=world:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=world:10m rate=${WORLD_RATE}r\/m;/" "$nginx"
+    sed -i "s/^limit_req_zone.*zone=mods:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=mods:10m rate=${MODS_RATE}r\/m;/" "$nginx" 2>/dev/null || true
+    sed -i "s/^limit_req_zone.*zone=players:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=players:10m rate=${PLAYERS_RATE}r\/m;/" "$nginx" 2>/dev/null || true
+    sed -i "s/^limit_req_zone.*zone=world:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=world:10m rate=${WORLD_RATE}r\/m;/" "$nginx" 2>/dev/null || true
 
     uncomment_nginx_block() {
         local file="$1"
         local marker="$2"
-        sed -i "/^    #${marker}#$/d" "$file"
-        sed -i '/^    #location \/get-/,/^    #}/s/^    #/    /' "$file"
+        sed -i "/^    #${marker}#$/d" "$file" 2>/dev/null || true
+        sed -i '/^    #location \/get-/,/^    #}/s/^    #/    /' "$file" 2>/dev/null || true
     }
 
     [[ "$ENABLE_MODS" == "yes" ]]   && uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_MODS"
