@@ -187,13 +187,19 @@ uninstall_server() {
     echo ""
 
     info "Starting uninstall on $SSH_HOST..."
-    ssh -t "$SSH_HOST" "$cmd" || {
-        err "Uninstall failed on $SSH_HOST"
-        err "Check the output above for details."
-        return 1
-    }
+    if ssh -t "$SSH_HOST" "$cmd"; then
+        ok "TES3MP server has been removed from $SSH_HOST"
+    else
+        local rc=$?
+        if [[ $rc -eq 1 ]]; then
+            info "Uninstall was cancelled on the server."
+        else
+            err "Uninstall failed on $SSH_HOST"
+            err "Check the output above for details."
+        fi
+        return $rc
+    fi
 
-    ok "TES3MP server has been removed from $SSH_HOST"
     echo ""
     info "Note: Your local config (~/.tes3mp-easy-admin.ini) was preserved."
     info "If you want to remove that too, run:  tes3mp-easy-admin uninstall"

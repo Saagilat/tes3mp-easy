@@ -59,9 +59,9 @@ else
         local input=""
 
         if [[ -c /dev/tty ]]; then
-            read -r -p "$prompt" input </dev/tty 2>/dev/null || true
+            read -r -p "$prompt" input </dev/tty || true
         elif [[ -t 0 ]]; then
-            read -r -p "$prompt" input 2>/dev/null || true
+            read -r -p "$prompt" input || true
         else
             echo ""
             err "Interactive input required but no TTY available."
@@ -161,11 +161,13 @@ main() {
     echo ""
 
     local confirm_word=""
-    read_input "Type YES (uppercase) to confirm: " confirm_word ""
+    echo ""
+    echo -e "${BOLD_RED}Type YES (uppercase) to confirm:${NC} "
+    read_input "" confirm_word ""
     if [[ "$confirm_word" != "YES" ]]; then
         echo ""
         info "Uninstall cancelled."
-        exit 0
+        exit 1
     fi
 
     # ── Step 4: Stop and remove Docker resources ──
