@@ -196,9 +196,15 @@ dispatch_admin() {
 # Entry point when called directly
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    load_config || {
-        first_run_wizard
-        load_config
-    }
-    dispatch_admin "$@"
+    # If a subcommand is given, dispatch immediately without wizard
+    if [[ $# -gt 0 ]]; then
+        load_config 2>/dev/null || true
+        dispatch_admin "$@"
+    else
+        load_config || {
+            first_run_wizard
+            load_config
+        }
+        dispatch_admin "$@"
+    fi
 fi
