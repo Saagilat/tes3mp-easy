@@ -55,7 +55,9 @@ show_player_menu() {
             7) download_world || true ;;
             8) generate_required_data || true ;;
             9) install_localization || true ;;
-            s|S) edit_config "$PLAYER_CONFIG" || true ; show_config "$PLAYER_CONFIG" || true ;;
+            s|S) edit_config "$PLAYER_CONFIG" || true
+                 load_config "$PLAYER_CONFIG" || true
+                 show_config "$PLAYER_CONFIG" || true ;;
             u|U) self_update || true ;;
             q|Q)
                 echo ""

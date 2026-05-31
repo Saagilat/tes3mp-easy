@@ -90,7 +90,9 @@ show_admin_menu() {
                 fi
                 ;;
             u|U) self_update || true ;;
-            s|S) edit_config "$ADMIN_CONFIG" || true ; show_config "$ADMIN_CONFIG" || true ;;
+            s|S) edit_config "$ADMIN_CONFIG" || true
+                 load_config "$ADMIN_CONFIG" || true
+                 show_config "$ADMIN_CONFIG" || true ;;
             q|Q)
                 echo ""
                 info "${MSG_BYE:-Bye!}"
