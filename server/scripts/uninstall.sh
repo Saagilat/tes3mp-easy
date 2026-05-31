@@ -19,12 +19,71 @@
 set -euo pipefail
 
 # ────────────────────────────────────────────────────────────
-# Source shared library (installed at /tes3mp-easy by install.sh)
+# Colors (inline — works when piped via curl | bash)
 # ────────────────────────────────────────────────────────────
-source /tes3mp-easy/common.sh
-check_root
+RED='\033[0;31m'
+BOLD_RED='\033[1;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+info()    { echo -e "${BLUE}[INFO]${NC}  $*"; }
+ok()      { echo -e "${GREEN}[OK]${NC}    $*"; }
+warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+err()     { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+fatal()   { echo -e "${BOLD_RED}⚠ $* ⚠${NC}"; }
+
+# ────────────────────────────────────────────────────────────
+# Root check
+# ────────────────────────────────────────────────────────────
+if [[ $EUID -ne 0 ]]; then
+    err "This script must be run as root (or via sudo)."
+    exit 1
+fi
 
 DEST="/tes3mp-easy"
+
+# ────────────────────────────────────────────────────────────
+# Try to source common.sh (may not exist on first install)
+# Falls back to inline functions if not found
+# ────────────────────────────────────────────────────────────
+if [[ -f "$DEST/common.sh" ]]; then
+    source "$DEST/common.sh"
+else
+    # Inline read_input fallback
+    read_input() {
+        local prompt="$1"
+        local var_name="$2"
+        local default_value="${3:-}"
+        local input=""
+
+        if [[ -c /dev/tty ]]; then
+            read -r -p "$prompt" input </dev/tty 2>/dev/null || true
+        elif [[ -t 0 ]]; then
+            read -r -p "$prompt" input 2>/dev/null || true
+        else
+            echo ""
+            err "Interactive input required but no TTY available."
+            err "Run with SSH -t, or use non-interactive mode if available."
+            return 1
+        fi
+
+        printf -v "$var_name" "%s" "${input:-$default_value}"
+    }
+
+    # Inline confirm fallback
+    confirm() {
+        local prompt="${1:-Are you sure?}"
+        local response=""
+
+        read_input "$prompt [y/N]: " response "n"
+        case "${response,,}" in
+            y|yes) return 0 ;;
+            *)     return 1 ;;
+        esac
+    }
+fi
 
 # ────────────────────────────────────────────────────────────
 # Main
