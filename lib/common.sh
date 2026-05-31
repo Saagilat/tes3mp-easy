@@ -1,0 +1,196 @@
+#!/bin/bash
+#
+# common.sh — shared utilities for tes3mp-easy
+# Source this file from any script in the project.
+#
+# Usage:
+#   source "$(dirname "$0")/lib/common.sh"
+#
+# Provides:
+#   - Colors and logging (info, ok, warn, err)
+#   - Dependency checking (check_deps)
+#   - Confirmation prompts (confirm)
+#   - INI section parser (parse_ini_section)
+#   - Utility functions (press_enter, is_os, detect_steam_path)
+#
+
+set -euo pipefail
+
+# ────────────────────────────────────────────────────────────
+# Paths
+# ────────────────────────────────────────────────────────────
+COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$COMMON_DIR/.." && pwd)"
+LIB_DIR="$COMMON_DIR"
+
+# ────────────────────────────────────────────────────────────
+# Colors
+# ────────────────────────────────────────────────────────────
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# ────────────────────────────────────────────────────────────
+# Logging
+# ────────────────────────────────────────────────────────────
+info()  { echo -e "${BLUE}[INFO]${NC}  $*"; }
+ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+err()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+# ────────────────────────────────────────────────────────────
+# Utility: confirm — ask yes/no, default No
+# Usage:  confirm "Continue?" && do_something
+# Returns: 0 if yes, 1 if no
+# ────────────────────────────────────────────────────────────
+confirm() {
+    local prompt="${1:-Are you sure?}"
+    local response
+    read -r -p "$prompt [y/N]: " response
+    case "${response,,}" in
+        y|yes) return 0 ;;
+        *)     return 1 ;;
+    esac
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: press_enter — wait for user keypress
+# ────────────────────────────────────────────────────────────
+press_enter() {
+    echo ""
+    read -r -p "Press Enter to continue..."
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: check_deps — verify required commands exist
+# Usage:  check_deps curl wget tar
+# Exits with error if any command is missing
+# ────────────────────────────────────────────────────────────
+check_deps() {
+    local missing=()
+    for cmd in "$@"; do
+        if ! command -v "$cmd" &>/dev/null; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        err "Required commands not found: ${missing[*]}"
+        err "Install them and try again."
+        exit 1
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: is_os — check operating system
+# Usage:  is_os "linux"  && echo "Linux detected"
+#         is_os "windows" && echo "Git Bash / MSYS2 / Cygwin"
+# ────────────────────────────────────────────────────────────
+is_os() {
+    local os="${1,,}"
+    case "$os" in
+        linux)
+            [[ "$(uname -s)" == "Linux" ]]
+            ;;
+        macos|darwin)
+            [[ "$(uname -s)" == "Darwin" ]]
+            ;;
+        windows)
+            [[ "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: detect_steam_path — locate Steam installation
+# Returns path to Steam root or empty string
+# ────────────────────────────────────────────────────────────
+detect_steam_path() {
+    if is_os "linux"; then
+        local candidates=(
+            "$HOME/.steam/steam"
+            "$HOME/.local/share/Steam"
+            "/usr/share/steam"
+        )
+        for dir in "${candidates[@]}"; do
+            if [[ -d "$dir" ]]; then
+                echo "$dir"
+                return 0
+            fi
+        done
+    elif is_os "windows"; then
+        # Wine/Proton compatdata on Linux is already handled above
+        # For actual Windows — detect via registry rarely
+        echo ""
+    fi
+    return 1
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: detect_morrowind_path — locate Morrowind installation
+# Returns path to Morrowind root or empty string
+# ────────────────────────────────────────────────────────────
+detect_morrowind_path() {
+    local steam_path
+    steam_path=$(detect_steam_path)
+    if [[ -n "$steam_path" ]]; then
+        local mw_path="$steam_path/steamapps/common/Morrowind"
+        if [[ -d "$mw_path" ]]; then
+            echo "$mw_path"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: INI section parser (from existing export-mods)
+#
+# Parses a section from an INI-style config file into
+# variables with a common prefix.
+#
+# Usage:
+#   parse_ini_section "config.ini" "section" "PREFIX_"
+#   echo "$PREFIX_KEY"
+# ────────────────────────────────────────────────────────────
+parse_ini_section() {
+    local file="$1"
+    local section="$2"
+    local prefix="$3"
+    local in_section=0
+
+    while IFS= read -r line; do
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        [[ -z "$line" || "$line" =~ ^# ]] && continue
+
+        if [[ "$line" =~ ^\[(.*)\]$ ]]; then
+            if [[ "${BASH_REMATCH[1]}" == "$section" ]]; then
+                in_section=1
+            else
+                in_section=0
+            fi
+            continue
+        fi
+
+        if [[ "$in_section" -eq 1 ]]; then
+            local key="${line%%=*}"
+            local value="${line#*=}"
+            key="${key#"${key%%[![:space:]]*}"}"
+            key="${key%"${key##*[![:space:]]}"}"
+            value="${value#"${value%%[![:space:]]*}"}"
+            value="${value%"${value##*[![:space:]]}"}"
+            case "$value" in
+                \"*\") value="${value#\"}"; value="${value%\"}" ;;
+                \'*\') value="${value#\'}"; value="${value%\'}" ;;
+            esac
+            printf -v "${prefix}${key}" "%s" "$value"
+        fi
+    done < "$file"
+}

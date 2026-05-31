@@ -1,0 +1,255 @@
+#!/bin/bash
+#
+# tes3mp-easy — TES3MP Easy Management Tool
+#
+# This is the bootstrap script. On first launch it downloads all
+# module scripts to ~/.local/share/tes3mp-easy/ and runs the setup.
+#
+# Usage:
+#   ./tes3mp-easy                    — interactive menu (based on role)
+#   ./tes3mp-easy menu               — admin menu
+#   ./tes3mp-easy player-menu        — player menu
+#   ./tes3mp-easy start              — start server
+#   ./tes3mp-easy stop               — stop server
+#   ./tes3mp-easy restart            — restart server
+#   ./tes3mp-easy logs               — view server logs
+#   ./tes3mp-easy export-mods        — export mods to server
+#   ./tes3mp-easy export-players     — export players to server
+#   ./tes3mp-easy export-world       — export world to server
+#   ./tes3mp-easy install-server     — install TES3MP server on VPS
+#   ./tes3mp-easy configure-server   — reconfigure server
+#   ./tes3mp-easy install-client     — install TES3MP client
+#   ./tes3mp-easy download-mods      — download mods (client)
+#   ./tes3mp-easy generate-required-data — generate requiredDataFiles.json
+#   ./tes3mp-easy install-localization    — install localization
+#   ./tes3mp-easy config             — edit config file
+#   ./tes3mp-easy self-update        — update tes3mp-easy
+#   ./tes3mp-easy help               — show this help
+#
+
+set -euo pipefail
+
+# ────────────────────────────────────────────────────────────
+# Configuration
+# ────────────────────────────────────────────────────────────
+GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
+UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
+CONFIG_FILE="${HOME}/.tes3mp-easy.conf"
+
+# ────────────────────────────────────────────────────────────
+# first_time_download — download all scripts on first launch
+# ────────────────────────────────────────────────────────────
+first_time_download() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║     TES3MP Easy — First Run Setup             ║"
+    echo "╚═══════════════════════════════════════════════╝"
+    echo ""
+
+    if ! command -v wget &>/dev/null; then
+        echo "ERROR: wget is required. Install it and try again." >&2
+        exit 1
+    fi
+
+    mkdir -p "$UPDATE_DIR"
+    mkdir -p "$UPDATE_DIR/lib"
+
+    echo "Downloading tes3mp-easy scripts to $UPDATE_DIR..."
+    echo ""
+
+    # Download bootstrap
+    echo "  [1/3] Downloading bootstrap..."
+    wget -q "$GITHUB_RAW/tes3mp-easy" -O "$UPDATE_DIR/tes3mp-easy" || {
+        echo "ERROR: Failed to download tes3mp-easy" >&2
+        exit 1
+    }
+    chmod +x "$UPDATE_DIR/tes3mp-easy"
+
+    # Download menu files
+    echo "  [2/3] Downloading menu scripts..."
+    for file in "menu-player.sh" "menu-admin.sh"; do
+        wget -q "$GITHUB_RAW/$file" -O "$UPDATE_DIR/$file" 2>/dev/null || true
+        chmod +x "$UPDATE_DIR/$file" 2>/dev/null || true
+    done
+
+    # Download lib files
+    echo "  [3/3] Downloading library modules..."
+    local lib_files=(
+        "common.sh" "config.sh" "server-install.sh" "server-control.sh"
+        "server-configs.sh" "export-mods.sh" "export-players.sh"
+        "export-world.sh" "import-server.sh" "import-client.sh"
+        "required-data.sh" "client-install.sh" "client-configs.sh"
+        "localization.sh" "player-roles.sh" "self-update.sh"
+    )
+    for file in "${lib_files[@]}"; do
+        wget -q "$GITHUB_RAW/lib/$file" -O "$UPDATE_DIR/lib/$file" 2>/dev/null || true
+        chmod +x "$UPDATE_DIR/lib/$file" 2>/dev/null || true
+    done
+
+    echo ""
+    echo "✓ Scripts downloaded to $UPDATE_DIR"
+    echo ""
+
+    # If we're not already in UPDATE_DIR, re-exec from there
+    local current_dir
+    current_dir="$(cd "$(dirname "$0")" && pwd)"
+    if [[ "$current_dir" != "$UPDATE_DIR" ]]; then
+        echo "Starting tes3mp-easy from $UPDATE_DIR..."
+        exec bash "$UPDATE_DIR/tes3mp-easy" "$@"
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
+# Locate script directory
+# ────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ────────────────────────────────────────────────────────────
+# Determine which LIB_DIR to use
+# ────────────────────────────────────────────────────────────
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    LOCAL_MODE=true
+    LIB_DIR="$SCRIPT_DIR/lib"
+elif [[ -f "$UPDATE_DIR/lib/common.sh" ]]; then
+    LOCAL_MODE=false
+    LIB_DIR="$UPDATE_DIR/lib"
+else
+    LOCAL_MODE=false
+    first_time_download "$@"
+    LIB_DIR="$UPDATE_DIR/lib"
+fi
+
+# ────────────────────────────────────────────────────────────
+# Source all library modules
+# ────────────────────────────────────────────────────────────
+source "$LIB_DIR/common.sh"
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/server-install.sh"
+source "$LIB_DIR/server-control.sh"
+source "$LIB_DIR/server-configs.sh"
+source "$LIB_DIR/export-mods.sh"
+source "$LIB_DIR/export-players.sh"
+source "$LIB_DIR/export-world.sh"
+source "$LIB_DIR/import-server.sh"
+source "$LIB_DIR/import-client.sh"
+source "$LIB_DIR/required-data.sh"
+source "$LIB_DIR/client-install.sh"
+source "$LIB_DIR/client-configs.sh"
+source "$LIB_DIR/localization.sh"
+source "$LIB_DIR/player-roles.sh"
+source "$LIB_DIR/self-update.sh"
+
+# ────────────────────────────────────────────────────────────
+# Show usage / help
+# ────────────────────────────────────────────────────────────
+show_usage() {
+    cat << 'USAGE'
+Usage: ./tes3mp-easy [command]
+
+Commands (optional):
+  install-server           Install TES3MP server on VPS (interactive)
+  install-server --default Install TES3MP server (non-interactive defaults)
+  configure-server         Reconfigure TES3MP server
+  start                    Start server
+  stop                     Stop server
+  restart                  Restart server
+  logs                     View server logs
+  export-mods              Export mods to server
+  export-players           Export players to server
+  export-world             Export world to server
+  install-client           Install TES3MP client (Proton)
+  download-mods            Download mods from server (client)
+  download-players         Download player data from server
+  download-world           Download world data from server
+  import-server            Import mods/players/world on server
+  generate-required-data   Generate requiredDataFiles.json
+  install-localization     Install localization
+  config                   Edit config file (~/.tes3mp-easy.conf)
+  self-update              Update tes3mp-easy
+  menu                     Open admin menu
+  player-menu              Open player menu
+  help                     Show this help message
+
+Without any arguments, opens the menu based on your role (admin/player).
+
+First run will download all scripts to ~/.local/share/tes3mp-easy/.
+All subsequent runs use the installed copy.
+
+For Windows, use Git Bash or WSL.
+USAGE
+}
+
+# ────────────────────────────────────────────────────────────
+# Subcommand dispatcher
+# ────────────────────────────────────────────────────────────
+dispatch() {
+    case "${1:-}" in
+        install-server)
+            shift
+            install_server "${1:-interactive}"
+            ;;
+        configure-server)
+            shift
+            configure_server "${1:-interactive}"
+            ;;
+        start) server_start ;;
+        stop) server_stop ;;
+        restart) server_restart ;;
+        logs) server_logs ;;
+        export-mods) export_mods ;;
+        export-players) export_players ;;
+        export-world) export_world ;;
+        install-client) install_client ;;
+        download-mods) download_mods ;;
+        download-players) download_players ;;
+        download-world) download_world ;;
+        import-server) import_server_menu ;;
+        generate-required-data) generate_required_data ;;
+        install-localization) install_localization ;;
+        config) edit_config ;;
+        self-update) self_update ;;
+        player-menu)
+            if [[ "$LOCAL_MODE" == "true" ]]; then
+                exec bash "$SCRIPT_DIR/menu-player.sh"
+            else
+                exec bash "$UPDATE_DIR/menu-player.sh"
+            fi
+            ;;
+        menu)
+            if [[ "$LOCAL_MODE" == "true" ]]; then
+                exec bash "$SCRIPT_DIR/menu-admin.sh"
+            else
+                exec bash "$UPDATE_DIR/menu-admin.sh"
+            fi
+            ;;
+        help|--help|-h)
+            show_usage
+            ;;
+        "")
+            load_config 2>/dev/null || {
+                first_run_wizard
+                load_config
+            }
+
+            local menu_dir="$SCRIPT_DIR"
+            [[ "$LOCAL_MODE" != "true" ]] && menu_dir="$UPDATE_DIR"
+
+            if [[ "${ROLE:-}" == "admin" ]]; then
+                exec bash "$menu_dir/menu-admin.sh"
+            else
+                exec bash "$menu_dir/menu-player.sh"
+            fi
+            ;;
+        *)
+            echo "Unknown command: $1"
+            echo ""
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
+# ────────────────────────────────────────────────────────────
+# Main entry point
+# ────────────────────────────────────────────────────────────
+dispatch "$@"

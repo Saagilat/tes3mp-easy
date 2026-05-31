@@ -1,0 +1,215 @@
+#!/bin/bash
+#
+# export-mods.sh — package and upload mods+scripts to TES3MP server
+#
+# Migrated from tools/linux/tes3mp-easy-export-mods
+#
+# Provides:
+#   - export_mods()      — full export pipeline (validate + package + scp + deploy)
+#   - validate_crc32()   — CRC32 check against requiredDataFiles.json
+#
+
+if [[ -z "${LIB_DIR:-}" ]]; then
+    echo "ERROR: common.sh must be sourced before export-mods.sh" >&2
+    exit 1
+fi
+
+# ────────────────────────────────────────────────────────────
+# export_mods — full mods export pipeline
+# ────────────────────────────────────────────────────────────
+export_mods() {
+    # Check dependencies
+    check_deps rhash tar ssh scp
+
+    # Validate config
+    if [[ -z "${SSH_HOST:-}" ]]; then
+        err "SSH_HOST is not set."
+        err "Run './tes3mp-easy config' to set it."
+        return 1
+    fi
+
+    if [[ -z "${PLUGINS_DIR:-}" || ! -d "${PLUGINS_DIR:-}" ]]; then
+        err "PLUGINS_DIR is not set or does not exist: ${PLUGINS_DIR:-}"
+        err "Run './tes3mp-easy config' to set it."
+        return 1
+    fi
+
+    if [[ -z "${SERVER_SCRIPTS_DIR:-}" || ! -d "${SERVER_SCRIPTS_DIR:-}" ]]; then
+        err "SERVER_SCRIPTS_DIR is not set or does not exist: ${SERVER_SCRIPTS_DIR:-}"
+        err "Run './tes3mp-easy config' to set it."
+        return 1
+    fi
+
+    ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
+
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  TES3MP Export Mods"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+    echo "  SSH host:            $SSH_HOST"
+    echo "  Plugins dir:         $PLUGINS_DIR"
+    echo "  Server scripts:      $SERVER_SCRIPTS_DIR"
+    echo ""
+
+    # ─── Step 1: Check requiredDataFiles.json ───
+    echo "[1/5] Checking requiredDataFiles.json..."
+    local req_json="$PLUGINS_DIR/requiredDataFiles.json"
+    if [[ ! -f "$req_json" ]]; then
+        err "requiredDataFiles.json not found in $PLUGINS_DIR"
+        err "Run './tes3mp-easy generate-required-data' first."
+        return 1
+    fi
+    ok "Found requiredDataFiles.json"
+
+    # ─── Step 2: Validate CRC32 ───
+    echo ""
+    echo "[2/5] Validating plugin CRC32 against requiredDataFiles.json..."
+    local validation_failed=0
+
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^[[:space:]]*\"([^\"]+)\":[[:space:]]*\[(.*)\] ]]; then
+            local filename="${BASH_REMATCH[1]}"
+            local crc_content="${BASH_REMATCH[2]}"
+
+            # Skip original Morrowind files
+            local skip=0
+            for orig in "${ORIGINAL_FILES[@]}"; do
+                if [[ "${filename,,}" == "${orig,,}" ]]; then
+                    skip=1
+                    break
+                fi
+            done
+            [[ "$skip" -eq 1 ]] && continue
+
+            local filepath="$PLUGINS_DIR/$filename"
+
+            if [[ ! -f "$filepath" ]]; then
+                err "Plugin \"$filename\" not found at $filepath"
+                validation_failed=1
+                continue
+            fi
+
+            local expected_crc=""
+            if [[ "$crc_content" =~ '"0x([0-9A-Fa-f]+)"' ]]; then
+                expected_crc="${BASH_REMATCH[1]}"
+            fi
+
+            if [[ -n "$expected_crc" ]]; then
+                local actual_crc
+                actual_crc=$(rhash --crc32 --simple "$filepath" 2>/dev/null | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
+                local expected_crc_upper="${expected_crc^^}"
+                if [[ "$actual_crc" != "$expected_crc_upper" ]]; then
+                    err "CRC32 mismatch for \"$filename\": expected 0x$expected_crc_upper, got 0x$actual_crc"
+                    validation_failed=1
+                fi
+            fi
+        fi
+    done < "$req_json"
+
+    if [[ "$validation_failed" -ne 0 ]]; then
+        err "Validation failed — aborting"
+        return 1
+    fi
+    ok "All plugins pass CRC32 check"
+
+    # ─── Step 3: Package mods+scripts ───
+    echo ""
+    echo "[3/5] Packaging mods and scripts..."
+
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    trap 'rm -rf "$tmp_dir"' EXIT
+
+    local output_archive="$tmp_dir/mods.tar.gz"
+
+    export PLUGINS_DIR
+    export SERVER_SCRIPTS_DIR
+    export ORIGINAL_FILES
+
+    local package_script
+    package_script=$(find_project_file "server_setup/scripts/package.sh")
+    if [[ -z "$package_script" ]]; then
+        err "Could not find server_setup/scripts/package.sh"
+        err "Make sure you're running from the tes3mp-easy repository."
+        return 1
+    fi
+
+    source "$package_script"
+    package_mods "$output_archive"
+
+    if [[ ! -f "$output_archive" ]]; then
+        err "Failed to create archive"
+        return 1
+    fi
+    ok "Archive created: $output_archive"
+
+    # ─── Step 4: Transfer to server ───
+    echo ""
+    echo "[4/5] Transferring to server..."
+
+    ssh "$SSH_HOST" "mkdir -p /tes3mp-easy/import-mods" || {
+        err "Failed to create remote directory"
+        return 1
+    }
+
+    scp "$output_archive" "$SSH_HOST":/tes3mp-easy/import-mods/mods.tar.gz || {
+        err "Failed to transfer archive to server"
+        return 1
+    }
+    ok "Archive transferred to $SSH_HOST:/tes3mp-easy/import-mods/"
+
+    # ─── Step 5: Import and deploy ───
+    echo ""
+    echo "[5/5] Running import_mods.sh and deploy_mods.sh on server..."
+    echo "  (import saves archive without stopping server)"
+    echo "  (deploy stops server, deploys mods, and restarts)"
+
+    # Import first (validate + save)
+    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/import_mods.sh" || {
+        err "import_mods.sh failed on server — check server logs"
+        err "deploy_mods.sh will NOT be called."
+        return 1
+    }
+    ok "Server import completed"
+
+    # Deploy (only if import succeeded)
+    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_mods.sh --latest" || {
+        err "deploy_mods.sh failed on server — check server logs"
+        return 1
+    }
+    ok "Server deploy completed"
+
+    # Clean up local archive
+    rm -f "$output_archive"
+    ok "Local archive cleaned up"
+
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  Export complete!"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+}
+
+# ────────────────────────────────────────────────────────────
+# find_project_file — locate a file relative to project root
+# Searches common locations
+# ────────────────────────────────────────────────────────────
+find_project_file() {
+    local relative_path="$1"
+    local candidates=(
+        "$PROJECT_DIR/$relative_path"
+        "$PWD/$relative_path"
+        "$PWD/../$relative_path"
+        "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../$relative_path"
+    )
+
+    for path in "${candidates[@]}"; do
+        if [[ -f "$path" ]]; then
+            echo "$path"
+            return 0
+        fi
+    done
+
+    return 1
+}

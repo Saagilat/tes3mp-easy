@@ -1,0 +1,12 @@
+[export]
+SSH_HOST=tes3mp-test
+
+[mods]
+PLUGINS_DIR=/home/mikhail/Projects/morrowind-modpack/plugins/
+SERVER_SCRIPTS_DIR=/home/mikhail/Projects/morrowind-modpack/server-scripts/
+
+[world]
+PLAYER_DIR=/home/mikhail/games/tes3mp-world/player/
+# WORLD_DIR should point to a directory containing cell/, world/, map/,
+# recordstore/, and custom/ subdirectories.
+WORLD_DIR=/home/mikhail/games/tes3mp-world/

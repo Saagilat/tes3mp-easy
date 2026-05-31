@@ -1,0 +1,4 @@
+[import]
+CLIENT_DEFAULT=/home/mikhail/games/tes3mp/tes3mp-client-default.cfg
+DATA_FILES=/home/mikhail/morrowind/Data Files/
+OPENMW_CFG=/home/mikhail/games/tes3mp/openmw-profile/openmw.cfg
