@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# i18n.sh — internationalization for tes3mp-easy
+# lang.sh — internationalization for tes3mp-easy
 #
 # Provides:
 #   - load_lang(lang)   — source .lang file, fallback to en
@@ -11,7 +11,7 @@
 #
 
 if [[ -z "${LIB_DIR:-}" ]]; then
-    echo "ERROR: common.sh must be sourced before i18n.sh" >&2
+    echo "ERROR: common.sh must be sourced before lang.sh" >&2
     exit 1
 fi
 

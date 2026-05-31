@@ -40,7 +40,7 @@ download() {
 
 # lib files (17)
 download "lib/common.sh"          "$UPDATE_DIR/lib/common.sh"
-download "lib/i18n.sh"            "$UPDATE_DIR/lib/i18n.sh"
+download "lib/lang.sh"            "$UPDATE_DIR/lib/lang.sh"
 download "lib/config.sh"          "$UPDATE_DIR/lib/config.sh"
 download "lib/server-install.sh"  "$UPDATE_DIR/lib/server-install.sh"
 download "lib/server-control.sh"  "$UPDATE_DIR/lib/server-control.sh"

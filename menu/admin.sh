@@ -13,7 +13,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
     source "$LIB_DIR/common.sh"
-    source "$LIB_DIR/i18n.sh"
+    source "$LIB_DIR/lang.sh"
     source "$LIB_DIR/config.sh"
     source "$LIB_DIR/server-install.sh"
     source "$LIB_DIR/server-control.sh"
