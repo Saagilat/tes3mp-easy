@@ -65,24 +65,37 @@ echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 echo ""
 
-# Configuration — keep existing unless user says overwrite via /dev/tty
-overwrite=false
+# ─── Configuration ───
+need_config=false
+lang_choice="en"
+
 if [[ -f "$PLAYER_CONFIG" ]]; then
-    user_input=""
-    if read -r user_input < /dev/tty 2>/dev/null; then
+    # Existing config — ask to overwrite if TTY available
+    if [[ -t 0 ]]; then
+        printf "Overwrite configuration? [y/N]: " > /dev/tty
+        read -r user_input < /dev/tty || true
         case "${user_input:-}" in
-            y|Y|yes|YES) overwrite=true ;;
+            y|Y|yes|YES) need_config=true ;;
         esac
     fi
 else
-    overwrite=true
+    need_config=true
 fi
 
-if $overwrite; then
+if $need_config; then
+    # Ask language if TTY available
+    if [[ -t 0 ]]; then
+        printf "Language (en/ru) [en]: " > /dev/tty
+        read -r lang_input < /dev/tty || true
+        case "${lang_input:-}" in
+            ru|RU|рус|Рус) lang_choice="ru" ;;
+        esac
+    fi
+
     {
         echo "# TES3MP Easy player configuration"
         echo "ROLE = player"
-        echo "LANG_CODE = en"
+        echo "LANG_CODE = $lang_choice"
     } > "$PLAYER_CONFIG"
     echo "Configuration created."
 else
