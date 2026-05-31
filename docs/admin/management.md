@@ -1,28 +1,33 @@
 # Server management reference
 
-## Common commands
+## Admin menu
 
-All commands are run on the server via SSH. Replace `my-server` with your SSH host.
+```bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-admin.sh | bash
+```
+
+Recommended alias:
+
+```bash
+alias tes3mp-easy-admin='bash ~/.local/share/tes3mp-easy/menu/admin.sh'
+```
+
+## Common commands (via alias)
 
 | Action | Command |
 |--------|---------|
-| Start | `ssh my-server "cd /tes3mp-easy && docker compose up -d"` |
-| Stop | `ssh my-server "cd /tes3mp-easy && docker compose down"` |
-| Restart | `ssh my-server "cd /tes3mp-easy && docker compose restart"` |
-| View logs | `ssh my-server "cd /tes3mp-easy && docker compose logs -f"` |
-| Edit config | `ssh my-server "nano /tes3mp-easy/configs/tes3mp-server-default.cfg"` |
-| Edit Lua config | `ssh my-server "nano /tes3mp-easy/configs/config.lua"` |
-| Edit ban list | `ssh my-server "nano /tes3mp-easy/configs/banlist.json"` |
-| Reconfigure | `ssh my-server "bash /tes3mp-easy/scripts/configure.sh"` |
-| Reconfigure (non-interactive) | `ssh my-server "bash /tes3mp-easy/scripts/configure.sh --test"` |
-| Export mods | `tes3mp-easy-export-mods` |
-| Export players only | `tes3mp-easy-export-players` |
-| Export world | `tes3mp-easy-export-world` |
-| Import mods (client) | `tes3mp-easy-import-mods` |
-| Generate required data files | `tes3mp-easy-generate-required-data` |
-| Import mods (server-side) | `ssh my-server "bash /tes3mp-easy/scripts/import_mods.sh"` |
-| Import players only (hot-add, no restart) | `ssh my-server "bash /tes3mp-easy/scripts/import_players.sh"` |
-| Import world (restarts TES3MP) | `ssh my-server "bash /tes3mp-easy/scripts/import_world.sh"` |
+| Start | `tes3mp-easy-admin start` |
+| Stop | `tes3mp-easy-admin stop` |
+| Restart | `tes3mp-easy-admin restart` |
+| View logs | `tes3mp-easy-admin logs` |
+| Edit config | `tes3mp-easy-admin config` |
+| Reconfigure | `tes3mp-easy-admin configure-server` |
+| Install server | `tes3mp-easy-admin install-server` |
+| Export mods | `tes3mp-easy-admin export-mods` |
+| Export players | `tes3mp-easy-admin export-players` |
+| Export world | `tes3mp-easy-admin export-world` |
+| Update scripts | `tes3mp-easy-admin self-update` |
+| Player menu | `tes3mp-easy-admin player-menu` |
 
 ## HTTP endpoints
 
@@ -37,14 +42,10 @@ It is disabled by default.
 
 To enable:
 
-1. **Uncomment the desired location blocks** in `/tes3mp-easy/nginx.conf`
-2. **Uncomment the `nginx` and/or `export` services** in `/tes3mp-easy/docker-compose.yml`
-   - `nginx` service is required for all endpoints
-    - `export` service is required for `/get-players` and `/get-world`
-3. Restart the container:
-
+1. **Run configure-server** and answer "yes" to the endpoints question, or
+2. **Edit the nginx config** directly on the server:
    ```bash
-   ssh my-server "cd /tes3mp-easy && docker compose restart"
+   ssh my-server "nano /tes3mp-easy/nginx.conf"
    ```
 
 When enabled, endpoints are available at:
@@ -56,18 +57,16 @@ When enabled, endpoints are available at:
 
 The first account that registers on the server automatically receives the **ServerOwner** rank (`staffRank: 3`).
 
-To change a player's role:
+To change a player's role via the admin menu — select "Player role management". Or manually via SSH:
 
 1. **Stop the server:**
-
    ```bash
    ssh my-server "cd /tes3mp-easy && docker compose down"
    ```
 
-2. **Open the player file** and change `staffRank`:
-
+2. **Edit the player file:**
    ```bash
-    ssh my-server "nano /tes3mp-easy/players/<accountName>.json"
+   ssh my-server "nano /tes3mp-easy/players/<accountName>.json"
    ```
 
    Find the `settings` section and set the desired rank:
@@ -87,12 +86,12 @@ To change a player's role:
    | `3` | Server owner |
 
 3. **Start the server:**
-
    ```bash
    ssh my-server "cd /tes3mp-easy && docker compose up -d"
    ```
 
 ## Further reading
 
+- [Admin install guide](install.md)
 - [Modding — what works and what doesn't in TES3MP 0.8.1](modding.md)
 - [config.lua reference — full settings documentation](tes3mp_settings.md)

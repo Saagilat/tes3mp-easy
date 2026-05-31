@@ -1,10 +1,29 @@
 # Player Guide
 
-## 1. Clone the repository
+## 1. Install the TES3MP management tool
 
 ```bash
-git clone git@github.com:Saagilat/tes3mp-easy.git
-cd tes3mp-easy
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-player.sh | bash
+```
+
+This downloads all scripts to `~/.local/share/tes3mp-easy/` and opens the player menu.
+
+After the first run, use the menu or aliases:
+
+```bash
+alias tes3mp-easy-player='bash ~/.local/share/tes3mp-easy/menu/player.sh'
+```
+
+Add to `~/.bashrc` to make it permanent.
+
+### Direct commands (skip the menu)
+
+```bash
+tes3mp-easy-player download-mods              # Download and install mods
+tes3mp-easy-player install-client             # Install TES3MP client (Proton)
+tes3mp-easy-player install-localization       # Install localization
+tes3mp-easy-player generate-required-data     # Generate requiredDataFiles.json
+tes3mp-easy-player self-update                # Update scripts
 ```
 
 ---
@@ -15,6 +34,8 @@ cd tes3mp-easy
 |----|-------|
 | Linux (Proton) | [Installation guide](linux/proton/install.md) |
 
+Or run in the player menu: `1. Install TES3MP client (Proton)`
+
 ---
 
 ## 3. Configure fonts
@@ -22,14 +43,10 @@ cd tes3mp-easy
 OpenMW uses bitmap fonts by default, which look blurry on modern screens. For better readability, install TrueType fonts:
 
 1. Download **TrueType fonts for OpenMW** from Nexus Mods:  
-   https://www.nexusmods.com/morrowind/mods/46854  
+   https://www.nexusmods.com/morrowind/mods/46854
 2. Extract the archive contents into your `openmw-profile` folder
 
-Copy the example file from the repository:
-
-```bash
-cp tools/example-settings.cfg /path/to/openmw-profile/settings.cfg
-```
+Then in the player menu select: `2. Configure fonts (TrueType)`
 
 <details>
 <summary>Parameter explanations</summary>
@@ -43,53 +60,40 @@ For more font options see the [OpenMW font documentation](https://openmw.readthe
 
 ---
 
-## 4. (optional) Install localization
+## 4. Set the server address
 
-| Language | Instructions |
-|----------|-------------|
-| Russian | [Setup guide](../../tools/localization/russian/README.md) |
+In the player menu select: `3. Configure server address`
+
+Or directly via alias:
+
+```bash
+tes3mp-easy-player config
+# → edit CLIENT_DEFAULT path
+```
+
+The script updates `destinationAddress` and `destinationPort` in your `tes3mp-client-default.cfg`.
 
 ---
 
-## 5. Set the server address
+## 5. Download and install mods
 
-Open `tes3mp-client-default.cfg` (next to your TES3MP client executable) and set the server address:
+In the player menu select: `4. Download and install mods`
 
-```
-destinationAddress = your-server-ip-or-host
-```
-
-Default port is `25565`. For a non-standard port, set it explicitly:
-
-```
-destinationPort = 25565
-```
-
----
-
-## 6. Install the mod update tool
-
-Edit the config:
+Or directly:
 
 ```bash
-nano tools/linux/tes3mp-easy-client-update-mods.conf
-```
-
-Set the paths to your files:
-
-```
-CLIENT_DEFAULT=/path/to/tes3mp-client-default.cfg
-DATA_FILES=/path/to/Data Files/
-OPENMW_CFG=/path/to/openmw.cfg
-```
-
-Run the sync:
-
-```bash
-bash tools/linux/tes3mp-easy-client-update-mods
+tes3mp-easy-player download-mods
 ```
 
 The script downloads mods from the server, installs them into `Data Files/`, and updates `openmw.cfg`.
+
+---
+
+## 6. (optional) Install localization
+
+| Language | Action |
+|----------|--------|
+| Russian | `tes3mp-easy-player install-localization` |
 
 ---
 

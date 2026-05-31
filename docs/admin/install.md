@@ -1,17 +1,42 @@
 # Admin Guide
 
-## 1. Clone the repository
+## 1. Quick start — install the management tool
 
 ```bash
-git clone git@github.com:Saagilat/tes3mp-easy.git
-cd tes3mp-easy
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-admin.sh | bash
+```
+
+This downloads all scripts to `~/.local/share/tes3mp-easy/` and opens the admin menu.
+
+After the first run, use the menu or aliases:
+
+```bash
+alias tes3mp-easy-admin='bash ~/.local/share/tes3mp-easy/menu/admin.sh'
+alias tes3mp-easy-player='bash ~/.local/share/tes3mp-easy/menu/player.sh'
+```
+
+Add these to `~/.bashrc` to make them permanent.
+
+### Direct commands (skip the menu)
+
+```bash
+tes3mp-easy-admin install-server        # Install server on VPS
+tes3mp-easy-admin configure-server      # Reconfigure server
+tes3mp-easy-admin start                 # docker compose up -d
+tes3mp-easy-admin stop                  # docker compose down
+tes3mp-easy-admin restart               # docker compose restart
+tes3mp-easy-admin logs                  # follow logs
+tes3mp-easy-admin export-mods           # push mods to server
+tes3mp-easy-admin export-players        # push players to server
+tes3mp-easy-admin export-world          # push world to server
+tes3mp-easy-admin self-update           # update scripts
 ```
 
 ---
 
-## 2. Install the server
+## 2. Install the server on the VPS
 
-Run the install script on your server (VPS).
+The admin menu has an option "Install server on VPS" which runs the install script on your remote server. You can also do it manually:
 
 ### Interactive installation
 
@@ -49,15 +74,19 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/
 After the initial installation, you can reconfigure the server
 at any time **without losing player/world/mod data**.
 
-### Interactive reconfiguration
+Via admin menu:
 
 ```bash
-ssh my-server "bash /tes3mp-easy/scripts/configure.sh"
+tes3mp-easy-admin configure-server
 ```
 
-### Non-interactive reconfiguration
+Or manually via SSH:
 
 ```bash
+# Interactive
+ssh my-server "bash /tes3mp-easy/scripts/configure.sh"
+
+# Non-interactive (test mode)
 ssh my-server "bash /tes3mp-easy/scripts/configure.sh --test"
 ```
 
@@ -74,11 +103,11 @@ What it does:
 
 ---
 
-## 4. Set up SSH access and an alias
+## 4. Set up SSH access
 
-To push mods to the server with a single command, configure SSH access and create an alias.
+The admin menu requires SSH access to your VPS.
 
-First, add an SSH host entry to `~/.ssh/config`:
+Add an SSH host entry to `~/.ssh/config`:
 
 ```
 Host my-server
@@ -86,7 +115,7 @@ Host my-server
     User root
 ```
 
-Then generate and copy the SSH key:
+Generate and copy the SSH key:
 
 ```bash
 ssh-keygen -t ed25519
@@ -95,52 +124,33 @@ ssh-copy-id my-server
 
 Now `ssh my-server` should connect without a password.
 
-Add a bash alias to `~/.bashrc` or `~/.bash_aliases`:
-
-```bash
-alias tes3mp-easy-server-update-mods='bash ~/tes3mp-easy/tools/linux/tes3mp-easy-export-mods'
-```
-
-Apply the changes:
-
-```bash
-source ~/.bashrc
-```
-
 ---
 
 ## 5. Push mods
 
-Edit the sync config:
+Place your mod files (`.esp`/`.esm`/`.omwaddon`) in your plugins directory,
+and Lua scripts in your server scripts directory.
+
+Set the paths via the admin menu (Settings → SSH host, paths) or directly:
 
 ```bash
-nano tools/linux/tes3mp-easy-export.conf.example
+nano ~/.tes3mp-easy-admin.conf
 ```
 
-Set the SSH host (the one from `~/.ssh/config`) and your local mod directories:
-
-```
-SSH_HOST=my-server
-PLUGINS_DIR=/path/to/your/plugins
-SERVER_SCRIPTS_DIR=/path/to/your/server-scripts
-```
-
-Place your mod files (`.esp`/`.esm`/`.omwaddon`) in `PLUGINS_DIR`,
-and Lua scripts in `SERVER_SCRIPTS_DIR`.
-
-Run the sync:
+Then run:
 
 ```bash
-tes3mp-easy-server-update-mods
+tes3mp-easy-admin export-mods
 ```
 
-The script copies all files to the server and restarts the container.
+The script validates CRC32, packages mods+scripts, uploads them to the server,
+and restarts the container.
 
 ---
 
 ## 6. Create an admin account and run the startup command
 
-1. **Join the server** through the TES3MP client ([Player guide](../player/install.md) — if you need to set up a client)
+1. **Join the server** through the TES3MP client ([Player guide](../player/install.md))
 2. **Register** — enter any username and password
 3. **Exit the game**
 4. **Set the admin role (if you are not the first player)** — see [Player role management](management.md#player-role-management) for instructions
@@ -148,9 +158,8 @@ The script copies all files to the server and restarts the container.
 6. **Run `/runstartup`** in the in-game chat (press **Y** to open the chat)
    > This command must be executed **on every newly created world** (after world creation or reset) for the server to function correctly.
 7. **Restart the server:**
-
    ```bash
-   ssh my-server "cd /tes3mp-easy && docker compose restart"
+   tes3mp-easy-admin restart
    ```
 
 Done — you are now a server administrator.
