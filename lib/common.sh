@@ -14,7 +14,6 @@
 #   - Utility functions (press_enter, is_os, detect_steam_path)
 #
 
-set -euo pipefail
 
 # ────────────────────────────────────────────────────────────
 # Paths
