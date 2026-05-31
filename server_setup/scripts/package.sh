@@ -5,15 +5,18 @@
 # This script is meant to be sourced (not executed directly).
 #
 # Variable requirements per function:
-#   package_mods_and_scripts()    — PLUGINS_DIR, SERVER_SCRIPTS_DIR, ORIGINAL_FILES
-#   package_players()             — PLAYER_DIR
-#   package_cells()               — CELL_DIR
-#   (package_world removed — use package_players + package_cells separately)
+#   package_mods()    — PLUGINS_DIR, SERVER_SCRIPTS_DIR, ORIGINAL_FILES
+#   package_players() — PLAYER_DIR
+#   package_world()   — WORLD_CELL_DIR, WORLD_WORLD_DIR, WORLD_MAP_DIR,
+#                       WORLD_RECORDSTORE_DIR, WORLD_CUSTOM_DIR
 #
 # Functions provided:
-#   package_mods_and_scripts(output_file)           — plugins + scripts + requiredDataFiles.json
-#   package_players(output_file)                    — player/ only
-#   package_cells(output_file)                      — cell/ only
+#   package_mods(output_file)                — plugins + scripts + requiredDataFiles.json
+#   package_players(output_file)             — player/ + metadata files
+#   package_world(output_file)               — cell/ + world/ + map/ + recordstore/ + custom/ + metadata
+#   package_init_mods(output_file)            — empty plugins/ + empty scripts/ + requiredDataFiles.json
+#   package_init_players(output_file)         — empty player/ + metadata
+#   package_init_world(output_file)           — empty world subdirs + metadata
 #
 
 # ────────────────────────────────────────────────────────────────
@@ -65,8 +68,24 @@ _check_disk_space() {
 }
 
 # ────────────────────────────────────────────────────────────────
-# Generate requiredDataFiles.json content (passed via stdin to the actual file)
-#   This is a helper used internally by package_mods_and_scripts
+# Internal: Create tar.gz archive from a staged directory
+#   Usage: _package_stage <output_file> <stage_dir>
+# ────────────────────────────────────────────────────────────────
+_package_stage() {
+    local output_file="$1"
+    local stage_dir="$2"
+
+    local parent_dir
+    parent_dir="$(dirname "$output_file")"
+    mkdir -p "$parent_dir"
+
+    tar czf "$output_file" -C "$stage_dir" .
+    echo "[package.sh] Created: $output_file"
+}
+
+# ────────────────────────────────────────────────────────────────
+# Generate requiredDataFiles.json content (passed via stdout)
+#   Usage: _generate_required_json <plugins_dir> [orig_files...]
 # ────────────────────────────────────────────────────────────────
 _generate_required_json() {
     local plugins_dir="$1"
@@ -141,7 +160,7 @@ _generate_required_json() {
 
 # ────────────────────────────────────────────────────────────────
 # Package mods and scripts into a tar.gz archive
-#   Usage: package_mods_and_scripts <output_file>
+#   Usage: package_mods <output_file>
 #   Always includes requiredDataFiles.json inside plugins/ subdir.
 #   Archive structure:
 #     output.tar.gz
@@ -152,11 +171,11 @@ _generate_required_json() {
 #     └── scripts/
 #         └── test.lua
 # ────────────────────────────────────────────────────────────────
-package_mods_and_scripts() {
+package_mods() {
     local output_file="$1"
 
     if [ -z "$output_file" ]; then
-        echo "[package.sh] ERROR: package_mods_and_scripts requires an output file path" >&2
+        echo "[package.sh] ERROR: package_mods requires an output file path" >&2
         return 1
     fi
 
@@ -214,42 +233,24 @@ package_mods_and_scripts() {
     fi
 
     # --- Create the archive ---
-    local parent_dir
-    parent_dir="$(dirname "$output_file")"
-    mkdir -p "$parent_dir"
+    _package_stage "$output_file" "$stage_dir"
 
-    tar czf "$output_file" -C "$stage_dir" .
-
-    echo "[package.sh] Created: $output_file"
     echo "[package.sh]   plugins: $copied, scripts: $script_copied, requiredDataFiles.json: yes"
 }
 
 # ────────────────────────────────────────────────────────────────
-# Internal: Create tar.gz archive from a staged directory
-#   Usage: _package_stage <output_file> <stage_dir>
-# ────────────────────────────────────────────────────────────────
-_package_stage() {
-    local output_file="$1"
-    local stage_dir="$2"
-
-    local parent_dir
-    parent_dir="$(dirname "$output_file")"
-    mkdir -p "$parent_dir"
-
-    tar czf "$output_file" -C "$stage_dir" .
-    echo "[package.sh] Created: $output_file"
-}
-
-# ────────────────────────────────────────────────────────────────
 # Package only players into a tar.gz archive
-#   Usage: package_players <output_file>
+#   Usage: package_players <output_file> [mods_sha256]
 #   Archive structure:
 #     output.tar.gz
-#     └── player/
-#         └── AccountName1.json
+#     ├── player/
+#     │   └── AccountName1.json
+#     ├── requiredDataFiles.json   (meta — list of mods at export time)
+#     └── current.txt               (meta — mods archive sha256)
 # ────────────────────────────────────────────────────────────────
 package_players() {
     local output_file="$1"
+    local mods_sha256="${2:-}"
 
     if [ -z "$output_file" ]; then
         echo "[package.sh] ERROR: package_players requires an output file path" >&2
@@ -277,49 +278,186 @@ package_players() {
         echo "[package.sh]   players: 0 (directory missing)"
     fi
 
+    # Add metadata: current.txt (mods archive sha256)
+    if [ -n "$mods_sha256" ]; then
+        echo "$mods_sha256" > "$stage_dir/current.txt"
+    fi
+
+    # Add metadata: requiredDataFiles.json (copy from mods/plugins/ if available)
+    if [ -n "${MODS_PLUGINS_DIR:-}" ] && [ -f "$MODS_PLUGINS_DIR/requiredDataFiles.json" ]; then
+        cp "$MODS_PLUGINS_DIR/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
+    fi
+
     # Create the archive
     _package_stage "$output_file" "$stage_dir"
 }
 
 # ────────────────────────────────────────────────────────────────
-# Package only cells into a tar.gz archive
-#   Usage: package_cells <output_file>
+# Package world into a tar.gz archive
+#   Usage: package_world <output_file> [mods_sha256]
+#   Archives cell/ + world/ + map/ + recordstore/ + custom/
 #   Archive structure:
 #     output.tar.gz
-#     └── cell/
-#         └── -1_-2.json
+#     ├── cell/
+#     ├── world/
+#     ├── map/
+#     ├── recordstore/
+#     ├── custom/
+#     ├── requiredDataFiles.json   (meta — list of mods at export time)
+#     └── current.txt               (meta — mods archive sha256)
 # ────────────────────────────────────────────────────────────────
-package_cells() {
+package_world() {
     local output_file="$1"
+    local mods_sha256="${2:-}"
 
     if [ -z "$output_file" ]; then
-        echo "[package.sh] ERROR: package_cells requires an output file path" >&2
+        echo "[package.sh] ERROR: package_world requires an output file path" >&2
         return 1
     fi
 
     # Check disk space before proceeding
-    _check_disk_space "$output_file" "$CELL_DIR"
+    _check_disk_space "$output_file" \
+        "${WORLD_CELL_DIR:-}" \
+        "${WORLD_WORLD_DIR:-}" \
+        "${WORLD_MAP_DIR:-}" \
+        "${WORLD_RECORDSTORE_DIR:-}" \
+        "${WORLD_CUSTOM_DIR:-}"
 
     local stage_dir
     stage_dir=$(mktemp -d)
     trap 'rm -rf "${stage_dir:-}"' RETURN
 
-    # Copy cells to staging/cell/
-    mkdir -p "$stage_dir/cell"
-    if [ -d "$CELL_DIR" ]; then
-        local count=0
-        for f in "$CELL_DIR"/*; do
-            [ -e "$f" ] || continue
-            cp -r "$f" "$stage_dir/cell/"
-            ((count++)) || true
-        done
-        echo "[package.sh]   cells: $count"
-    else
-        echo "[package.sh]   cells: 0 (directory missing)"
+    local count=0
+
+    # Copy each world subdirectory
+    _copy_world_subdir() {
+        local src="$1"
+        local dest_subdir="$2"
+        if [ -d "$src" ]; then
+            mkdir -p "$stage_dir/$dest_subdir"
+            for f in "$src"/*; do
+                [ -e "$f" ] || continue
+                cp -r "$f" "$stage_dir/$dest_subdir/"
+                ((count++)) || true
+            done
+        fi
+    }
+
+    _copy_world_subdir "${WORLD_CELL_DIR:-}" "cell"
+    _copy_world_subdir "${WORLD_WORLD_DIR:-}" "world"
+    _copy_world_subdir "${WORLD_MAP_DIR:-}" "map"
+    _copy_world_subdir "${WORLD_RECORDSTORE_DIR:-}" "recordstore"
+    _copy_world_subdir "${WORLD_CUSTOM_DIR:-}" "custom"
+
+    echo "[package.sh]   world entries: $count"
+
+    # Add metadata: current.txt (mods archive sha256)
+    if [ -n "$mods_sha256" ]; then
+        echo "$mods_sha256" > "$stage_dir/current.txt"
+    fi
+
+    # Add metadata: requiredDataFiles.json (copy from mods/plugins/ if available)
+    if [ -n "${MODS_PLUGINS_DIR:-}" ] && [ -f "$MODS_PLUGINS_DIR/requiredDataFiles.json" ]; then
+        cp "$MODS_PLUGINS_DIR/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
     fi
 
     # Create the archive
     _package_stage "$output_file" "$stage_dir"
 }
 
-# (package_world is removed — use package_players + package_cells instead)
+# ────────────────────────────────────────────────────────────────
+# Package init mods archive (empty plugins/ + empty scripts/ + requiredDataFiles.json)
+#   Usage: package_init_mods <output_file>
+#   Creates an archive with empty plugins/ and scripts/ directories and
+#   a minimal requiredDataFiles.json.
+# ────────────────────────────────────────────────────────────────
+package_init_mods() {
+    local output_file="$1"
+
+    if [ -z "$output_file" ]; then
+        echo "[package.sh] ERROR: package_init_mods requires an output file path" >&2
+        return 1
+    fi
+
+    local stage_dir
+    stage_dir=$(mktemp -d)
+    trap 'rm -rf "${stage_dir:-}"' RETURN
+
+    mkdir -p "$stage_dir/plugins" "$stage_dir/scripts"
+
+    # Generate minimal requiredDataFiles.json (only original files)
+    local orig_files=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
+    _generate_required_json "/dev/null" "${orig_files[@]}" > "$stage_dir/plugins/requiredDataFiles.json"
+
+    # Create the archive
+    _package_stage "$output_file" "$stage_dir"
+
+    echo "[package.sh]   init mods archive: empty plugins/ + empty scripts/ + requiredDataFiles.json"
+}
+
+# ────────────────────────────────────────────────────────────────
+# Package init players archive (empty player/ + metadata)
+#   Usage: package_init_players <output_file> [mods_sha256]
+#   Creates an archive with an empty player/ directory and metadata files.
+# ────────────────────────────────────────────────────────────────
+package_init_players() {
+    local output_file="$1"
+    local mods_sha256="${2:-}"
+
+    if [ -z "$output_file" ]; then
+        echo "[package.sh] ERROR: package_init_players requires an output file path" >&2
+        return 1
+    fi
+
+    local stage_dir
+    stage_dir=$(mktemp -d)
+    trap 'rm -rf "${stage_dir:-}"' RETURN
+
+    mkdir -p "$stage_dir/player"
+
+    # Add metadata: current.txt (mods archive sha256)
+    if [ -n "$mods_sha256" ]; then
+        echo "$mods_sha256" > "$stage_dir/current.txt"
+    fi
+
+    # Create the archive
+    _package_stage "$output_file" "$stage_dir"
+
+    echo "[package.sh]   init players archive: empty player/ + metadata"
+}
+
+# ────────────────────────────────────────────────────────────────
+# Package init world archive (empty world subdirs + metadata)
+#   Usage: package_init_world <output_file> [mods_sha256]
+#   Creates an archive with empty cell/, world/, map/, recordstore/, custom/
+#   directories and metadata files.
+# ────────────────────────────────────────────────────────────────
+package_init_world() {
+    local output_file="$1"
+    local mods_sha256="${2:-}"
+
+    if [ -z "$output_file" ]; then
+        echo "[package.sh] ERROR: package_init_world requires an output file path" >&2
+        return 1
+    fi
+
+    local stage_dir
+    stage_dir=$(mktemp -d)
+    trap 'rm -rf "${stage_dir:-}"' RETURN
+
+    mkdir -p "$stage_dir/cell" \
+             "$stage_dir/world" \
+             "$stage_dir/map" \
+             "$stage_dir/recordstore" \
+             "$stage_dir/custom"
+
+    # Add metadata: current.txt (mods archive sha256)
+    if [ -n "$mods_sha256" ]; then
+        echo "$mods_sha256" > "$stage_dir/current.txt"
+    fi
+
+    # Create the archive
+    _package_stage "$output_file" "$stage_dir"
+
+    echo "[package.sh]   init world archive: empty cell/ + world/ + map/ + recordstore/ + custom/ + metadata"
+}

@@ -7,4 +7,6 @@ SERVER_SCRIPTS_DIR=/home/mikhail/Projects/morrowind-modpack/server-scripts/
 
 [world]
 PLAYER_DIR=/home/mikhail/games/tes3mp-world/player/
-CELL_DIR=/home/mikhail/games/tes3mp-world/cell/
+# WORLD_DIR should point to a directory containing cell/, world/, map/,
+# recordstore/, and custom/ subdirectories.
+WORLD_DIR=/home/mikhail/games/tes3mp-world/

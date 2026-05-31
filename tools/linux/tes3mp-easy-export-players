@@ -107,7 +107,7 @@ echo "  Player dir:          $CFG_PLAYER_DIR"
 echo ""
 
 # --- Step 1: Package players ---
-echo "[1/4] Packaging player data..."
+echo "[1/5] Packaging player data..."
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -128,7 +128,7 @@ ok "Archive created: $OUTPUT_ARCHIVE"
 
 # --- Step 2: Transfer to server ---
 echo ""
-echo "[2/4] Transferring to server..."
+echo "[2/5] Transferring to server..."
 
 ssh "$CFG_SSH_HOST" "mkdir -p /tes3mp-easy/import-players" || {
     err "Failed to create remote directory"
@@ -143,17 +143,29 @@ ok "Archive transferred to $CFG_SSH_HOST:/tes3mp-easy/import-players/"
 
 # --- Step 3: Run import_players.sh on server ---
 echo ""
-echo "[3/4] Running import_players.sh on server..."
+echo "[3/5] Running import_players.sh on server..."
+echo "  (import saves archive without stopping server)"
 
 ssh "$CFG_SSH_HOST" "cd /tes3mp-easy && bash scripts/import_players.sh" || {
     err "import_players.sh failed on server — check server logs"
     exit 1
 }
-ok "Server import completed (players hot-added)"
+ok "Server import completed"
 
-# --- Step 4: Clean up local archive ---
+# --- Step 4: Run deploy_players.sh on server ---
 echo ""
-echo "[4/4] Cleaning up..."
+echo "[4/5] Running deploy_players.sh --latest on server..."
+echo "  (This will stop TES3MP, deploy players, and restart)"
+
+ssh "$CFG_SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_players.sh --latest" || {
+    err "deploy_players.sh failed on server — check server logs"
+    exit 1
+}
+ok "Server deploy completed"
+
+# --- Step 5: Clean up local archive ---
+echo ""
+echo "[5/5] Cleaning up..."
 rm -f "$OUTPUT_ARCHIVE"
 ok "Local archive cleaned up"
 

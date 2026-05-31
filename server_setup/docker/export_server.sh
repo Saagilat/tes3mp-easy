@@ -1,24 +1,32 @@
 #!/bin/bash
 #
-# export_server.sh — lightweight HTTP server for TES3MP player/cell exports
+# export_server.sh — lightweight HTTP server for TES3MP player/world exports
 #
 # Endpoints:
 #   GET /get-players — serves a tar.gz of the player/ directory (cached 5 min)
-#   GET /get-cells   — serves a tar.gz of the cell/ directory (cached 5 min)
+#   GET /get-world   — serves a tar.gz of the world/ directory (cached 5 min)
 #
 # Environment variables:
-#   CHARACTERS_DIR — path to players directory    (default: /mnt/characters)
-#   CELLS_DIR      — path to cells directory      (default: /mnt/cells)
-#   CACHE_DIR      — cache directory              (default: /tmp/export_cache)
-#   CACHE_MINUTES  — cache TTL                    (default: 5)
-#   PORT           — listen port                  (default: 5000)
+#   CHARACTERS_DIR     — path to players directory          (default: /mnt/characters)
+#   WORLD_CELL_DIR     — path to world/cell directory       (default: /mnt/world/cell)
+#   WORLD_WORLD_DIR    — path to world/world directory      (default: /mnt/world/world)
+#   WORLD_MAP_DIR      — path to world/map directory        (default: /mnt/world/map)
+#   WORLD_RECORDSTORE_DIR — path to world/recordstore dir   (default: /mnt/world/recordstore)
+#   WORLD_CUSTOM_DIR   — path to world/custom directory     (default: /mnt/world/custom)
+#   CACHE_DIR          — cache directory                    (default: /tmp/export_cache)
+#   CACHE_MINUTES      — cache TTL                          (default: 5)
+#   PORT               — listen port                        (default: 5000)
 #
 # Dependencies: bash, tar, socat
 
 set -euo pipefail
 
 CHARACTERS_DIR="${CHARACTERS_DIR:-/mnt/characters}"
-CELLS_DIR="${CELLS_DIR:-/mnt/cells}"
+WORLD_CELL_DIR="${WORLD_CELL_DIR:-/mnt/world/cell}"
+WORLD_WORLD_DIR="${WORLD_WORLD_DIR:-/mnt/world/world}"
+WORLD_MAP_DIR="${WORLD_MAP_DIR:-/mnt/world/map}"
+WORLD_RECORDSTORE_DIR="${WORLD_RECORDSTORE_DIR:-/mnt/world/recordstore}"
+WORLD_CUSTOM_DIR="${WORLD_CUSTOM_DIR:-/mnt/world/custom}"
 CACHE_DIR="${CACHE_DIR:-/tmp/export_cache}"
 CACHE_MINUTES="${CACHE_MINUTES:-5}"
 PORT="${PORT:-5000}"
@@ -26,7 +34,11 @@ CACHE_TTL=$((CACHE_MINUTES * 60))
 
 # Set up variables for package.sh
 export PLAYER_DIR="$CHARACTERS_DIR"
-export CELL_DIR="$CELLS_DIR"
+export WORLD_CELL_DIR
+export WORLD_WORLD_DIR
+export WORLD_MAP_DIR
+export WORLD_RECORDSTORE_DIR
+export WORLD_CUSTOM_DIR
 
 source /app/package.sh
 
@@ -100,8 +112,8 @@ handle_request() {
         /get-players)
             serve_archive "players.tar.gz" "package_players"
             ;;
-        /get-cells)
-            serve_archive "cells.tar.gz" "package_cells"
+        /get-world)
+            serve_archive "world.tar.gz" "package_world"
             ;;
         *)
             echo -ne "HTTP/1.1 404 Not Found\r\n"

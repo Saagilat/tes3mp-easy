@@ -11,7 +11,8 @@
 #   4. Packages mods+scripts via package.sh (source)
 #   5. SCPs mods.tar.gz to server:/tes3mp-easy/import-mods/
 #   6. Runs import_mods.sh on server via SSH
-#   7. Cleans up local archive
+#   7. Runs deploy_mods.sh --latest on server via SSH (only if import succeeds)
+#   8. Cleans up local archive
 #
 # Configuration:
 #   $(dirname "$0")/tes3mp-easy-export.conf
@@ -39,8 +40,6 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 
 # --- INI parser for sections ---
-# Usage: parse_ini_section <file> <section> <var_prefix>
-# Sets variables like ${prefix}KEY="value"
 parse_ini_section() {
     local file="$1"
     local section="$2"
@@ -48,14 +47,10 @@ parse_ini_section() {
     local in_section=0
 
     while IFS= read -r line; do
-        # Trim leading/trailing whitespace
         line="${line#"${line%%[![:space:]]*}"}"
         line="${line%"${line##*[![:space:]]}"}"
-
-        # Skip empty lines and comments
         [[ -z "$line" || "$line" =~ ^# ]] && continue
 
-        # Check for section header
         if [[ "$line" =~ ^\[(.*)\]$ ]]; then
             if [ "${BASH_REMATCH[1]}" = "$section" ]; then
                 in_section=1
@@ -66,20 +61,16 @@ parse_ini_section() {
         fi
 
         if [ "$in_section" -eq 1 ]; then
-            # Parse key=value
             local key="${line%%=*}"
             local value="${line#*=}"
             key="${key#"${key%%[![:space:]]*}"}"
             key="${key%"${key##*[![:space:]]}"}"
             value="${value#"${value%%[![:space:]]*}"}"
             value="${value%"${value##*[![:space:]]}"}"
-
-            # Remove surrounding quotes
             case "$value" in
                 \"*\") value="${value#\"}"; value="${value%\"}" ;;
                 \'*\') value="${value#\'}"; value="${value%\'}" ;;
             esac
-
             printf -v "${prefix}${key}" "%s" "$value"
         fi
     done < "$file"
@@ -155,12 +146,10 @@ ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
 VALIDATION_FAILED=0
 
 while IFS= read -r line; do
-    # Match lines like: "filename.ext": [] or "filename.ext": ["0xCRC32"]
     if [[ "$line" =~ ^[[:space:]]*\"([^\"]+)\":[[:space:]]*\[(.*)\] ]]; then
         filename="${BASH_REMATCH[1]}"
         crc_content="${BASH_REMATCH[2]}"
 
-        # Skip original files (Morrowind.esm, Tribunal.esm, Bloodmoon.esm)
         skip=0
         for orig in "${ORIGINAL_FILES[@]}"; do
             if [[ "${filename,,}" == "${orig,,}" ]]; then
@@ -172,14 +161,12 @@ while IFS= read -r line; do
 
         filepath="$CFG_PLUGINS_DIR/$filename"
 
-        # Check file exists
         if [ ! -f "$filepath" ]; then
             err "Plugin \"$filename\" not found at $filepath"
             VALIDATION_FAILED=1
             continue
         fi
 
-        # Extract expected CRC from crc_content (e.g. "0xABCD1234")
         expected_crc=""
         if [[ "$crc_content" =~ '"0x([0-9A-Fa-f]+)"' ]]; then
             expected_crc="${BASH_REMATCH[1]}"
@@ -211,14 +198,13 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 OUTPUT_ARCHIVE="$TMP_DIR/mods.tar.gz"
 
-# Source package.sh and create archive
 export PLUGINS_DIR="$CFG_PLUGINS_DIR"
 export SERVER_SCRIPTS_DIR="$CFG_SERVER_SCRIPTS_DIR"
 export ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
 
 source "$SCRIPT_DIR/../../server_setup/scripts/package.sh"
 
-package_mods_and_scripts "$OUTPUT_ARCHIVE"
+package_mods "$OUTPUT_ARCHIVE"
 
 if [ ! -f "$OUTPUT_ARCHIVE" ]; then
     err "Failed to create archive"
@@ -230,7 +216,6 @@ ok "Archive created: $OUTPUT_ARCHIVE"
 echo ""
 echo "[4/5] Transferring to server..."
 
-# Create remote import directory
 ssh "$CFG_SSH_HOST" "mkdir -p /tes3mp-easy/import-mods" || {
     err "Failed to create remote directory"
     exit 1
@@ -242,15 +227,26 @@ scp "$OUTPUT_ARCHIVE" "$CFG_SSH_HOST":/tes3mp-easy/import-mods/mods.tar.gz || {
 }
 ok "Archive transferred to $CFG_SSH_HOST:/tes3mp-easy/import-mods/"
 
-# --- Step 5: Run import_mods.sh on server ---
+# --- Step 5: Import and deploy on server ---
 echo ""
-echo "[5/5] Running import_mods.sh on server..."
+echo "[5/5] Running import_mods.sh and deploy_mods.sh on server..."
+echo "  (import saves archive without stopping server)"
+echo "  (deploy stops server, deploys mods, and restarts)"
 
+# Import first (validate + save). If this fails, deploy is not called
 ssh "$CFG_SSH_HOST" "cd /tes3mp-easy && bash scripts/import_mods.sh" || {
     err "import_mods.sh failed on server — check server logs"
+    err "deploy_mods.sh will NOT be called."
     exit 1
 }
 ok "Server import completed"
+
+# Deploy (only if import succeeded)
+ssh "$CFG_SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_mods.sh --latest" || {
+    err "deploy_mods.sh failed on server — check server logs"
+    exit 1
+}
+ok "Server deploy completed"
 
 # --- Clean up local archive ---
 rm -f "$OUTPUT_ARCHIVE"

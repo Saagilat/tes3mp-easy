@@ -186,11 +186,11 @@ gather_options() {
         *)     ENABLE_PLAYERS="no" ;;
     esac
 
-    read -r -p "Enable /get-cells? [y/N]: " ENABLE_CELLS </dev/tty
-    ENABLE_CELLS="${ENABLE_CELLS:-n}"
-    case "${ENABLE_CELLS,,}" in
-        y|yes) ENABLE_CELLS="yes" ;;
-        *)     ENABLE_CELLS="no" ;;
+    read -r -p "Enable /get-world? [y/N]: " ENABLE_WORLD </dev/tty
+    ENABLE_WORLD="${ENABLE_WORLD:-n}"
+    case "${ENABLE_WORLD,,}" in
+        y|yes) ENABLE_WORLD="yes" ;;
+        *)     ENABLE_WORLD="no" ;;
     esac
 
     # ---- Rate limits ----
@@ -212,18 +212,18 @@ gather_options() {
         PLAYERS_RATE="${input:-5}"
     fi
 
-    CELLS_RATE="5"
-    if [[ "$ENABLE_CELLS" == "yes" ]]; then
-        read -r -p "  /get-cells rate limit (req/min) [default: 5]: " input </dev/tty
-        CELLS_RATE="${input:-5}"
+    WORLD_RATE="5"
+    if [[ "$ENABLE_WORLD" == "yes" ]]; then
+        read -r -p "  /get-world rate limit (req/min) [default: 5]: " input </dev/tty
+        WORLD_RATE="${input:-5}"
     fi
 
     # ---- Example content ----
     echo ""
     echo "--- Example content ---"
-    echo "Test server scripts and plugins to verify the setup works."
+    echo "Test server scripts to verify the setup works."
     echo ""
-    read -r -p "Create example mods (scripts) to verify setup? [Y/n]: " ENABLE_EXAMPLE_MODS </dev/tty
+    read -r -p "Create example server script to verify setup? [Y/n]: " ENABLE_EXAMPLE_MODS </dev/tty
     ENABLE_EXAMPLE_MODS="${ENABLE_EXAMPLE_MODS:-y}"
     case "${ENABLE_EXAMPLE_MODS,,}" in
         n|no)  ENABLE_EXAMPLE_MODS="no" ;;
@@ -426,27 +426,35 @@ gather_lua_options() {
 # ────────────────────────────────────────────────────────────
 setup_files() {
     local dest="/tes3mp-easy"
-    mkdir -p "$dest/container-data" \
-             "$dest/container-data/server/data" \
-             "$dest/plugins" "$dest/server-scripts" \
+    
+    # Create all required directories (mount points + scripts + backups + import)
+    mkdir -p "$dest/players" \
+             "$dest/world/cell" "$dest/world/world" "$dest/world/map" "$dest/world/recordstore" "$dest/world/custom" \
+             "$dest/mods/plugins" "$dest/mods/scripts" \
+             "$dest/configs" \
+             "$dest/backups/mods" "$dest/backups/players" "$dest/backups/world" \
+             "$dest/import-mods" "$dest/import-players" "$dest/import-world" \
              "$dest/scripts"
     chown -R root:root "$dest"
 
     cd "$dest"
 
     info "Downloading Dockerfile and configs from Saagilat/tes3mp-easy..."
-    for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.sh; do
+    for f in tes3mp.dockerfile docker-compose.yml nginx.conf export.dockerfile export_server.sh entrypoint.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/docker/$f" -O "$dest/$f"
     done
-    for f in package.sh import_mods.sh import_players.sh import_cells.sh; do
+    chmod +x "$dest/entrypoint.sh"
+
+    for f in package.sh import_mods.sh import_players.sh import_world.sh \
+             deploy_mods.sh deploy_players.sh deploy_world.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/scripts/$f" -O "$dest/scripts/$f"
     done
-    chmod +x "$dest/scripts/import_mods.sh" "$dest/scripts/import_players.sh" "$dest/scripts/import_cells.sh"
+    chmod +x "$dest/scripts/"*.sh
 
     # Download management reference
     wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/docs/admin/management.md" -O "$dest/management.md"
 
-    # Download TES3MP version file and extract URL
+    # Download TES3MP version file and extract URL (for Docker build ARG)
     local TES3MP_URL=""
     local version_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/tes3mp-version.txt"
     local version_file=$(mktemp)
@@ -460,42 +468,108 @@ setup_files() {
         exit 1
     fi
 
-    if [[ -f "$dest/container-data/tes3mp-server" ]]; then
-        ok "TES3MP server binary already downloaded"
-    else
-        info "Downloading TES3MP server (~50 MB)..."
-        wget -q --show-progress "$TES3MP_URL" -O /tmp/tes3mp.tar.gz
-        tar --strip-components=1 -xzf /tmp/tes3mp.tar.gz -C "$dest/container-data/"
-        rm -f /tmp/tes3mp.tar.gz
-        ok "TES3MP server installed"
-    fi
+    # Write TES3MP_URL to .env for Docker build ARG
+    echo "TES3MP_URL=$TES3MP_URL" > "$dest/.env"
 
+    # Download sample config files from the repo (tes3mp-server-default.cfg, config.lua)
+    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/tes3mp-server-sample/server/tes3mp-server-default.cfg" \
+        -O "$dest/configs/tes3mp-server-default.cfg" 2>/dev/null || {
+        # Fallback: generate minimal config
+        cat > "$dest/configs/tes3mp-server-default.cfg" << 'CFGEOF'
+hostname = tes3mp
+password =
+serverPort = 25565
+maximumPlayers = 4
+enableDebug = false
+logLevel = 0
+CFGEOF
+    }
+
+    # Generate empty banlist.json
+    cat > "$dest/configs/banlist.json" << 'BANEOF'
+{
+  "playerNames":[],
+  "ipAddresses":[]
+}
+BANEOF
+
+    # Download sample config.lua
+    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/tes3mp-server-sample/server/scripts/config.lua" \
+        -O "$dest/configs/config.lua" 2>/dev/null || {
+        # Fallback: generate minimal config.lua
+        cat > "$dest/configs/config.lua" << 'LUAEOF'
+return {
+    gameMode = "Default",
+    difficulty = 0,
+    loginTime = 60,
+    maxClientsPerIP = 3,
+    shareJournal = true,
+    shareFactionRanks = true,
+    shareFactionExpulsion = false,
+    shareFactionReputation = true,
+    shareTopics = true,
+    shareBounty = false,
+    shareReputation = true,
+    shareMapExploration = false,
+    shareVideos = true,
+    allowConsole = false,
+    allowBedRest = true,
+    allowWildernessRest = true,
+    allowWait = true,
+    allowSuicideCommand = true,
+    allowFixmeCommand = true,
+    playersRespawn = true,
+    deathTime = 5,
+    deathPenaltyJailDays = 5,
+    bountyResetOnDeath = false,
+    bountyDeathPenalty = false,
+    respawnAtImperialShrine = true,
+    respawnAtTribunalTemple = true,
+    enablePlayerCollision = true,
+    enableActorCollision = true,
+    enablePlacedObjectCollision = false,
+    passTimeWhenEmpty = false,
+    nightStartHour = 20,
+    nightEndHour = 6,
+    maxAttributeValue = 200,
+    maxSpeedValue = 365,
+    maxSkillValue = 200,
+    maxAcrobaticsValue = 1200,
+    enforceDataFiles = true,
+    ignoreScriptErrors = false,
+}
+LUAEOF
+    }
+
+    # If example mods requested, download test server script
     if [[ "$ENABLE_EXAMPLE_MODS" == "yes" ]]; then
         info "Downloading example server script..."
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/modding-test/server-scripts/test_server.lua" \
-            -O "$dest/server-scripts/test_server.lua"
-
-        info "Downloading example plugin..."
-        wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server_setup/modding-test/plugins/test_plugin.omwaddon" \
-            -O "$dest/plugins/test_plugin.omwaddon"
-
-        ok "Example mods downloaded"
+            -O "$dest/mods/scripts/test_server.lua" 2>/dev/null || {
+            # Create a minimal test script
+            cat > "$dest/mods/scripts/test_server.lua" << 'LUAEOF'
+-- Test server script for tes3mp-easy
+-- This script is a simple placeholder
+print("[TES3MP-EASY] Test server script loaded successfully!")
+LUAEOF
+        }
+        ok "Example script downloaded to mods/scripts/"
     fi
 
-    ok "All files installed — configs are in container-data/, edit them directly on the host"
+    ok "All files installed — mount points are in $dest/"
 }
+
 # ────────────────────────────────────────────────────────────
 # 5. Generate server config from answers
 # ────────────────────────────────────────────────────────────
 write_config() {
-    local dest="/tes3mp-easy/container-data"
+    local dest="/tes3mp-easy/configs"
     local cfg="$dest/tes3mp-server-default.cfg"
 
     info "Generating $cfg from your answers..."
 
     # Replace hostname (case-insensitive, allows any whitespace around =)
     sed -i 's/^[[:space:]]*hostname[[:space:]]*=.*/hostname = '"$SERVER_NAME"'/i' "$cfg"
-    # Fallback: append if the key was not found at all
     if ! grep -qi '^[[:space:]]*hostname[[:space:]]*=' "$cfg" 2>/dev/null; then
         echo "hostname = $SERVER_NAME" >> "$cfg"
     fi
@@ -520,6 +594,9 @@ write_config() {
         echo "maximumPlayers = $MAX_PLAYERS" >> "$cfg"
     fi
 
+    # Replace serverPort (stored in .cfg, but docker-compose maps the external port)
+    # docker-compose.yml port mapping is handled in configure_endpoints
+
     ok "Config updated"
 }
 
@@ -527,7 +604,7 @@ write_config() {
 # 5b. Generate Lua config from answers
 # ────────────────────────────────────────────────────────────
 write_lua_config() {
-    local dest="/tes3mp-easy/container-data/server/scripts"
+    local dest="/tes3mp-easy/configs"
     local cfg="$dest/config.lua"
     local marker="-- install.sh config"
 
@@ -613,26 +690,31 @@ configure_endpoints() {
     sed -i "s/\"25565:25565\/udp\"/\"$TES3MP_PORT:25565\/udp\"/" "$compose"
 
     # Uncomment nginx service if at least one endpoint is enabled
-    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
+    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
         sed -i 's/#\(nginx:\)/\1/' "$compose"
         sed -i 's/#\(  image: nginx:alpine\)/  image: nginx:alpine/' "$compose"
         sed -i 's/#\(  ports:\)/  ports:/' "$compose"
         sed -i "s/#\(    - \"8085:80\"\)/    - \"8085:80\"/" "$compose"
         sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
-        sed -i 's/#\(    - \.\/container-data:\/usr\/share\/nginx\/html:ro\)/    - .\/container-data:\/usr\/share\/nginx\/html:ro/' "$compose"
+        sed -i 's/#\(    - \.\/backups\/mods:\/usr\/share\/nginx\/html\/mods:ro\)/    - .\/backups\/mods:\/usr\/share\/nginx\/html\/mods:ro/' "$compose"
         sed -i 's/#\(    - \.\/nginx.conf:\/etc\/nginx\/conf\.d\/default\.conf:ro\)/    - .\/nginx.conf:\/etc\/nginx\/conf.d\/default.conf:ro/' "$compose"
         sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
     fi
 
-    # Uncomment export service if /get-players or /get-cells is enabled
-    if [[ "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
+    # Uncomment export service if /get-players or /get-world is enabled
+    if [[ "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
         sed -i 's/#\(export:\)/\1/' "$compose"
         sed -i 's/#\(  build:\)/  build:/' "$compose"
         sed -i 's/#\(    context: \.\)/    context: ./' "$compose"
         sed -i 's/#\(    dockerfile: export\.dockerfile\)/    dockerfile: export.dockerfile/' "$compose"
         sed -i 's/#\(  volumes:\)/  volumes:/' "$compose"
-        sed -i 's/#\(    - \.\/container-data\/server\/data\/player:\/mnt\/characters:ro\)/    - .\/container-data\/server\/data\/player:\/mnt\/characters:ro/' "$compose"
-        sed -i 's/#\(    - \.\/container-data\/server\/data\/cell:\/mnt\/cells:ro\)/    - .\/container-data\/server\/data\/cell:\/mnt\/cells:ro/' "$compose"
+        # Uncomment all 6 world sub-mounts for the export service
+        sed -i 's/#\(    - \.\/players:\/mnt\/characters:ro\)/    - .\/players:\/mnt\/characters:ro/' "$compose"
+        sed -i 's/#\(    - \.\/world\/cell:\/mnt\/world\/cell:ro\)/    - .\/world\/cell:\/mnt\/world\/cell:ro/' "$compose"
+        sed -i 's/#\(    - \.\/world\/world:\/mnt\/world\/world:ro\)/    - .\/world\/world:\/mnt\/world\/world:ro/' "$compose"
+        sed -i 's/#\(    - \.\/world\/map:\/mnt\/world\/map:ro\)/    - .\/world\/map:\/mnt\/world\/map:ro/' "$compose"
+        sed -i 's/#\(    - \.\/world\/recordstore:\/mnt\/world\/recordstore:ro\)/    - .\/world\/recordstore:\/mnt\/world\/recordstore:ro/' "$compose"
+        sed -i 's/#\(    - \.\/world\/custom:\/mnt\/world\/custom:ro\)/    - .\/world\/custom:\/mnt\/world\/custom:ro/' "$compose"
         sed -i 's/#\(  restart: unless-stopped\)/  restart: unless-stopped/' "$compose"
     fi
 
@@ -640,7 +722,6 @@ configure_endpoints() {
     local nginx="$dest/nginx.conf"
 
     # Helper: uncomment a block that starts with a marker comment
-    # Usage: uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_..."
     uncomment_nginx_block() {
         local file="$1"
         local marker="$2"
@@ -653,7 +734,7 @@ configure_endpoints() {
     # Update rate limits in zone declarations
     sed -i "s/^limit_req_zone.*zone=mods:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=mods:10m rate=${MODS_RATE}r\/m;/" "$nginx"
     sed -i "s/^limit_req_zone.*zone=players:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=players:10m rate=${PLAYERS_RATE}r\/m;/" "$nginx"
-    sed -i "s/^limit_req_zone.*zone=cells:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=cells:10m rate=${CELLS_RATE}r\/m;/" "$nginx"
+    sed -i "s/^limit_req_zone.*zone=world:[0-9]\+m rate=[0-9.]\+r\/m;/limit_req_zone \$binary_remote_addr zone=world:10m rate=${WORLD_RATE}r\/m;/" "$nginx"
 
     if [[ "$ENABLE_MODS" == "yes" ]]; then
         uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_MODS"
@@ -663,8 +744,8 @@ configure_endpoints() {
         uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_PLAYERS"
     fi
 
-    if [[ "$ENABLE_CELLS" == "yes" ]]; then
-        uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_CELLS"
+    if [[ "$ENABLE_WORLD" == "yes" ]]; then
+        uncomment_nginx_block "$nginx" "UNCOMMENT_TO_ENABLE_GET_WORLD"
     fi
 }
 
@@ -700,13 +781,13 @@ configure_firewall() {
     case "$fw" in
         ufw)
             ufw allow "$TES3MP_PORT/udp" comment "TES3MP"
-            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
                 ufw allow "8085/tcp" comment "TES3MP HTTP endpoints"
             fi
             ;;
         firewall-cmd)
             firewall-cmd --permanent --add-port="$TES3MP_PORT/udp"
-            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
+            if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
                 firewall-cmd --permanent --add-port="8085/tcp"
             fi
             firewall-cmd --reload
@@ -717,7 +798,7 @@ configure_firewall() {
 }
 
 # ────────────────────────────────────────────────────────────
-# 8. Build Docker image and start
+# 8. Build Docker image, start, create init archives, deploy
 # ────────────────────────────────────────────────────────────
 build_and_start() {
     local dest="/tes3mp-easy"
@@ -731,71 +812,68 @@ build_and_start() {
 
     ok "Docker container started"
 
-    # --- Inline initialisation: deploy plugins, scripts, generate configs ---
-    info "Initialising mods, scripts and required configs..."
+    # --- Create init archives ---
+    info "Creating initial (init) archives..."
 
-    # Copy plugins to server/data/ (protecting original Morrowind files)
-    if [ -d "$dest/plugins" ]; then
-        for file in "$dest/plugins"/*.esp "$dest/plugins"/*.ESP \
-                    "$dest/plugins"/*.esm "$dest/plugins"/*.ESM \
-                    "$dest/plugins"/*.omwaddon "$dest/plugins"/*.OMWADDON \
-                    "$dest/plugins"/*.omwscripts "$dest/plugins"/*.OMWSCRIPTS \
-                    "$dest/plugins"/*.omwgame "$dest/plugins"/*.OMWGAME; do
-            [ -f "$file" ] || continue
-            basename="$(basename "$file")"
-
-            # Skip original files
-            local skip=0
-            for orig in "Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm"; do
-                if [ "${basename,,}" = "${orig,,}" ]; then
-                    skip=1
-                    break
-                fi
-            done
-            [ "$skip" -eq 1 ] && continue
-
-            cp "$file" "$dest/container-data/server/data/"
-            echo "  - Copied: $basename"
-        done
-    fi
-
-    # Sync scripts to server/scripts/custom/
-    local custom_scripts_dir="$dest/container-data/server/scripts/custom"
-    mkdir -p "$custom_scripts_dir"
-    rm -f "$custom_scripts_dir"/*.lua
-    if [ -d "$dest/server-scripts" ]; then
-        for file in "$dest/server-scripts"/*.lua "$dest/server-scripts"/*.LUA; do
-            [ -f "$file" ] || continue
-            cp "$file" "$custom_scripts_dir/"
-        done
-    fi
-
-    # Generate customScripts.lua
-    local custom_scripts_lua="$dest/container-data/server/scripts/customScripts.lua"
-    echo "-- This file is auto-generated by install.sh" > "$custom_scripts_lua"
-    echo "-- Do not edit manually — changes will be overwritten" >> "$custom_scripts_lua"
-    for file in "$custom_scripts_dir"/*.lua; do
-        [ -f "$file" ] || continue
-        local name
-        name="$(basename "$file" .lua)"
-        echo "require(\"custom.$name\")" >> "$custom_scripts_lua"
-    done
-
-    # Generate requiredDataFiles.json with CRC32 via rhash
     source "$dest/scripts/package.sh"
+
+    # Init mods archive (empty plugins/ + empty scripts/ + requiredDataFiles.json)
+    export PLUGINS_DIR="$dest/mods/plugins"
+    export SERVER_SCRIPTS_DIR="$dest/mods/scripts"
     export ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
-    export PLUGINS_DIR="$dest/plugins"
-    export SERVER_SCRIPTS_DIR="$dest/server-scripts"
-    _generate_required_json "$dest/plugins" "Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm" > "$dest/container-data/server/data/requiredDataFiles.json"
-    ok "Required data files generated"
 
-    # Create mods.tar.gz for HTTP distribution
-    rm -f "$dest/container-data/mods.tar.gz"
-    package_mods_and_scripts "$dest/container-data/mods.tar.gz"
+    package_init_mods "$dest/backups/mods/init-$(date +%F_%H-%M-%S)-mods.tar.gz"
 
-    # Restart Docker to apply changes
-    docker compose restart
-    ok "Docker containers restarted"
+    # Init world archive (empty world subdirs)
+    export WORLD_CELL_DIR="$dest/world/cell"
+    export WORLD_WORLD_DIR="$dest/world/world"
+    export WORLD_MAP_DIR="$dest/world/map"
+    export WORLD_RECORDSTORE_DIR="$dest/world/recordstore"
+    export WORLD_CUSTOM_DIR="$dest/world/custom"
+
+    package_init_world "$dest/backups/world/init-$(date +%F_%H-%M-%S)-world.tar.gz"
+
+    # Init players archive (empty players)
+    export PLAYER_DIR="$dest/players"
+
+    package_init_players "$dest/backups/players/init-$(date +%F_%H-%M-%S)-players.tar.gz"
+
+    # Write current.txt for each type (pointing to the init archives)
+    local latest_mods
+    latest_mods=$(ls -t "$dest/backups/mods"/init-*-mods.tar.gz 2>/dev/null | head -1)
+    if [ -n "$latest_mods" ]; then
+        local sha256
+        sha256=$(sha256sum "$latest_mods" | cut -d' ' -f1)
+        echo "$sha256 $(basename "$latest_mods")" > "$dest/backups/mods/current.txt"
+        ok "Mods current.txt written"
+    fi
+
+    local latest_world
+    latest_world=$(ls -t "$dest/backups/world"/init-*-world.tar.gz 2>/dev/null | head -1)
+    if [ -n "$latest_world" ]; then
+        sha256=$(sha256sum "$latest_world" | cut -d' ' -f1)
+        echo "$sha256 $(basename "$latest_world")" > "$dest/backups/world/current.txt"
+        ok "World current.txt written"
+    fi
+
+    local latest_players
+    latest_players=$(ls -t "$dest/backups/players"/init-*-players.tar.gz 2>/dev/null | head -1)
+    if [ -n "$latest_players" ]; then
+        sha256=$(sha256sum "$latest_players" | cut -d' ' -f1)
+        echo "$sha256 $(basename "$latest_players")" > "$dest/backups/players/current.txt"
+        ok "Players current.txt written"
+    fi
+
+    # Call deploy scripts to apply the init archives (via --latest)
+    info "Running initial deployment via deploy scripts..."
+
+    cd "$dest"
+
+    bash "$dest/scripts/deploy_mods.sh" --latest && ok "Initial mods deploy done" || warn "Initial mods deploy had issues"
+
+    bash "$dest/scripts/deploy_world.sh" --latest && ok "Initial world deploy done" || warn "Initial world deploy had issues"
+
+    bash "$dest/scripts/deploy_players.sh" --latest && ok "Initial players deploy done" || warn "Initial players deploy had issues"
 
     echo ""
     echo "=========================================="
@@ -811,9 +889,9 @@ build_and_start() {
     echo "  Endpoints:"
     echo "    /get-mods:           $ENABLE_MODS"
     echo "    /get-players:        $ENABLE_PLAYERS"
-    echo "    /get-cells:          $ENABLE_CELLS"
+    echo "    /get-world:          $ENABLE_WORLD"
     echo ""
-    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_CELLS" == "yes" ]]; then
+    if [[ "$ENABLE_MODS" == "yes" || "$ENABLE_PLAYERS" == "yes" || "$ENABLE_WORLD" == "yes" ]]; then
         echo "  HTTP port (endpoints): 8085"
     fi
     echo ""
@@ -827,15 +905,17 @@ build_and_start() {
     echo "  Stop:        docker compose -f $dest/docker-compose.yml down"
     echo "  Restart:     docker compose -f $dest/docker-compose.yml restart"
     echo ""
-    echo "  Config:      nano $dest/container-data/tes3mp-server-default.cfg"
-    echo "  Lua config:  nano $dest/container-data/server/scripts/config.lua"
-    echo "  Ban list:    nano $dest/container-data/server/data/banlist.json"
-    echo "  Required data files: nano $dest/container-data/server/data/requiredDataFiles.json"
+    echo "  Config:      nano $dest/configs/tes3mp-server-default.cfg"
+    echo "  Lua config:  nano $dest/configs/config.lua"
+    echo "  Ban list:    nano $dest/configs/banlist.json"
     echo ""
     echo "  After editing any config: docker compose restart"
     echo ""
-    echo "  To import mods and scripts: bash $dest/scripts/import_mods.sh"
-    echo "  Place server scripts in: server-scripts/"
+    echo "  To import mods: scp mods.tar.gz user@host:/tes3mp-easy/import-mods/"
+    echo "                   && ssh user@host 'bash scripts/deploy_mods.sh --latest'"
+    echo ""
+    echo "  Custom server scripts:   $dest/mods/scripts/"
+    echo "  Custom plugins:          $dest/mods/plugins/"
     echo ""
 }
 

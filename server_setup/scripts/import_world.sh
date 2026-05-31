@@ -1,30 +1,30 @@
 #!/bin/bash
 #
-# import_players.sh — Import player data from a players.tar.gz archive
+# import_world.sh — Import world data from a world.tar.gz archive
 #
 # What it does:
-#   1. Checks for archive at /tes3mp-easy/import-players/players.tar.gz
-#   2. Moves it to backups/players/import-<timestamp>-players.tar.gz
+#   1. Checks for archive at /tes3mp-easy/import-world/world.tar.gz
+#   2. Moves it to backups/world/import-<timestamp>-world.tar.gz
 #   3. Cleans up import directory
 #   4. Does NOT stop TES3MP (import only — deploy is a separate step)
 #
 # Usage:
-#   Place players.tar.gz in /tes3mp-easy/import-players/
-#   Run: bash import_players.sh
+#   Place world.tar.gz in /tes3mp-easy/import-world/
+#   Run: bash import_world.sh
 #
 # Requirements: bash, tar
 #
-# Note: This script only saves the archive. To deploy it, run deploy_players.sh
+# Note: This script only saves the archive. To deploy it, run deploy_world.sh
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE_DIR="$(dirname "$SCRIPT_DIR")"
 
-IMPORT_DIR="$BASE_DIR/import-players"
-ARCHIVE="$IMPORT_DIR/players.tar.gz"
+IMPORT_DIR="$BASE_DIR/import-world"
+ARCHIVE="$IMPORT_DIR/world.tar.gz"
 
-BACKUPS_DIR="$BASE_DIR/backups/players"
+BACKUPS_DIR="$BASE_DIR/backups/world"
 
 # Colors
 RED='\033[0;31m'
@@ -38,7 +38,7 @@ ok()   { echo -e "${GREEN}[OK]${NC}   $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 
-echo "=== TES3MP Import Players ==="
+echo "=== TES3MP Import World ==="
 echo "Archive:       $ARCHIVE"
 echo ""
 
@@ -46,7 +46,7 @@ echo ""
 echo "[1/3] Checking archive..."
 if [ ! -f "$ARCHIVE" ]; then
     err "Archive not found: $ARCHIVE"
-    err "Place players.tar.gz in $IMPORT_DIR/ and re-run."
+    err "Place world.tar.gz in $IMPORT_DIR/ and re-run."
     exit 1
 fi
 ok "Archive found: $ARCHIVE"
@@ -57,7 +57,7 @@ echo "[2/3] Moving archive to backups..."
 
 TIMESTAMP=$(date +%F_%H-%M-%S)
 mkdir -p "$BACKUPS_DIR"
-DEST="$BACKUPS_DIR/import-${TIMESTAMP}-players.tar.gz"
+DEST="$BACKUPS_DIR/import-${TIMESTAMP}-world.tar.gz"
 mv "$ARCHIVE" "$DEST"
 ok "Archive saved to: $DEST"
 
@@ -68,4 +68,4 @@ rm -rf "$IMPORT_DIR"
 ok "Import directory cleaned up"
 
 echo ""
-echo "=== Done! Players archive saved. Run deploy_players.sh to deploy. ==="
+echo "=== Done! World archive saved. Run deploy_world.sh to deploy. ==="
