@@ -147,6 +147,52 @@ print_header() {
 }
 
 # ────────────────────────────────────────────────────────────
+# Subcommand dispatcher (for direct calls like: menu/admin.sh start)
+# ────────────────────────────────────────────────────────────
+dispatch_admin() {
+    case "${1:-}" in
+        install-server)
+            shift
+            install_server "${1:-interactive}"
+            ;;
+        configure-server)
+            shift
+            configure_server "${1:-interactive}"
+            ;;
+        start) server_start ;;
+        stop) server_stop ;;
+        restart) server_restart ;;
+        logs) server_logs ;;
+        export-mods) export_mods ;;
+        export-players) export_players ;;
+        export-world) export_world ;;
+        import-server) import_server_menu ;;
+        generate-required-data) generate_required_data ;;
+        config) edit_config ;;
+        player-menu)
+            local pm="${SCRIPT_DIR}/menu/player.sh"
+            [[ -f "$pm" ]] && exec bash "$pm" || err "menu/player.sh not found"
+            ;;
+        self-update)
+            self_update
+            ;;
+        help|--help|-h)
+            echo "Admin subcommands: install-server, configure-server, start, stop, restart,"
+            echo "  logs, export-mods, export-players, export-world, import-server,"
+            echo "  generate-required-data, config, player-menu, self-update, menu"
+            ;;
+        menu|"")
+            show_admin_menu
+            ;;
+        *)
+            echo "Unknown command: $1"
+            echo "Run 'menu/admin.sh help' for available commands."
+            exit 1
+            ;;
+    esac
+}
+
+# ────────────────────────────────────────────────────────────
 # Entry point when called directly
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -154,5 +200,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         first_run_wizard
         load_config
     }
-    show_admin_menu
+    dispatch_admin "$@"
 fi

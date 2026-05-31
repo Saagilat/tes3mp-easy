@@ -108,6 +108,39 @@ print_header() {
 }
 
 # ────────────────────────────────────────────────────────────
+# Subcommand dispatcher (for direct calls like: menu/player.sh download-mods)
+# ────────────────────────────────────────────────────────────
+dispatch_player() {
+    case "${1:-}" in
+        download-mods) download_mods ;;
+        download-players) download_players ;;
+        download-world) download_world ;;
+        install-client) install_client ;;
+        install-localization) install_localization ;;
+        generate-required-data) generate_required_data ;;
+        config) edit_config ;;
+        admin-menu)
+            local am="${SCRIPT_DIR}/menu/admin.sh"
+            [[ -f "$am" ]] && exec bash "$am" || err "menu/admin.sh not found"
+            ;;
+        self-update) self_update ;;
+        help|--help|-h)
+            echo "Player subcommands: download-mods, download-players, download-world,"
+            echo "  install-client, install-localization, generate-required-data,"
+            echo "  config, admin-menu, self-update, menu"
+            ;;
+        menu|"")
+            show_player_menu
+            ;;
+        *)
+            echo "Unknown command: $1"
+            echo "Run 'menu/player.sh help' for available commands."
+            exit 1
+            ;;
+    esac
+}
+
+# ────────────────────────────────────────────────────────────
 # Entry point when called directly
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -115,5 +148,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         first_run_wizard
         load_config
     }
-    show_player_menu
+    dispatch_player "$@"
 fi
