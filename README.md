@@ -51,7 +51,9 @@ tes3mp-easy-admin stop                   # docker compose down
 tes3mp-easy-admin restart                # docker compose restart
 tes3mp-easy-admin logs                   # follow logs
 tes3mp-easy-admin export-mods            # push mods to server
-tes3mp-easy-admin install-server         # install server on VPS
+tes3mp-easy-admin install-server         # install server infrastructure on VPS
+tes3mp-easy-admin configure-server       # configure server (name, password, ports, etc.)
+tes3mp-easy-admin uninstall-server       # remove server from VPS (keeps Docker)
 tes3mp-easy-admin self-update            # update scripts
 tes3mp-easy-admin uninstall              # remove tes3mp-easy completely
 

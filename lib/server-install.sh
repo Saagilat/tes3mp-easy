@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-# server-install.sh — install and configure TES3MP server on VPS
+# server-install.sh — install, configure and uninstall TES3MP server on VPS
 #
 # Provides:
 #   - install_server()      — run install.sh on remote VPS
 #   - configure_server()    — run configure.sh on remote VPS
+#   - uninstall_server()    — run uninstall.sh on remote VPS
 #
 
 # ────────────────────────────────────────────────────────────
@@ -54,7 +55,6 @@ install_server() {
     echo "    - Installs system utilities (nano, rhash, tar, zip)"
     echo "    - Downloads TES3MP server files"
     echo "    - Builds the Docker image"
-    echo "    - Runs configuration (interactive or automated)"
     echo ""
 
     if [[ "$mode" == "interactive" ]]; then
@@ -93,12 +93,12 @@ install_server() {
         }
     fi
 
-    ok "TES3MP server installation completed on $SSH_HOST"
+    ok "Infrastructure installation completed on $SSH_HOST"
     echo ""
     info "Next steps:"
-    info "  1. If not already done, the configure.sh script should have run."
-    info "  2. You can reconfigure later with:  ./tes3mp-easy configure-server"
-    info "  3. Add your mods with:              ./tes3mp-easy export-mods"
+    info "  1. Configure the server:     ./tes3mp-easy configure-server"
+    info "  2. Add your mods with:       ./tes3mp-easy export-mods"
+    info "  3. Start the server:         ./tes3mp-easy start"
     echo ""
 }
 
@@ -171,4 +171,56 @@ configure_server() {
     fi
 
     ok "TES3MP server reconfiguration completed on $SSH_HOST"
+}
+
+# ────────────────────────────────────────────────────────────
+# uninstall_server — run uninstall.sh on remote VPS
+# Usage: uninstall_server
+# ────────────────────────────────────────────────────────────
+uninstall_server() {
+    if [[ -z "${SSH_HOST:-}" ]]; then
+        err "SSH_HOST is not set."
+        err "Run './tes3mp-easy config' to set it."
+        return 1
+    fi
+
+    local uninstall_url="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/uninstall.sh"
+    local cmd="curl -fsSL '$uninstall_url' | bash"
+
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  TES3MP Server Uninstall"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+    echo "  This will REMOVE the TES3MP server from: $SSH_HOST"
+    echo ""
+    echo "  ⚠ WARNING: ALL data will be lost! ⚠"
+    echo "  This includes player saves, world data,"
+    echo "  mods, configs, and Docker images."
+    echo ""
+    echo "  System dependencies (Docker, nano, etc.)"
+    echo "  will NOT be removed."
+    echo ""
+    echo "  The script will offer to export your data"
+    echo "  (players, world, mods) before removal."
+    echo ""
+
+    if ! confirm "Proceed with uninstall?"; then
+        info "Uninstall cancelled."
+        return 0
+    fi
+
+    echo ""
+
+    info "Starting uninstall on $SSH_HOST..."
+    ssh -t "$SSH_HOST" "$cmd" || {
+        err "Uninstall failed on $SSH_HOST"
+        err "Check the output above for details."
+        return 1
+    }
+
+    ok "TES3MP server has been removed from $SSH_HOST"
+    echo ""
+    info "Note: Your local config (~/.tes3mp-easy-admin.ini) was preserved."
+    info "If you want to remove that too, run:  tes3mp-easy-admin uninstall"
 }

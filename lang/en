@@ -31,6 +31,7 @@ ADMIN_IMPORT_SERVER="14) 📥 Import to server (mods/players/world)"
 
 # ─── Tools ───
 ADMIN_GENERATE_DATA="15) 🔑 Generate requiredDataFiles.json"
+ADMIN_UNINSTALL_SERVER="16) 🗑  Uninstall server from VPS"
 
 # ─── Generic menu items ───
 MENU_SWITCH_PLAYER="p) 🎮 Switch to player menu →"

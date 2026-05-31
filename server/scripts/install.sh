@@ -3,12 +3,10 @@
 # install.sh — TES3MP Docker server installer (infrastructure part)
 #
 # Installs Docker, utilities, downloads files, builds the Docker image.
-# Then delegates configuration to configure.sh.
+# Does NOT run configuration — run configure.sh separately after.
 #
 # Usage:
-#   bash install.sh                     # interactive (via configure.sh)
-#   bash install.sh --default           # non-interactive with defaults
-#   bash install.sh --test              # test mode (password=1234, all endpoints)
+#   bash install.sh                     # install infrastructure only
 #   bash install.sh --help              # show help
 #
 
@@ -37,9 +35,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # ────────────────────────────────────────────────────────────
-# Argument parsing — pass through to configure.sh
+# Argument parsing
 # ────────────────────────────────────────────────────────────
-CONFIGURE_ARGS=()
 
 usage() {
     cat <<EOF
@@ -47,13 +44,11 @@ Usage: $0 [OPTIONS]
        bash $0 [OPTIONS]
 
 Installs Docker and system dependencies, downloads TES3MP server files
-from Saagilat/tes3mp-easy, builds the Docker image, then runs
-configure.sh to set up the server interactively or non-interactively.
+from Saagilat/tes3mp-easy, and builds the Docker image.
 
-Options (passed through to configure.sh):
-  --default   Non-interactive mode with all default values.
-  --test      Like --default, but sets password to "1234" and
-              enables all HTTP endpoints.
+After installation, run configure.sh separately to set up the server.
+
+Options:
   --help      Show this help message and exit.
 EOF
 }
@@ -63,10 +58,6 @@ while [[ $# -gt 0 ]]; do
         --help)
             usage
             exit 0
-            ;;
-        --default|--test)
-            CONFIGURE_ARGS+=("$1")
-            shift
             ;;
         *)
             err "Unknown option: $1"
@@ -272,8 +263,21 @@ main() {
     setup_files
     build_image
 
-    info "Infrastructure ready. Running configuration..."
-    bash "/tes3mp-easy/scripts/configure.sh" "${CONFIGURE_ARGS[@]}"
+    info "Infrastructure installation complete."
+    echo ""
+    echo "──────────────────────────────────────────"
+    echo "  Infrastructure (Docker, files, image) is ready."
+    echo ""
+    echo "  Next step — configure the server:"
+    echo "    bash /tes3mp-easy/scripts/configure.sh"
+    echo ""
+    echo "  Or with defaults:"
+    echo "    bash /tes3mp-easy/scripts/configure.sh --default"
+    echo ""
+    echo "  (The configure script will ask about server name,"
+    echo "   password, ports, Lua settings, etc.)"
+    echo "──────────────────────────────────────────"
+    echo ""
 }
 
 main "$@"

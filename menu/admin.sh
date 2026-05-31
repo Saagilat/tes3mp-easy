@@ -55,6 +55,7 @@ show_admin_menu() {
         echo "  $ADMIN_IMPORT_SERVER"
         echo ""
         echo "  $ADMIN_GENERATE_DATA"
+        echo "  $ADMIN_UNINSTALL_SERVER"
         echo ""
         echo "  $MENU_SWITCH_PLAYER"
         echo "  $MENU_UPDATE"
@@ -79,6 +80,7 @@ show_admin_menu() {
             13) player_roles_menu || true ;;
             14) import_server_menu || true ;;
             15) generate_required_data || true ;;
+            16) uninstall_server || true ;;
             p|P)
                 local player_menu="$SCRIPT_DIR/menu/player.sh"
                 if [[ -f "$player_menu" ]]; then
@@ -139,6 +141,7 @@ dispatch_admin() {
             local pm="${SCRIPT_DIR}/menu/player.sh"
             [[ -f "$pm" ]] && exec bash "$pm" || err "menu/player.sh not found"
             ;;
+        uninstall-server) uninstall_server ;;
         uninstall)
             echo ""
             echo "This will remove: $ADMIN_CONFIG and $UPDATE_DIR"
@@ -154,7 +157,8 @@ dispatch_admin() {
         help|--help|-h)
             echo "Admin subcommands: install-server, configure-server, start, stop, restart,"
             echo "  logs, export-mods, export-players, export-world, import-server,"
-            echo "  generate-required-data, config, player-menu, self-update, uninstall, menu"
+            echo "  generate-required-data, uninstall-server, config, player-menu,"
+            echo "  self-update, uninstall, menu"
             ;;
         menu|"") show_admin_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'menu/admin.sh help' for available commands."; exit 1 ;;

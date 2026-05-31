@@ -23,6 +23,8 @@ alias tes3mp-easy-admin='bash ~/.local/share/tes3mp-easy/menu/admin.sh'
 | Edit config | `tes3mp-easy-admin config` |
 | Reconfigure | `tes3mp-easy-admin configure-server` |
 | Install server | `tes3mp-easy-admin install-server` |
+| Configure server | `tes3mp-easy-admin configure-server` |
+| Uninstall server | `tes3mp-easy-admin uninstall-server` |
 | Export mods | `tes3mp-easy-admin export-mods` |
 | Export players | `tes3mp-easy-admin export-players` |
 | Export world | `tes3mp-easy-admin export-world` |
