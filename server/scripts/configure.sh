@@ -13,7 +13,7 @@
 #   bash configure.sh --help        # show help
 #
 
-set -euo pipefail
+set -uo pipefail
 
 # ────────────────────────────────────────────────────────────
 # Source shared library (installed at /tes3mp-easy by install.sh)
@@ -57,23 +57,16 @@ main() {
     echo "╚══════════════════════════════════════╝"
     echo ""
 
-    # Run sub-scripts
     local scripts_dir="$DEST/scripts"
 
     if [[ -f "$scripts_dir/configure-basic.sh" ]]; then
-        bash "$scripts_dir/configure-basic.sh" $args || {
-            err "configure-basic.sh failed."
-            exit 1
-        }
+        bash "$scripts_dir/configure-basic.sh" $args || true
     else
         warn "configure-basic.sh not found — skipping."
     fi
 
     if [[ -f "$scripts_dir/configure-lua.sh" ]]; then
-        bash "$scripts_dir/configure-lua.sh" $args || {
-            err "configure-lua.sh failed."
-            exit 1
-        }
+        bash "$scripts_dir/configure-lua.sh" $args || true
     else
         warn "configure-lua.sh not found — skipping."
     fi
