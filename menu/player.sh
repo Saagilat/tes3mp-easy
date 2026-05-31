@@ -75,7 +75,6 @@ show_player_menu() {
         esac
 
         echo ""
-        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
     done
 }
 
