@@ -11,7 +11,7 @@
 #   bash configure-basic.sh --test        # test mode (password=1234)
 #
 
-set -euo pipefail
+set -uo pipefail
 
 # ────────────────────────────────────────────────────────────
 # Source shared library
