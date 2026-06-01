@@ -198,19 +198,33 @@ extract_configs() {
         return 1
     }
 
-    grep -E '^\s+- \.\/' "$DEST/docker-compose.yml" 2>/dev/null || true | while IFS= read -r line; do
+    # Read docker-compose volume mappings
+    while IFS= read -r line; do
         local host_container
         host_container=$(echo "$line" | sed 's/^[[:space:]]*- //')
         local host_path="${host_container%%:*}"
         local container_path="${host_container##*:}"
 
+        # Skip if host path is a directory (ends with /)
         [[ "$host_path" == */ ]] && continue
+        # Skip if file already exists on host
         [ -f "$DEST/$host_path" ] && continue
 
         local full_host_path="$DEST/$host_path"
-        mkdir -p "$(dirname "$full_host_path")"
-        docker cp "$temp_container:$container_path" "$full_host_path" 2>/dev/null || true
-    done
+        local parent_dir
+        parent_dir="$(dirname "$full_host_path")"
+        mkdir -p "$parent_dir"
+
+        # Remove if a directory with the same name was created by accident
+        [ -d "$full_host_path" ] && rm -rf "$full_host_path"
+
+        # Copy file from Docker image
+        if docker cp "$temp_container:$container_path" "$full_host_path" 2>/dev/null; then
+            [ -f "$full_host_path" ] && ok "Extracted: $host_path" || warn "Not a file: $container_path"
+        else
+            warn "Could not extract $container_path from image"
+        fi
+    done < <(grep -E '^\s+- \.\/' "$DEST/docker-compose.yml" 2>/dev/null || true)
 
     docker rm "$temp_container" >/dev/null 2>&1 || true
 }
