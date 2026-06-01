@@ -360,6 +360,8 @@ switch_to_player() {
 
 edit_admin_config() {
     edit_config "$ADMIN_CONFIG" || true
+    # Reload config after editing so new values take effect immediately
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
 }
 
 menu_exit() {
@@ -372,11 +374,11 @@ menu_exit() {
 # show_admin_menu — entry point for interactive menu
 # ────────────────────────────────────────────────────────────
 show_admin_menu() {
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
 
     # Loop forever so menu reopens after each action
     while true; do
+        load_config "$ADMIN_CONFIG" 2>/dev/null || true
         run_menu "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" "${admin_menu[@]}"
     done
 }
