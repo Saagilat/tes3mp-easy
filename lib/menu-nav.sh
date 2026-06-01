@@ -30,39 +30,40 @@ fi
 #          KEY_Q, or raw character
 # ────────────────────────────────────────────────────────────
 _read_key() {
-    # Save terminal settings
+    # Save terminal settings — handle empty output from stty -g
     local old_settings
-    old_settings=$(stty -g 2>/dev/null || echo "")
-    # Restore on exit
-    trap 'stty "$old_settings" 2>/dev/null || true' RETURN
+    old_settings=$(stty -g 2>/dev/null) || true
+    if [[ -z "$old_settings" ]]; then
+        old_settings="sane"
+    fi
 
-    # Set raw mode — read single byte
-    stty -icanon -echo 2>/dev/null || true
+    # Restore terminal on exit
+    trap 'stty "$old_settings" 2>/dev/null; stty echo 2>/dev/null || true' RETURN
 
-    local key=""
+    # Set raw mode — properly
+    stty -icanon -echo min 1 time 0 2>/dev/null || true
+
     local char=""
     
-    # Read first byte with timeout
+    # Read one byte
     read -r -s -n1 char 2>/dev/null || true
-    key="$char"
-
-    # Escape sequence (arrow keys)
+    # Wait a tiny bit for more bytes (escape sequences)
     if [[ "$char" == $'\e' ]]; then
-        read -r -s -n1 char 2>/dev/null || true
-        key="$key$char"
-        if [[ "$char" == "[" ]]; then
-            read -r -s -n1 char 2>/dev/null || true
-            key="$key$char"
-            case "$char" in
+        local seq=""
+        read -r -s -n1 -t 0.01 seq 2>/dev/null || true
+        if [[ "$seq" == "[" ]]; then
+            local dir=""
+            read -r -s -n1 -t 0.01 dir 2>/dev/null || true
+            case "$dir" in
                 A) echo "KEY_UP" ;;
                 B) echo "KEY_DOWN" ;;
                 C) echo "KEY_RIGHT" ;;
                 D) echo "KEY_LEFT" ;;
-                *) echo "$key" ;;
+                *) echo "KEY_UNKNOWN" ;;
             esac
             return
         fi
-        echo "$key"
+        echo "KEY_UNKNOWN"
         return
     fi
 
