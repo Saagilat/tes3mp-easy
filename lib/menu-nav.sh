@@ -99,6 +99,14 @@ run_menu() {
     local key=""
     local running=true
 
+    # Check needs_restart ONCE before the loop (not every frame)
+    local needs_restart=false
+    if [[ -n "${SSH_HOST:-}" ]]; then
+        if ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
+            needs_restart=true
+        fi
+    fi
+
     # Save terminal settings
     local old_settings
     old_settings=$(stty -g 2>/dev/null || echo "")
@@ -106,7 +114,7 @@ run_menu() {
     while $running; do
         # Render menu
         clear_screen
-        _render_menu "$title" "$selected" "${items[@]}"
+        _render_menu "$title" "$selected" "$needs_restart" "${items[@]}"
 
         # Read key
         stty -icanon -echo 2>/dev/null || true
@@ -201,7 +209,8 @@ _run_submenu() {
 _render_menu() {
     local title="$1"
     local selected="$2"
-    shift 2
+    local needs_restart="$3"
+    shift 3
     local items=("$@")
 
     # Header
@@ -214,12 +223,10 @@ _render_menu() {
     echo "  MODPACK: $modpack_display"
     echo ""
 
-    # Check for needs_restart
-    if [[ -n "${SSH_HOST:-}" ]]; then
-        if ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
-            echo -e "  ${RED}⚠ RESTART REQUIRED — USE RESTART TO APPLY${NC}"
-            echo ""
-        fi
+    # Show restart warning (cached from run_menu, no SSH here)
+    if [[ "$needs_restart" == "true" ]]; then
+        echo -e "  ${RED}⚠ RESTART REQUIRED — USE RESTART TO APPLY${NC}"
+        echo ""
     fi
 
     # Render items
