@@ -9,6 +9,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/common.sh"
     source "$LIB_DIR/lang.sh"
     source "$LIB_DIR/config.sh"
+    source "$LIB_DIR/menu-nav.sh"
     source "$LIB_DIR/server-install.sh"
     source "$LIB_DIR/server-control.sh"
     source "$LIB_DIR/server-configs.sh"
@@ -24,103 +25,84 @@ fi
 ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
 CONFIG_FILE="$ADMIN_CONFIG"
 
-show_admin_menu() {
-    local choice
+# ────────────────────────────────────────────────────────────
+# Submenu definitions
+# ────────────────────────────────────────────────────────────
 
-    while true; do
-        clear_screen
-        print_header "$MENU_TITLE_ADMIN"
-        local host_display="${SSH_HOST:-<not set>}"
-        local modpack_display="${MODPACK_DIR:--}"
-        echo "  Host: $host_display | Modpack: $modpack_display"
-        echo ""
+control_menu=(
+    "START|fn|server_start"
+    "STOP|fn|server_stop"
+    "RESTART|fn|server_restart"
+    "STATUS|fn|server_status"
+    "LOGS|fn|server_logs"
+    "─|sep|"
+    "BACK|back|"
+)
 
-        echo "  $ADMIN_INSTALL_SERVER"
-        echo "  $ADMIN_CONFIGURE"
-        echo ""
-        echo "  $ADMIN_START"
-        echo "  $ADMIN_STOP"
-        echo "  $ADMIN_RESTART"
-        echo "  $ADMIN_LOGS"
-        echo "  $ADMIN_STATUS"
-        echo ""
-        echo "  $ADMIN_EDIT_CONFIGS"
-        echo ""
-        echo "  $ADMIN_EXPORT_MODS"
-        echo "  $ADMIN_EXPORT_PLAYERS"
-        echo "  $ADMIN_EXPORT_WORLD"
-        echo "  $ADMIN_MANAGE_ROLES"
-        echo ""
-        echo "  $ADMIN_IMPORT_SERVER"
-        echo ""
-        echo "  $ADMIN_GENERATE_DATA"
-        echo "  $ADMIN_UNINSTALL_SERVER"
-        echo ""
-        echo "  $MENU_SWITCH_PLAYER"
-        echo "  $MENU_UPDATE"
-        echo "  $MENU_SETTINGS"
-        echo "  $MENU_QUIT"
-        echo ""
-        read -r -p "  ${MSG_PROMPT:-Select option:} " choice
+modding_menu=(
+    "GENERATE REQUIRED DATA|fn|generate_required_data"
+    "─|sep|"
+    "EXPORT MODS|fn|export_mods"
+    "DEPLOY MODS|fn|deploy_mods_menu"
+    "DOWNLOAD MOD BACKUP|fn|download_mod_backup"
+    "─|sep|"
+    "BACK|back|"
+)
 
-        case "$choice" in
-            1) install_server || true ;;
-            2) configure_server || true ;;
-            3) server_start || true ;;
-            4) server_stop || true ;;
-            5) server_restart || true ;;
-            6) server_logs || true ;;
-            7) server_status || true ;;
-            8) edit_configs_menu || true ;;
-            9) export_mods || true ;;
-            10) export_players || true ;;
-            11) export_world || true ;;
-            12) player_roles_menu || true ;;
-            13) import_server_menu || true ;;
-            14) generate_required_data || true ;;
-            15) uninstall_server || true ;;
-            p|P)
-                local player_menu="$SCRIPT_DIR/menu/player.sh"
-                if [[ -f "$player_menu" ]]; then
-                    info "${MSG_SWITCHING_PLAYER:-Switching to player menu...}"
-                    sleep 1
-                    exec bash "$player_menu"
-                else
-                    err "menu/player.sh not found at $player_menu"
-                fi
-                ;;
-            u|U) self_update || true ;;
-            s|S)
-                edit_config "$ADMIN_CONFIG" || true
-                echo ""
-                info "Restarting menu..."
-                sleep 1
-                exec bash "$0"
-                ;;
-            q|Q)
-                echo ""
-                info "${MSG_BYE:-Bye!}"
-                exit 0
-                ;;
-            *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
-        esac
+snapshots_menu=(
+    "EXPORT PLAYERS|fn|export_players"
+    "EXPORT WORLD|fn|export_world"
+    "─|sep|"
+    "DEPLOY PLAYERS|fn|deploy_players_menu"
+    "DEPLOY WORLD|fn|deploy_world_menu"
+    "─|sep|"
+    "DOWNLOAD PLAYERS BACKUP|fn|download_players_backup"
+    "DOWNLOAD WORLD BACKUP|fn|download_world_backup"
+    "─|sep|"
+    "BACK|back|"
+)
 
-        echo ""
-        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
-    done
-}
+settings_menu=(
+    "EDIT CONFIGS|fn|edit_configs_menu"
+    "─|sep|"
+    "MANAGE ROLES|fn|player_roles_menu"
+    "─|sep|"
+    "BACK|back|"
+)
 
-clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
+install_menu=(
+    "INSTALL SERVER|fn|install_server"
+    "─|sep|"
+    "UNINSTALL SERVER|fn|uninstall_server"
+    "─|sep|"
+    "BACK|back|"
+)
 
-print_header() {
-    local title="$1" width=60
-    local padding=$(( (width - ${#title} - 2) / 2 ))
-    echo ""
-    printf "╔"; printf '═%.0s' $(seq 1 $width); printf "╗\n"
-    printf "║%*s %s %*s║\n" $padding "" "$title" $padding ""
-    printf "╚"; printf '═%.0s' $(seq 1 $width); printf "╝\n"
-}
+system_menu=(
+    "SWITCH TO PLAYER MENU|fn|switch_to_player"
+    "─|sep|"
+    "UPDATE TES3MP-EASY|fn|self_update"
+    "SETTINGS|fn|edit_admin_config"
+    "─|sep|"
+    "EXIT|fn|menu_exit"
+    "BACK|back|"
+)
 
+# ────────────────────────────────────────────────────────────
+# Admin main menu
+# ────────────────────────────────────────────────────────────
+admin_menu=(
+    "CONTROL|menu|control_menu"
+    "MODDING|menu|modding_menu"
+    "SNAPSHOTS|menu|snapshots_menu"
+    "SETTINGS|menu|settings_menu"
+    "INSTALL|menu|install_menu"
+    "TES3MP-EASY|menu|system_menu"
+)
+
+# ────────────────────────────────────────────────────────────
+# dispatch — handle direct command line arguments
+# ────────────────────────────────────────────────────────────
 dispatch_admin() {
     case "${1:-}" in
         install-server) install_server ;;
@@ -129,10 +111,10 @@ dispatch_admin() {
         stop) server_stop ;;
         restart) server_restart ;;
         logs) server_logs ;;
+        status) server_status ;;
         export-mods) export_mods ;;
         export-players) export_players ;;
         export-world) export_world ;;
-        import-server) import_server_menu ;;
         generate-required-data) generate_required_data ;;
         config) edit_config "$ADMIN_CONFIG" ;;
         player-menu)
@@ -154,7 +136,7 @@ dispatch_admin() {
         self-update) self_update ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, configure-server, start, stop, restart,"
-            echo "  logs, export-mods, export-players, export-world, import-server,"
+            echo "  logs, status, export-mods, export-players, export-world,"
             echo "  generate-required-data, uninstall-server, config, player-menu,"
             echo "  self-update, uninstall, menu"
             ;;
@@ -163,6 +145,245 @@ dispatch_admin() {
     esac
 }
 
+# ────────────────────────────────────────────────────────────
+# Deploy menu wrappers
+# ────────────────────────────────────────────────────────────
+deploy_mods_menu() {
+    require_ssh_host || return 1
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  Deploy Mods"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+    echo "  Choose archive to deploy (or press Enter for latest):"
+    echo ""
+    local archives
+    archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/mods/import-*.tar.gz /tes3mp-easy/backups/mods/init-*.tar.gz 2>/dev/null | head -10" 2>/dev/null)
+    if [[ -z "$archives" ]]; then
+        warn "No archives found on server."
+        press_enter
+        return
+    fi
+    echo "$archives" | nl -w2 -s') '
+    echo ""
+    read -r -p "  Select number (empty = latest): " choice
+    local archive
+    if [[ -z "$choice" ]]; then
+        archive=$(echo "$archives" | head -1)
+        archive=$(basename "$archive")
+    else
+        archive=$(echo "$archives" | sed -n "${choice}p")
+        archive=$(basename "$archive")
+    fi
+    if [[ -z "$archive" ]]; then
+        err "Invalid selection."
+        press_enter
+        return
+    fi
+    info "Deploying: $archive"
+    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_mods.sh '$archive'" || {
+        err "Deploy failed."
+        press_enter
+        return
+    }
+    needs_restart_set
+    ok "Deploy queued. Use RESTART to apply."
+    press_enter
+}
+
+deploy_players_menu() {
+    require_ssh_host || return 1
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  Deploy Players"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+    local archives
+    archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/players/import-*.tar.gz /tes3mp-easy/backups/players/init-*.tar.gz 2>/dev/null | head -10" 2>/dev/null)
+    if [[ -z "$archives" ]]; then
+        warn "No archives found on server."
+        press_enter
+        return
+    fi
+    echo "$archives" | nl -w2 -s') '
+    echo ""
+    read -r -p "  Select number (empty = latest): " choice
+    local archive
+    if [[ -z "$choice" ]]; then
+        archive=$(echo "$archives" | head -1)
+        archive=$(basename "$archive")
+    else
+        archive=$(echo "$archives" | sed -n "${choice}p")
+        archive=$(basename "$archive")
+    fi
+    if [[ -z "$archive" ]]; then
+        err "Invalid selection."
+        press_enter
+        return
+    fi
+    info "Deploying: $archive"
+    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_players.sh '$archive'" || {
+        err "Deploy failed."
+        press_enter
+        return
+    }
+    needs_restart_set
+    ok "Deploy queued. Use RESTART to apply."
+    press_enter
+}
+
+deploy_world_menu() {
+    require_ssh_host || return 1
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  Deploy World"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+    local archives
+    archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/world/import-*.tar.gz /tes3mp-easy/backups/world/init-*.tar.gz 2>/dev/null | head -10" 2>/dev/null)
+    if [[ -z "$archives" ]]; then
+        warn "No archives found on server."
+        press_enter
+        return
+    fi
+    echo "$archives" | nl -w2 -s') '
+    echo ""
+    read -r -p "  Select number (empty = latest): " choice
+    local archive
+    if [[ -z "$choice" ]]; then
+        archive=$(echo "$archives" | head -1)
+        archive=$(basename "$archive")
+    else
+        archive=$(echo "$archives" | sed -n "${choice}p")
+        archive=$(basename "$archive")
+    fi
+    if [[ -z "$archive" ]]; then
+        err "Invalid selection."
+        press_enter
+        return
+    fi
+    info "Deploying: $archive"
+    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_world.sh '$archive'" || {
+        err "Deploy failed."
+        press_enter
+        return
+    }
+    needs_restart_set
+    ok "Deploy queued. Use RESTART to apply."
+    press_enter
+}
+
+# ────────────────────────────────────────────────────────────
+# Download backup functions
+# ────────────────────────────────────────────────────────────
+download_backup() {
+    local remote_dir="$1"
+    local local_dir="$2"
+    local label="$3"
+
+    require_ssh_host || return 1
+
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  Download $label Backup"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+
+    local archives
+    archives=$(ssh "$SSH_HOST" "ls -t $remote_dir/*.tar.gz 2>/dev/null | head -10" 2>/dev/null)
+    if [[ -z "$archives" ]]; then
+        warn "No archives found on server."
+        press_enter
+        return
+    fi
+
+    echo "$archives" | nl -w2 -s') '
+    echo ""
+    read -r -p "  Select number (empty = latest): " choice
+
+    local archive
+    if [[ -z "$choice" ]]; then
+        archive=$(echo "$archives" | head -1)
+    else
+        archive=$(echo "$archives" | sed -n "${choice}p")
+    fi
+
+    if [[ -z "$archive" ]]; then
+        err "Invalid selection."
+        press_enter
+        return
+    fi
+
+    local basename
+    basename=$(basename "$archive")
+    local dest="$local_dir/$basename"
+    mkdir -p "$local_dir"
+
+    info "Downloading: $archive"
+    scp "$SSH_HOST:$archive" "$dest" || {
+        err "Download failed."
+        press_enter
+        return
+    }
+    ok "Downloaded to: $dest"
+    press_enter
+}
+
+download_mod_backup() {
+    local local_dir="${MODPACK_DIR:-$HOME/Downloads}"
+    download_backup "/tes3mp-easy/backups/mods" "$local_dir" "Mods"
+}
+
+download_players_backup() {
+    local local_dir="${MODPACK_DIR:-$HOME/Downloads}"
+    download_backup "/tes3mp-easy/backups/players" "$local_dir" "Players"
+}
+
+download_world_backup() {
+    local local_dir="${MODPACK_DIR:-$HOME/Downloads}"
+    download_backup "/tes3mp-easy/backups/world" "$local_dir" "World"
+}
+
+# ────────────────────────────────────────────────────────────
+# Menu transitions
+# ────────────────────────────────────────────────────────────
+switch_to_player() {
+    local player_menu="$SCRIPT_DIR/menu/player.sh"
+    if [[ -f "$player_menu" ]]; then
+        info "${MSG_SWITCHING_PLAYER:-Switching to player menu...}"
+        sleep 1
+        exec bash "$player_menu"
+    else
+        err "menu/player.sh not found at $player_menu"
+    fi
+}
+
+edit_admin_config() {
+    edit_config "$ADMIN_CONFIG" || true
+}
+
+menu_exit() {
+    echo ""
+    info "${MSG_BYE:-Bye!}"
+    exit 0
+}
+
+# ────────────────────────────────────────────────────────────
+# show_admin_menu — entry point for interactive menu
+# ────────────────────────────────────────────────────────────
+show_admin_menu() {
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_lang "${LANG_CODE:-en}"
+
+    # Loop forever so menu reopens after each action
+    while true; do
+        run_menu "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" "${admin_menu[@]}"
+    done
+}
+
+# ────────────────────────────────────────────────────────────
+# Entry
+# ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     load_config "$ADMIN_CONFIG" 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"

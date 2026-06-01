@@ -8,6 +8,9 @@
 #   - server_restart()
 #   - server_logs()
 #   - server_status()
+#   - needs_restart_set()
+#   - needs_restart_clear()
+#   - needs_restart_check()
 #
 
 if [[ -z "${LIB_DIR:-}" ]]; then
@@ -34,7 +37,6 @@ docker_compose() {
     local tty_flag="${2:-}"
     local cmd="cd /tes3mp-easy && docker compose $action"
 
-    echo ""
     info "Running on $SSH_HOST: $cmd"
     echo ""
 
@@ -43,6 +45,32 @@ docker_compose() {
     else
         ssh "$SSH_HOST" "$cmd"
     fi
+}
+
+# ────────────────────────────────────────────────────────────
+# needs_restart_set — mark server as needing a restart
+# ────────────────────────────────────────────────────────────
+needs_restart_set() {
+    require_ssh_host || return 1
+    ssh "$SSH_HOST" "touch /tes3mp-easy/needs_restart.flag" 2>/dev/null || true
+}
+
+# ────────────────────────────────────────────────────────────
+# needs_restart_clear — clear the restart flag
+# ────────────────────────────────────────────────────────────
+needs_restart_clear() {
+    require_ssh_host || return 1
+    ssh "$SSH_HOST" "rm -f /tes3mp-easy/needs_restart.flag" 2>/dev/null || true
+}
+
+# ────────────────────────────────────────────────────────────
+# needs_restart_check — returns 0 if restart needed, 1 if not
+# ────────────────────────────────────────────────────────────
+needs_restart_check() {
+    if [[ -z "${SSH_HOST:-}" ]]; then
+        return 1
+    fi
+    ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null
 }
 
 # ────────────────────────────────────────────────────────────
@@ -56,6 +84,7 @@ server_start() {
     echo "═══════════════════════════════════════════════"
     echo ""
     docker_compose "up -d"
+    needs_restart_clear
     ok "Server started on $SSH_HOST"
 }
 
@@ -84,6 +113,7 @@ server_restart() {
     echo "═══════════════════════════════════════════════"
     echo ""
     docker_compose "restart"
+    needs_restart_clear
     ok "Server restarted on $SSH_HOST"
 }
 
