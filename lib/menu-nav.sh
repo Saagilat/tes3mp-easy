@@ -363,6 +363,20 @@ reorder_list() {
 }
 
 # ────────────────────────────────────────────────────────────
-# backup_menu_dependency — required by run_menu for 'sep' type
+# Screen utilities (used by run_menu)
 # ────────────────────────────────────────────────────────────
-# This is needed so that 'sep' items display correctly
+clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
+
+print_header() {
+    local title="$1" width=60
+    local padding=$(( (width - ${#title} - 2) / 2 ))
+    local i
+    echo ""
+    printf "╔"
+    for ((i=0; i<width; i++)); do printf "═"; done
+    printf "╗\n"
+    printf "║%*s %s %*s║\n" $padding "" "$title" $padding ""
+    printf "╚"
+    for ((i=0; i<width; i++)); do printf "═"; done
+    printf "╝\n"
+}
