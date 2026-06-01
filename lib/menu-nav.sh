@@ -150,10 +150,19 @@ run_menu() {
 
                 case "$item_type" in
                     fn)
-                        stty "$old_settings" 2>/dev/null || true
-                        clear_screen
-                        if type "$action" &>/dev/null 2>&1; then
-                            "$action"
+                        # If SSH_HOST needed and not set, show warning
+                        if [[ -z "${SSH_HOST:-}" ]] && type "$action" 2>/dev/null | grep -q 'SSH_HOST'; then
+                            stty "$old_settings" 2>/dev/null || true
+                            clear_screen
+                            err "SSH_HOST is not set. Use Settings to configure it."
+                            echo ""
+                            read -r -p "  Press Enter to continue..." dummy 2>/dev/null || true
+                        else
+                            stty "$old_settings" 2>/dev/null || true
+                            clear_screen
+                            if type "$action" &>/dev/null 2>&1; then
+                                "$action"
+                            fi
                         fi
                         stty "$old_settings" 2>/dev/null || true
                         # After function, wait for key then return to menu

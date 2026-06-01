@@ -23,8 +23,6 @@ fi
 # ────────────────────────────────────────────────────────────
 require_ssh_host() {
     if [[ -z "${SSH_HOST:-}" ]]; then
-        err "SSH_HOST is not set."
-        err "Run './tes3mp-easy config' to set it."
         return 1
     fi
 }
