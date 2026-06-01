@@ -37,6 +37,7 @@ self_update() {
         "lib/common.sh"
         "lib/lang.sh"
         "lib/config.sh"
+        "lib/menu-nav.sh"
         "lib/server-install.sh"
         "lib/server-control.sh"
         "lib/server-configs.sh"
