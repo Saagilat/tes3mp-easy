@@ -68,4 +68,5 @@ rm -rf "$IMPORT_DIR"
 ok "Import directory cleaned up"
 
 echo ""
+touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
 echo "=== Done! World archive saved. Run deploy_world.sh to deploy. ==="

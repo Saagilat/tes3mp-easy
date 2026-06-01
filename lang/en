@@ -1,60 +1,15 @@
 # TES3MP Easy — English localization
-# Format: KEY="value"
 
 # ─── Menu titles ───
 MENU_TITLE_ADMIN="TES3MP Easy — Admin"
 MENU_TITLE_PLAYER="TES3MP Easy — Player"
-
-# ─── Install / Configure ───
-ADMIN_INSTALL_SERVER="1) 📦 Install server on VPS"
-ADMIN_CONFIGURE="2) 🛠  Reconfigure server"
-
-# ─── Server control ───
-ADMIN_START="3) ▶  Start server"
-ADMIN_STOP="4) ■  Stop server"
-ADMIN_RESTART="5) ↻  Restart server"
-ADMIN_LOGS="6) 📜 Server logs"
-ADMIN_STATUS="7) 📊 Server status"
-
-# ─── Config ───
-ADMIN_EDIT_CONFIGS="8) ✎  Edit server configs"
-
-# ─── Mods / Players / World ───
-ADMIN_EXPORT_MODS="9) 📦 Export mods to server"
-ADMIN_EXPORT_PLAYERS="10) 👥 Export players"
-ADMIN_EXPORT_WORLD="11) 🌍 Export world"
-ADMIN_MANAGE_ROLES="12) 🛡  Manage player roles"
-
-# ─── Import ───
-ADMIN_IMPORT_SERVER="13) 📥 Import to server (mods/players/world)"
-
-# ─── Tools ───
-ADMIN_GENERATE_DATA="14) 🔑 Generate requiredDataFiles.json"
-ADMIN_UNINSTALL_SERVER="15) 🗑  Uninstall server from VPS"
-
-# ─── Generic menu items ───
-MENU_SWITCH_PLAYER="p) 🎮 Switch to player menu →"
-MENU_UPDATE="u) 🔄 Update tes3mp-easy"
-MENU_SETTINGS="s) ⚙  Settings (SSH host, paths)"
-MENU_QUIT="q) Exit"
-
-# ─── Player menu ───
-PLAYER_INSTALL_CLIENT="1) 🎮 Install TES3MP client (Proton)"
-PLAYER_SETUP_FONTS="2) 🔤 Configure fonts (TrueType)"
-PLAYER_SET_ADDRESS="3) 🌐 Set server address"
-PLAYER_DOWNLOAD_MODS="4) 📥 Download and install mods"
-PLAYER_UPDATE_MODS="5) 🔄 Update mods"
-PLAYER_DOWNLOAD_PLAYERS="6) 👥 Download player data"
-PLAYER_DOWNLOAD_WORLD="7) 🌍 Download world data"
-PLAYER_GENERATE_DATA="8) 🔑 Generate requiredDataFiles.json"
-PLAYER_INSTALL_LANG="9) 🌐 Install localization"
 
 # ─── Messages ───
 MSG_PROMPT="Select option:"
 MSG_PRESS_ENTER="Press Enter to continue..."
 MSG_INVALID="Invalid option."
 MSG_BYE="Bye!"
-MSG_HOST_UNSET="Host: <not set>"
+
 MSG_SWITCHING_PLAYER="Switching to player menu..."
 MSG_SWITCHING_ADMIN="Switching to admin menu..."
 MSG_UNINSTALL_CONFIRM="Remove tes3mp-easy completely?"

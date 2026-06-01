@@ -1,60 +1,15 @@
 # TES3MP Easy — Русская локализация
-# Формат: KEY="значение"
 
 # ─── Заголовки меню ───
 MENU_TITLE_ADMIN="TES3MP Easy — Админ"
 MENU_TITLE_PLAYER="TES3MP Easy — Игрок"
-
-# ─── Установка / Настройка ───
-ADMIN_INSTALL_SERVER="1) 📦 Установить сервер на VPS"
-ADMIN_CONFIGURE="2) 🛠  Перенастроить сервер"
-
-# ─── Управление сервером ───
-ADMIN_START="3) ▶  Запустить сервер"
-ADMIN_STOP="4) ■  Остановить сервер"
-ADMIN_RESTART="5) ↻  Перезапустить сервер"
-ADMIN_LOGS="6) 📜 Логи сервера"
-ADMIN_STATUS="7) 📊 Статус сервера"
-
-# ─── Конфигурация ───
-ADMIN_EDIT_CONFIGS="8) ✎  Редактировать конфиги сервера"
-
-# ─── Моды / Игроки / Мир ───
-ADMIN_EXPORT_MODS="9) 📦 Экспорт модов на сервер"
-ADMIN_EXPORT_PLAYERS="10) 👥 Экспорт игроков"
-ADMIN_EXPORT_WORLD="11) 🌍 Экспорт мира"
-ADMIN_MANAGE_ROLES="12) 🛡  Управление ролями игроков"
-
-# ─── Импорт ───
-ADMIN_IMPORT_SERVER="13) 📥 Импорт на сервер (моды/игроки/мир)"
-
-# ─── Инструменты ───
-ADMIN_GENERATE_DATA="14) 🔑 Сгенерировать requiredDataFiles.json"
-ADMIN_UNINSTALL_SERVER="15) 🗑  Удалить сервер с VPS"
-
-# ─── Общие пункты меню ───
-MENU_SWITCH_PLAYER="p) 🎮 Перейти в меню игрока →"
-MENU_UPDATE="u) 🔄 Обновить tes3mp-easy"
-MENU_SETTINGS="s) ⚙  Настройки (SSH, пути)"
-MENU_QUIT="q) Выход"
-
-# ─── Меню игрока ───
-PLAYER_INSTALL_CLIENT="1) 🎮 Установить TES3MP клиент (Proton)"
-PLAYER_SETUP_FONTS="2) 🔤 Настроить шрифты (TrueType)"
-PLAYER_SET_ADDRESS="3) 🌐 Настроить адрес сервера"
-PLAYER_DOWNLOAD_MODS="4) 📥 Скачать и установить моды"
-PLAYER_UPDATE_MODS="5) 🔄 Обновить моды"
-PLAYER_DOWNLOAD_PLAYERS="6) 👥 Скачать данные игроков"
-PLAYER_DOWNLOAD_WORLD="7) 🌍 Скачать данные мира"
-PLAYER_GENERATE_DATA="8) 🔑 Сгенерировать requiredDataFiles.json"
-PLAYER_INSTALL_LANG="9) 🌐 Установить локализацию"
 
 # ─── Сообщения ───
 MSG_PROMPT="Выберите пункт:"
 MSG_PRESS_ENTER="Нажмите Enter чтобы продолжить..."
 MSG_INVALID="Неверный пункт."
 MSG_BYE="До свидания!"
-MSG_HOST_UNSET="Хост: <не задан>"
+
 MSG_SWITCHING_PLAYER="Переход в меню игрока..."
 MSG_SWITCHING_ADMIN="Переход в меню админа..."
 MSG_UNINSTALL_CONFIRM="Удалить tes3mp-easy полностью?"

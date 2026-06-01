@@ -350,4 +350,5 @@ cd "$BASE_DIR" && docker compose up -d
 ok "TES3MP started"
 
 echo ""
+touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
 echo "=== Done! Mods deployed successfully. ==="

@@ -151,4 +151,5 @@ rm -rf "$IMPORT_DIR"
 ok "Import directory cleaned up"
 
 echo ""
+touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
 echo "=== Done! Mods archive validated and saved. Run deploy_mods.sh to deploy. ==="

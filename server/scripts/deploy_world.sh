@@ -247,4 +247,5 @@ echo "$ARCHIVE_SHA256 $ARCHIVE_FILENAME" > "$CURRENT_FILE"
 ok "current.txt updated: $ARCHIVE_SHA256 $ARCHIVE_FILENAME"
 
 echo ""
+touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
 echo "=== Done! World deployed successfully. ==="

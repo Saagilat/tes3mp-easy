@@ -9,6 +9,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/common.sh"
     source "$LIB_DIR/lang.sh"
     source "$LIB_DIR/config.sh"
+    source "$LIB_DIR/menu-nav.sh"
     source "$LIB_DIR/import-client.sh"
     source "$LIB_DIR/client-install.sh"
     source "$LIB_DIR/client-configs.sh"
@@ -20,73 +21,56 @@ fi
 PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
 CONFIG_FILE="$PLAYER_CONFIG"
 
-show_player_menu() {
-    local choice
+# ────────────────────────────────────────────────────────────
+# Submenu definitions
+# ────────────────────────────────────────────────────────────
 
-    while true; do
-        clear_screen
-        print_header "$MENU_TITLE_PLAYER"
-        echo ""
-        echo "  $PLAYER_INSTALL_CLIENT"
-        echo "  $PLAYER_SETUP_FONTS"
-        echo "  $PLAYER_SET_ADDRESS"
-        echo ""
-        echo "  $PLAYER_DOWNLOAD_MODS"
-        echo "  $PLAYER_UPDATE_MODS"
-        echo ""
-        echo "  $PLAYER_DOWNLOAD_PLAYERS"
-        echo "  $PLAYER_DOWNLOAD_WORLD"
-        echo ""
-        echo "  $PLAYER_GENERATE_DATA"
-        echo "  $PLAYER_INSTALL_LANG"
-        echo ""
-        echo "  $MENU_SETTINGS"
-        echo "  $MENU_UPDATE"
-        echo "  $MENU_QUIT"
-        echo ""
-        read -r -p "  ${MSG_PROMPT:-Select option:} " choice
+player_client_menu=(
+    "INSTALL CLIENT|fn|install_client"
+    "CONFIGURE FONTS|fn|setup_fonts"
+    "SET SERVER ADDRESS|fn|set_server_address"
+    "─|sep|"
+    "BACK|back|"
+)
 
-        case "$choice" in
-            1) install_client || true ;;
-            2) setup_fonts || true ;;
-            3) set_server_address || true ;;
-            4|5) download_mods || true ;;
-            6) download_players || true ;;
-            7) download_world || true ;;
-            8) generate_required_data || true ;;
-            9) install_localization || true ;;
-            s|S)
-                edit_config "$PLAYER_CONFIG" || true
-                echo ""
-                info "Restarting menu..."
-                sleep 1
-                exec bash "$0"
-                ;;
-            u|U) self_update || true ;;
-            q|Q)
-                echo ""
-                info "${MSG_BYE:-Bye!}"
-                exit 0
-                ;;
-            *) echo "  ${MSG_INVALID:-Invalid option.}" ;;
-        esac
+player_data_menu=(
+    "DOWNLOAD MODS|fn|download_mods"
+    "UPDATE MODS|fn|download_mods"
+    "─|sep|"
+    "DOWNLOAD PLAYERS|fn|download_players"
+    "DOWNLOAD WORLD|fn|download_world"
+    "─|sep|"
+    "GENERATE REQUIRED DATA|fn|generate_required_data"
+    "─|sep|"
+    "BACK|back|"
+)
 
-        echo ""
-        read -r -p "  ${MSG_PRESS_ENTER:-Press Enter to continue...}"
-    done
-}
+player_lang_menu=(
+    "INSTALL LOCALIZATION|fn|install_localization"
+    "─|sep|"
+    "BACK|back|"
+)
 
-clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
+player_system_menu=(
+    "SWITCH TO ADMIN MENU|fn|switch_to_admin"
+    "─|sep|"
+    "UPDATE TES3MP-EASY|fn|self_update"
+    "SETTINGS|fn|edit_player_config"
+    "─|sep|"
+    "EXIT|fn|menu_exit"
+    "BACK|back|"
+)
 
-print_header() {
-    local title="$1" width=60
-    local padding=$(( (width - ${#title} - 2) / 2 ))
-    echo ""
-    printf "╔"; printf '═%.0s' $(seq 1 $width); printf "╗\n"
-    printf "║%*s %s %*s║\n" $padding "" "$title" $padding ""
-    printf "╚"; printf '═%.0s' $(seq 1 $width); printf "╝\n"
-}
+player_main_menu=(
+    "CLIENT|menu|player_client_menu"
+    "DATA|menu|player_data_menu"
+    "LOCALIZATION|menu|player_lang_menu"
+    "TES3MP-EASY|menu|player_system_menu"
+)
 
+# ────────────────────────────────────────────────────────────
+# dispatch_player — handle direct command line arguments
+# ────────────────────────────────────────────────────────────
 dispatch_player() {
     case "${1:-}" in
         download-mods) download_mods ;;
@@ -122,6 +106,45 @@ dispatch_player() {
     esac
 }
 
+# ────────────────────────────────────────────────────────────
+# Helper functions
+# ────────────────────────────────────────────────────────────
+switch_to_admin() {
+    local am="${SCRIPT_DIR}/menu/admin.sh"
+    if [[ -f "$am" ]]; then
+        info "${MSG_SWITCHING_ADMIN:-Switching to admin menu...}"
+        sleep 1
+        exec bash "$am"
+    else
+        err "menu/admin.sh not found at $am"
+    fi
+}
+
+edit_player_config() {
+    edit_config "$PLAYER_CONFIG" || true
+}
+
+menu_exit() {
+    echo ""
+    info "${MSG_BYE:-Bye!}"
+    exit 0
+}
+
+# ────────────────────────────────────────────────────────────
+# show_player_menu — entry point for interactive menu
+# ────────────────────────────────────────────────────────────
+show_player_menu() {
+    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_lang "${LANG_CODE:-en}"
+
+    while true; do
+        run_menu "${MENU_TITLE_PLAYER:-TES3MP Easy — Player}" "${player_main_menu[@]}"
+    done
+}
+
+# ────────────────────────────────────────────────────────────
+# Entry
+# ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     load_config "$PLAYER_CONFIG" 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
