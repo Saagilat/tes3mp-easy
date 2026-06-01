@@ -19,10 +19,9 @@
 #   run_menu "MY TITLE" "${main_menu[@]}"
 #
 
-if [[ -z "${LIB_DIR:-}" ]]; then
-    echo "ERROR: common.sh must be sourced before menu-nav.sh" >&2
-    exit 1
-fi
+# No strict guard needed — run_menu() works standalone with common.sh
+# common.sh sets LIB_DIR, colors, etc.
+[ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
 # Internal: read a single keypress
