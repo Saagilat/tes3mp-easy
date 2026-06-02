@@ -5,40 +5,23 @@
 # Provides:
 #   run_menu() — flat interactive menu with section separators
 #
-# Item format:
-#   "LABEL|fn|function_name"  — run bash function
-#   "LABEL|sep|"              — section divider (label = section name)
-#   "BACK|back|"              — exit menu
-#
-# Usage:
-#   source lib/menu-nav.sh
-#   run_menu "Title" "ssh_host" "modpack_dir" "needs_restart_flag" "${items[@]}"
-#
 
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions
+# Color definitions (ANSI-C quoted $'...' — contains real ESC byte)
 # ────────────────────────────────────────────────────────────
-readonly C_RESET='\033[0m'
-readonly C_BOLD='\033[1m'
-readonly C_DIM='\033[2m'
-readonly C_REV='\033[7m'
+readonly C_RESET=$'\033[0m'
+readonly C_BOLD=$'\033[1m'
 
-readonly C_BLACK='\033[30m'
-readonly C_RED='\033[31m'
-readonly C_GREEN='\033[32m'
-readonly C_YELLOW='\033[33m'
-readonly C_BLUE='\033[34m'
-readonly C_MAGENTA='\033[35m'
-readonly C_CYAN='\033[36m'
-readonly C_WHITE='\033[37m'
-readonly C_GRAY='\033[90m'
+readonly C_RED=$'\033[31m'
+readonly C_GREEN=$'\033[32m'
+readonly C_YELLOW=$'\033[33m'
+readonly C_CYAN=$'\033[36m'
+readonly C_WHITE=$'\033[37m'
+readonly C_GRAY=$'\033[90m'
 
-readonly C_BG_BLUE='\033[44m'
-readonly C_BG_CYAN='\033[46m'
-readonly C_BG_GRAY='\033[100m'
-readonly C_BG_WHITE='\033[107m'
+readonly C_BG_BLUE=$'\033[44m'
 
 # ────────────────────────────────────────────────────────────
 # Key codes
@@ -60,37 +43,40 @@ print_boxed_header() {
     local right_pad=$((width - pad - title_len - 2))
     [[ $right_pad -lt 0 ]] && right_pad=0
 
-    printf "\n"
-    printf "${C_CYAN}╭"
-    printf "─%.0s" $(seq 1 $width)
-    printf "╮${C_RESET}\n"
+    local line
+    printf -v line "%64s" ""
+    line="${line// /─}"
 
-    printf "${C_CYAN}│${C_RESET}"
-    printf "%*s" $pad ""
-    printf "${C_BOLD}${C_YELLOW} %s ${C_RESET}" "$title"
-    printf "%*s" $right_pad ""
-    printf "${C_CYAN}│${C_RESET}\n"
-
-    printf "${C_CYAN}╰"
-    printf "─%.0s" $(seq 1 $width)
-    printf "╯${C_RESET}\n"
+    printf "\n${C_CYAN}╭${line}╮${C_RESET}\n"
+    printf "${C_CYAN}│${C_RESET}%*s${C_BOLD}${C_YELLOW} %s ${C_RESET}%*s${C_CYAN}│${C_RESET}\n" \
+        $(( (width - title_len - 2) / 2 )) "" \
+        "$title" \
+        $(( width - (width - title_len - 2) / 2 - title_len - 2 )) ""
+    printf "${C_CYAN}╰${line}╯${C_RESET}\n"
 }
 
 # ────────────────────────────────────────────────────────────
 # run_menu — flat interactive menu with sections & info line
 #
 # Usage: run_menu "TITLE" "SSH_HOST" "MODPACK_DIR" "NEEDS_RESTART" item1 item2 ...
+#   After each fn action, the function source() the config to refresh
+#   ssh_host and modpack_dir from CONFIG_FILE.
 # ────────────────────────────────────────────────────────────
 run_menu() {
     local menu_title="$1"
     shift
-    local ssh_host="${1:-}"
+    local ssh_host_def="${1:-}"
     shift
-    local modpack_dir="${1:-}"
+    local modpack_dir_def="${1:-}"
+    shift
+    local config_file="${1:-}"
     shift
     local needs_restart="${1:-}"
     shift
     local items=("$@")
+
+    local ssh_host="$ssh_host_def"
+    local modpack="$modpack_dir_def"
 
     # Build visible arrays
     local -a v_labels=()
@@ -113,12 +99,6 @@ run_menu() {
     local count=${#v_labels[@]}
     local cursor=0
 
-    # Count only selectable (fn) items for wrapping
-    local fn_count=0
-    for ((i=0; i<count; i++)); do
-        [[ "${v_types[$i]}" == "fn" ]] && ((fn_count++))
-    done
-
     # Build a mapping from fn-only index to actual index
     local -a fn_map=()
     for ((i=0; i<count; i++)); do
@@ -134,22 +114,22 @@ run_menu() {
         print_boxed_header "$menu_title"
 
         # Info line
-        local info=""
+        local info_parts=""
         if [[ -n "$ssh_host" ]]; then
-            info="${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}"
+            info_parts="${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}"
         fi
-        if [[ -n "$modpack_dir" ]]; then
-            [[ -n "$info" ]] && info="$info  "
-            info="${info}${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack_dir}${C_RESET}"
+        if [[ -n "$modpack" ]]; then
+            [[ -n "$info_parts" ]] && info_parts="${info_parts}  "
+            info_parts="${info_parts}${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack}${C_RESET}"
         fi
         if [[ "$needs_restart" == "1" ]]; then
-            [[ -n "$info" ]] && info="$info  "
-            info="${info}${C_RED}${C_BOLD}[!] Restart required${C_RESET}"
+            [[ -n "$info_parts" ]] && info_parts="${info_parts}  "
+            info_parts="${info_parts}${C_RED}${C_BOLD}[!] Restart required${C_RESET}"
         fi
-        if [[ -z "$info" ]]; then
+        if [[ -z "$info_parts" ]]; then
             printf "${C_GRAY}  <not configured>${C_RESET}\n\n"
         else
-            printf "  %s\n\n" "$info"
+            printf "  ${info_parts}\n\n"
         fi
 
         # ─── Items ───
@@ -158,8 +138,8 @@ run_menu() {
             local lbl="${v_labels[$i]}"
 
             if [[ "$typ" == "sep" ]]; then
-                # Section divider
-                printf "  ${C_GRAY}${C_DIM}─── ${lbl} ─────────────────────────────────────────────${C_RESET}\n"
+                # Section divider — bright cyan, no dim
+                printf "  ${C_CYAN}${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
             elif [[ "$typ" == "fn" ]]; then
                 local num=$((i + 1))
                 if [[ $i -eq $cursor ]]; then
@@ -167,16 +147,10 @@ run_menu() {
                 else
                     printf "  ${C_GREEN}%2d)${C_RESET} %s\n" "$num" "$lbl"
                 fi
-            elif [[ "$typ" == "back" ]]; then
-                if [[ $i -eq $cursor ]]; then
-                    printf "  ${C_BG_BLUE}${C_WHITE}${C_BOLD}   %s${C_RESET}\n" "$lbl"
-                else
-                    printf "  ${C_GRAY}%s${C_RESET}\n" "$lbl"
-                fi
             fi
         done
 
-        printf "\n  ${C_DIM}${C_GRAY}↑↓ navigate  Enter select  q/ESC exit${C_RESET}\n"
+        printf "\n  ${C_GRAY}↑↓ navigate · Enter select · q/ESC exit${C_RESET}\n"
 
         # ─── Key input ───
         local key
@@ -193,7 +167,6 @@ run_menu() {
 
         case "$key" in
             $KEY_UP|k|K)
-                # Move to previous fn item
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -208,7 +181,6 @@ run_menu() {
                 fi
                 ;;
             $KEY_DOWN|j|J)
-                # Move to next fn item
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -236,7 +208,12 @@ run_menu() {
                     echo ""
                     press_enter
 
-                    # After any fn, refresh needs_restart from server
+                    # After any fn action — refresh config and restart flag
+                    if [[ -n "$config_file" && -f "$config_file" ]]; then
+                        source "$config_file" 2>/dev/null || true
+                        ssh_host="${SSH_HOST:-}"
+                        modpack="${MODPACK_DIR:-}"
+                    fi
                     if [[ -n "$ssh_host" ]]; then
                         if ssh "$ssh_host" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
                             needs_restart="1"
@@ -244,9 +221,6 @@ run_menu() {
                             needs_restart=""
                         fi
                     fi
-
-                elif [[ "$typ" == "back" ]]; then
-                    return 0
                 fi
                 ;;
         esac

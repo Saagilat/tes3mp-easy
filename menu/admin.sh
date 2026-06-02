@@ -57,7 +57,7 @@ admin_menu=(
     "Lua Settings|fn|edit_lua_config"
     "Ban List|fn|edit_banlist"
     "Manage Roles|fn|player_roles_menu"
-    "Admin Settings|fn|edit_admin_config"
+    "Menu Settings|fn|edit_admin_config"
 
     # ─── Section: System ───
     "System|sep|"
@@ -364,6 +364,7 @@ show_admin_menu() {
         "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" \
         "${SSH_HOST:-}" \
         "${MODPACK_DIR:-}" \
+        "$ADMIN_CONFIG" \
         "$restart_flag" \
         "${admin_menu[@]}"
 }
