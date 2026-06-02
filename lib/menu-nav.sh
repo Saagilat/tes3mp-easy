@@ -6,14 +6,13 @@
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions — 3 colors only
+# Color definitions — 2 colors
 # ────────────────────────────────────────────────────────────
 readonly C_RESET=$'\033[0m'
 readonly C_BOLD=$'\033[1m'
 
 readonly C_YELLOW=$'\033[33m'
 readonly C_CYAN=$'\033[36m'
-readonly C_GRAY=$'\033[90m'
 
 # ────────────────────────────────────────────────────────────
 # Key codes
@@ -102,10 +101,10 @@ run_menu() {
             printf "  ${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack}${C_RESET}\n"
         fi
         if [[ "$needs_restart" == "1" ]]; then
-            printf "  ${C_GRAY}${C_BOLD}[!] Restart required${C_RESET}\n"
+            printf "  ${C_BOLD}[!] Restart required${C_RESET}\n"
         fi
         if [[ -z "$ssh_host" && -z "$modpack" && "$needs_restart" != "1" ]]; then
-            printf "  ${C_GRAY}<not configured>${C_RESET}\n"
+            printf "  <not configured>\n"
         fi
         echo ""
 
@@ -116,7 +115,7 @@ run_menu() {
             local lbl="${v_labels[$i]}"
 
             if [[ "$typ" == "sep" ]]; then
-                printf "  ${C_GRAY}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
+                printf "  ${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
             elif [[ "$typ" == "fn" ]]; then
                 fn_counter=$((fn_counter + 1))
                 if [[ $i -eq $cursor ]]; then
@@ -127,7 +126,7 @@ run_menu() {
             fi
         done
 
-        printf "\n  ${C_GRAY}↑↓ navigate · Enter select · q/ESC exit${C_RESET}\n"
+        printf "\n  ↑↓ navigate · Enter select · q/ESC exit\n"
 
         # ─── Key input ───
         local key
