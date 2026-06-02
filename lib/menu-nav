@@ -163,9 +163,13 @@ run_menu() {
 
         stty "$old_tty" 2>/dev/null
 
+        # In raw mode Enter comes as \r (0x0d)
+        if [[ "$key" == $'\r' || "$key" == $'\n' || -z "$key" ]]; then
+            key=$'\n'
+        fi
+
         case "$key" in
             $'\e[A')
-                # Up arrow
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -188,8 +192,8 @@ run_menu() {
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
                 ;;
-            *)
-                # Enter or any other key — select current item
+            $'\n')
+                # Enter — select current item
                 local typ="${v_types[$cursor]}"
                 local action="${v_actions[$cursor]}"
 
