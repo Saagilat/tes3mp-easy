@@ -5,7 +5,7 @@
 # Migrated from tools/linux/tes3mp-easy-export-mods
 #
 # Provides:
-#   - export_mods()      — full export pipeline (validate + package + scp + deploy)
+#   - export_mods()      — full export pipeline (validate + package + scp + import)
 #   - validate_crc32()   — CRC32 check against requiredDataFiles.json
 #
 
@@ -166,26 +166,17 @@ export_mods() {
     }
     ok "Archive transferred to $SSH_HOST:/tes3mp-easy/import-mods/"
 
-    # ─── Step 5: Import and deploy ───
+    # ─── Step 5: Import (validate + save archive on server) ───
     echo ""
-    echo "[5/5] Running import_mods.sh and deploy_mods.sh on server..."
+    echo "[5/5] Running import_mods.sh on server..."
     echo "  (import saves archive without stopping server)"
-    echo "  (deploy stops server, deploys mods, and restarts)"
+    echo "  (run 'Deploy Mods' from admin menu to apply)"
 
-    # Import first (validate + save)
     ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/import_mods.sh" || {
         err "import_mods.sh failed on server — check server logs"
-        err "deploy_mods.sh will NOT be called."
         return 1
     }
     ok "Server import completed"
-
-    # Deploy (only if import succeeded)
-    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_mods.sh --latest" || {
-        err "deploy_mods.sh failed on server — check server logs"
-        return 1
-    }
-    ok "Server deploy completed"
 
     # Clean up local archive
     rm -f "$output_archive"
