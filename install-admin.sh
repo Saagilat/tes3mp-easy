@@ -23,7 +23,7 @@ echo ""
 echo "Downloading TES3MP Easy admin scripts..."
 mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu" "$UPDATE_DIR/lang"
 
-total=20
+total=21
 count=0
 
 download() {
@@ -41,6 +41,7 @@ download() {
 download "lib/common.sh"          "$UPDATE_DIR/lib/common.sh"
 download "lib/lang.sh"            "$UPDATE_DIR/lib/lang.sh"
 download "lib/config.sh"          "$UPDATE_DIR/lib/config.sh"
+download "lib/menu-nav.sh"        "$UPDATE_DIR/lib/menu-nav.sh"
 download "lib/server-install.sh"  "$UPDATE_DIR/lib/server-install.sh"
 download "lib/server-control.sh"  "$UPDATE_DIR/lib/server-control.sh"
 download "lib/server-configs.sh"  "$UPDATE_DIR/lib/server-configs.sh"
