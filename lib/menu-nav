@@ -187,6 +187,8 @@ run_menu() {
 
             if [[ "$typ" == "fn" ]]; then
                 "$action"
+                echo ""
+                press_enter
 
                 if [[ -n "$config_file" && -f "$config_file" ]]; then
                     source "$config_file" 2>/dev/null || true
@@ -238,6 +240,8 @@ run_menu() {
 
         if [[ "$typ" == "fn" ]]; then
             "$action"
+            echo ""
+            press_enter
 
             if [[ -n "$config_file" && -f "$config_file" ]]; then
                 source "$config_file" 2>/dev/null || true
