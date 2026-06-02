@@ -23,7 +23,7 @@ echo ""
 echo "Downloading TES3MP Easy player scripts..."
 mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu" "$UPDATE_DIR/lang"
 
-total=12
+total=13
 count=0
 
 download() {
@@ -38,18 +38,18 @@ download() {
     fi
 }
 
-"lib/common"          "$UPDATE_DIR/lib/common"
-"lib/lang"            "$UPDATE_DIR/lib/lang"
-"lib/config"          "$UPDATE_DIR/lib/config"
-"lib/menu-nav"        "$UPDATE_DIR/lib/menu-nav"
-"lib/import-client"   "$UPDATE_DIR/lib/import-client"
-"lib/client-install"  "$UPDATE_DIR/lib/client-install"
-"lib/client-configs"  "$UPDATE_DIR/lib/client-configs"
-"lib/localization"    "$UPDATE_DIR/lib/localization"
-"lib/required-data"   "$UPDATE_DIR/lib/required-data"
-"lib/theme.ini"           "$UPDATE_DIR/lib/theme"
-download "menu/player"         "$UPDATE_DIR/menu/player"
-download "menu/admin"          "$UPDATE_DIR/menu/admin"
+download "lib/common"           "$UPDATE_DIR/lib/common"
+download "lib/lang"             "$UPDATE_DIR/lib/lang"
+download "lib/config"           "$UPDATE_DIR/lib/config"
+download "lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
+download "lib/import-client"    "$UPDATE_DIR/lib/import-client"
+download "lib/client-install"   "$UPDATE_DIR/lib/client-install"
+download "lib/client-configs"   "$UPDATE_DIR/lib/client-configs"
+download "lib/localization"     "$UPDATE_DIR/lib/localization"
+download "lib/required-data"    "$UPDATE_DIR/lib/required-data"
+download "lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
+download "menu/player"          "$UPDATE_DIR/menu/player"
+download "menu/admin"           "$UPDATE_DIR/menu/admin"
 
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"

@@ -206,6 +206,7 @@ find_project_file() {
     local relative_path="$1"
     local candidates=(
         "$PROJECT_DIR/$relative_path"
+        "$UPDATE_DIR/$relative_path"
         "$PWD/$relative_path"
         "$PWD/../$relative_path"
         "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../$relative_path"

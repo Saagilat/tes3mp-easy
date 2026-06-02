@@ -23,6 +23,11 @@ PROJECT_DIR="$(cd "$COMMON_DIR/.." && pwd)"
 LIB_DIR="$COMMON_DIR"
 
 # ────────────────────────────────────────────────────────────
+# Update directory (where scripts are installed via curl|bash)
+# ────────────────────────────────────────────────────────────
+UPDATE_DIR="${UPDATE_DIR:-${HOME}/.local/share/tes3mp-easy}"
+
+# ────────────────────────────────────────────────────────────
 # Colors
 # ────────────────────────────────────────────────────────────
 RED='\033[0;31m'
