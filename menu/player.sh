@@ -15,7 +15,6 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/client-configs.sh"
     source "$LIB_DIR/localization.sh"
     source "$LIB_DIR/required-data.sh"
-    source "$LIB_DIR/self-update.sh"
 fi
 
 PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
@@ -54,7 +53,6 @@ player_lang_menu=(
 player_system_menu=(
     "SWITCH TO ADMIN MENU|fn|switch_to_admin"
     "─|sep|"
-    "UPDATE TES3MP-EASY|fn|self_update"
     "SETTINGS|fn|edit_player_config"
     "─|sep|"
     "EXIT|fn|menu_exit"
@@ -95,11 +93,10 @@ dispatch_player() {
                 info "${MSG_UNINSTALL_CANCELLED:-Cancelled.}"
             fi
             ;;
-        self-update) self_update ;;
         help|--help|-h)
             echo "Player subcommands: download-mods, download-players, download-world,"
             echo "  install-client, install-localization, generate-required-data,"
-            echo "  config, admin-menu, self-update, uninstall, menu"
+            echo "  config, admin-menu, uninstall, menu"
             ;;
         menu|"") show_player_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'menu/player.sh help' for available commands."; exit 1 ;;

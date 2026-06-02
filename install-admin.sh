@@ -23,7 +23,7 @@ echo ""
 echo "Downloading TES3MP Easy admin scripts..."
 mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu" "$UPDATE_DIR/lang"
 
-total=21
+total=20
 count=0
 
 download() {
@@ -55,7 +55,6 @@ download "lib/client-install.sh"  "$UPDATE_DIR/lib/client-install.sh"
 download "lib/client-configs.sh"  "$UPDATE_DIR/lib/client-configs.sh"
 download "lib/localization.sh"    "$UPDATE_DIR/lib/localization.sh"
 download "lib/player-roles.sh"    "$UPDATE_DIR/lib/player-roles.sh"
-download "lib/self-update.sh"     "$UPDATE_DIR/lib/self-update.sh"
 download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
 download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
 

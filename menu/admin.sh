@@ -19,7 +19,6 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/import-server.sh"
     source "$LIB_DIR/player-roles.sh"
     source "$LIB_DIR/required-data.sh"
-    source "$LIB_DIR/self-update.sh"
 fi
 
 ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
@@ -81,7 +80,6 @@ install_menu=(
 system_menu=(
     "SWITCH TO PLAYER MENU|fn|switch_to_player"
     "─|sep|"
-    "UPDATE TES3MP-EASY|fn|self_update"
     "SETTINGS|fn|edit_admin_config"
     "─|sep|"
     "EXIT|fn|menu_exit"
@@ -133,12 +131,11 @@ dispatch_admin() {
                 info "${MSG_UNINSTALL_CANCELLED:-Cancelled.}"
             fi
             ;;
-        self-update) self_update ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, configure-server, start, stop, restart,"
             echo "  logs, status, export-mods, export-players, export-world,"
             echo "  generate-required-data, uninstall-server, config, player-menu,"
-            echo "  self-update, uninstall, menu"
+            echo "  uninstall, menu"
             ;;
         menu|"") show_admin_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'menu/admin.sh help' for available commands."; exit 1 ;;
