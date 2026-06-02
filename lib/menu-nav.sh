@@ -40,6 +40,50 @@ readonly KEY_ENTER=$'\n'
 readonly KEY_ESC=$'\e'
 
 # ────────────────────────────────────────────────────────────
+# _draw_item — write a single item line at current cursor position
+# $1 = index in vis_items
+# $2 = 1 for highlighted, 0 for normal
+# ────────────────────────────────────────────────────────────
+_draw_item() {
+    local idx="$1"
+    local hl="$2"
+    local num=$((idx + 1))
+    local text="${M_items[$idx]}"
+    printf "\r\033[K  "
+    if [[ "$hl" == "1" ]]; then
+        printf "${C_BG_BLUE}${C_YELLOW}%2d) %s${C_NC}" "$num" "$text"
+    else
+        printf "${C_GREEN}%2d)${C_NC} %s" "$num" "$text"
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
+# _draw_all — full menu render from top
+# Uses globals set up by run_menu: M_title, M_items, M_count, M_cursor
+# ────────────────────────────────────────────────────────────
+_draw_all() {
+    clear_screen
+    print_header "$M_title"
+
+    local header="${SSH_HOST:-<not set>}"
+    [[ -n "$M_restart" ]] && header="$M_restart — $header"
+    echo ""
+    echo -e "  ${C_CYAN}${header}${C_NC}"
+    echo ""
+
+    local j
+    for ((j=0; j<M_count; j++)); do
+        local hl=0
+        [[ $j -eq $M_cursor ]] && hl=1
+        _draw_item "$j" "$hl"
+        echo ""
+    done
+
+    echo ""
+    printf "  Arrow keys to move, Enter to select\n"
+}
+
+# ────────────────────────────────────────────────────────────
 # run_menu — display an interactive menu (arrow key navigation)
 #
 # Item format: "LABEL|type|action"
@@ -80,35 +124,58 @@ run_menu() {
         vis_indices+=($i)
     done
 
+    # Make these available as pseudo-globals for _draw_item / _draw_all
+    M_title="$title"
+    M_items=("${vis_items[@]}")
+    M_count=${#vis_items[@]}
+    M_restart="$restart_warn"
+
     local vis_count=${#vis_items[@]}
-    local cursor=0  # 0-based index in vis_items
+    local cursor=0
+    local first_pass=true
+
+    # Lines below header for cursor arithmetic:
+    # 1 blank line + 1 header + 1 blank line + vis_count items + 1 blank line + 1 hint = vis_count + 4
+    # But we only need to move up from the bottom of the menu
+    local menu_lines=$((vis_count + 2))  # items + blank + hint, excluding header area
 
     while true; do
-        clear_screen
-        print_header "$title"
+        M_cursor=$cursor
 
-        # Header line
-        local header="${SSH_HOST:-<not set>}"
-        [[ -n "$restart_warn" ]] && header="$restart_warn — $header"
-        echo ""
-        echo -e "  ${C_CYAN}${header}${C_NC}"
-        echo ""
+        if $first_pass; then
+            _draw_all
+            first_pass=false
+        else
+            # Incremental update: move up to old cursor line,
+            # redraw it as normal, then move to new cursor line,
+            # redraw it as highlighted.
 
-        # Render all visible items with highlight on cursor
-        local j
-        for ((j=0; j<vis_count; j++)); do
-            local num=$((j + 1))
-            local disp="${vis_items[$j]}"
-            if [[ $j -eq $cursor ]]; then
-                # Highlighted (selected) line
-                printf "  ${C_BG_BLUE}${C_YELLOW}%2d) %s${C_NC}\n" "$num" "$disp"
+            # From the hint line (bottom of menu), move up to the correct lines
+            # The hint is at line (vis_count + 1) below the blank after items.
+            # Item 0 is at row 1 from top of item list.
+            # From hint row, moving up: hint=1, blank=1, then items.
+            # So up to old: (vis_count - old) + 1 (blank) + 1 (hint) = vis_count - old + 2
+            local up_to_old=$((vis_count - prev_cursor + 2))
+            printf "\033[%dA" "$up_to_old"
+            _draw_item "$prev_cursor" "0"
+
+            # Now move to new cursor line
+            if [[ $prev_cursor -lt $cursor ]]; then
+                # new is below old — move down
+                local down=$((cursor - prev_cursor))
+                printf "\033[%dB" "$down"
             else
-                printf "  ${C_GREEN}%2d)${C_NC} %s\n" "$num" "$disp"
+                # new is above old — move up
+                local up=$((prev_cursor - cursor))
+                printf "\033[%dA" "$up"
             fi
-        done
+            _draw_item "$cursor" "1"
 
-        echo ""
-        printf "  Arrow keys to move, Enter to select\n"
+            # Move cursor back to the prompt line (bottom of menu)
+            local back_to_prompt=$((vis_count - cursor + 2))
+            printf "\033[%dB" "$back_to_prompt"
+            printf "\r\033[K  Arrow keys to move, Enter to select\n"
+        fi
 
         # Read a single keypress
         local key
@@ -126,6 +193,8 @@ run_menu() {
             key=$KEY_ENTER
         fi
 
+        prev_cursor=$cursor
+
         case "$key" in
             $KEY_UP)
                 cursor=$((cursor - 1))
@@ -136,6 +205,8 @@ run_menu() {
                 [[ $cursor -ge $vis_count ]] && cursor=0
                 ;;
             $KEY_ENTER|"")
+                first_pass=true
+
                 # Resolve selected item
                 local sel_idx="${vis_indices[$cursor]}"
                 local sel_item="${items[$sel_idx]}"
