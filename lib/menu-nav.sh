@@ -3,7 +3,7 @@
 # menu-nav.sh — TUI menu navigation engine (pure bash, no whiptail)
 #
 # Provides:
-#   run_menu()      — display an interactive menu (arrow keys via select)
+#   run_menu()      — display an interactive menu (arrow key navigation)
 #   reorder_list()  — reorder items (numbered checklist)
 #
 # Usage:
@@ -28,10 +28,19 @@ readonly C_GREEN='\033[0;32m'
 readonly C_YELLOW='\033[1;33m'
 readonly C_CYAN='\033[0;36m'
 readonly C_RED='\033[0;31m'
+readonly C_BG_BLUE='\033[44m'
 readonly C_NC='\033[0m'
 
 # ────────────────────────────────────────────────────────────
-# run_menu — display an interactive menu (arrow keys via select)
+# Key codes (for arrow key detection)
+# ────────────────────────────────────────────────────────────
+readonly KEY_UP=$'\e[A'
+readonly KEY_DOWN=$'\e[B'
+readonly KEY_ENTER=$'\n'
+readonly KEY_ESC=$'\e'
+
+# ────────────────────────────────────────────────────────────
+# run_menu — display an interactive menu (arrow key navigation)
 #
 # Item format: "LABEL|type|action"
 #   fn    — run bash function (in real terminal, no subshell)
@@ -52,6 +61,28 @@ run_menu() {
         fi
     fi
 
+    # Build visible items (skip separators), store index mapping
+    local -a vis_items=()
+    local -a vis_indices=()
+    local i
+    for ((i=0; i<${#items[@]}; i++)); do
+        local item="${items[$i]}"
+        local label="${item%%|*}"
+        local rest="${item#*|}"
+        local type="${rest%%|*}"
+        [[ "$type" == "sep" ]] && continue
+
+        local display="$label"
+        [[ "$type" == "menu" ]] && display="$label →"
+        [[ "$type" == "back" ]] && display="← Back"
+
+        vis_items+=("$display")
+        vis_indices+=($i)
+    done
+
+    local vis_count=${#vis_items[@]}
+    local cursor=0  # 0-based index in vis_items
+
     while true; do
         clear_screen
         print_header "$title"
@@ -63,77 +94,78 @@ run_menu() {
         echo -e "  ${C_CYAN}${header}${C_NC}"
         echo ""
 
-        # Build select options (skip separators)
-        local -a options=()
-        local -a indices=()
-        local i
-        for ((i=0; i<${#items[@]}; i++)); do
-            local item="${items[$i]}"
-            local label="${item%%|*}"
-            local rest="${item#*|}"
-            local type="${rest%%|*}"
-            [[ "$type" == "sep" ]] && continue
-
-            local display="$label"
-            [[ "$type" == "menu" ]] && display="$label →"
-            [[ "$type" == "back" ]] && display="← Back"
-
-            options+=("$display")
-            indices[${#options[@]}]=$i
-        done
-
-        local saved_ps3="$PS3"
-        saved_columns="${COLUMNS:-80}"
-        COLUMNS=1
-        PS3="  → "
-
-        select opt in "${options[@]}"; do
-            COLUMNS="$saved_columns"
-            # Empty = Ctrl+D / invalid — stay in select
-            [[ -z "$opt" ]] && continue
-
-            local sel_idx="${indices[$REPLY]:-}"
-            if [[ -z "$sel_idx" ]]; then
-                # Should not happen for valid indices, but safety check
-                continue
+        # Render all visible items with highlight on cursor
+        local j
+        for ((j=0; j<vis_count; j++)); do
+            local num=$((j + 1))
+            local disp="${vis_items[$j]}"
+            if [[ $j -eq $cursor ]]; then
+                # Highlighted (selected) line
+                printf "  ${C_BG_BLUE}${C_YELLOW}%2d) %s${C_NC}\n" "$num" "$disp"
+            else
+                printf "  ${C_GREEN}%2d)${C_NC} %s\n" "$num" "$disp"
             fi
-
-            local sel_item="${items[$sel_idx]}"
-            local sel_label="${sel_item%%|*}"
-            local sel_rest="${sel_item#*|}"
-            local sel_type="${sel_rest%%|*}"
-            local sel_action="${sel_rest#*|}"
-
-            case "$sel_type" in
-                fn)
-                    echo ""
-                    # Run function directly in real terminal —
-                    # no subshell capture, so ssh -t / nano etc work fine
-                    "$sel_action"
-                    echo ""
-                    press_enter
-                    # break from select → while loop continues → redraw
-                    break
-                    ;;
-                menu)
-                    local -a submenu=()
-                    eval 'submenu=("${'"$sel_action"'[@]}")'
-                    if [[ ${#submenu[@]} -gt 0 ]]; then
-                        run_menu "$sel_label" "${submenu[@]}"
-                    fi
-                    # break from select → redraw
-                    break
-                    ;;
-                back|"")
-                    # break from select AND while loop → return to parent
-                    PS3="$saved_ps3"
-                    break 2
-                    ;;
-            esac
-            break
         done
 
-        PS3="$saved_ps3"
+        echo ""
+        printf "  Arrow keys to move, Enter to select\n"
+
+        # Read a single keypress
+        local key
+        IFS= read -s -n1 key 2>/dev/null || true
+
+        # If it's an escape sequence, read two more bytes for arrow code
+        if [[ "$key" == $KEY_ESC ]]; then
+            local seq
+            IFS= read -s -n2 -t 0.1 seq 2>/dev/null || true
+            key="$key$seq"
+        fi
+
+        # If Enter (empty key)
+        if [[ -z "$key" ]]; then
+            key=$KEY_ENTER
+        fi
+
+        case "$key" in
+            $KEY_UP)
+                cursor=$((cursor - 1))
+                [[ $cursor -lt 0 ]] && cursor=$((vis_count - 1))
+                ;;
+            $KEY_DOWN)
+                cursor=$((cursor + 1))
+                [[ $cursor -ge $vis_count ]] && cursor=0
+                ;;
+            $KEY_ENTER|"")
+                # Resolve selected item
+                local sel_idx="${vis_indices[$cursor]}"
+                local sel_item="${items[$sel_idx]}"
+                local sel_label="${sel_item%%|*}"
+                local sel_rest="${sel_item#*|}"
+                local sel_type="${sel_rest%%|*}"
+                local sel_action="${sel_rest#*|}"
+
+                case "$sel_type" in
+                    fn)
+                        echo ""
+                        # Run function directly in real terminal
+                        "$sel_action"
+                        echo ""
+                        press_enter
+                        ;;
+                    menu)
+                        local -a submenu=()
+                        eval 'submenu=("${'"$sel_action"'[@]}")'
+                        if [[ ${#submenu[@]} -gt 0 ]]; then
+                            run_menu "$sel_label" "${submenu[@]}"
+                        fi
+                        ;;
+                    back|"")
+                        return 0
+                        ;;
+                esac
+                ;;
+            # Any other key — ignore (stay in menu)
+        esac
     done
 }
 
