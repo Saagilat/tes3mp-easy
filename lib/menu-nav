@@ -156,12 +156,12 @@ run_menu() {
 
         # ─── Key input ───
         local key seq
-        # Read keypress using stty raw to capture every byte
-        IFS= read -r -n1 key 2>/dev/null || true
+        # Read exactly 1 byte (-N1 = raw, no delimiter processing)
+        IFS= read -s -N1 key 2>/dev/null || true
 
-        # Arrow keys start with ESC
-        if [[ "$key" == $KEY_ESC ]]; then
-            IFS= read -r -n2 -t 0.1 seq 2>/dev/null || true
+        # Arrow keys start with ESC (0x1b)
+        if [[ "$key" == $'\e' ]]; then
+            IFS= read -s -N2 -t 0.1 seq 2>/dev/null || true
             key="$key$seq"
         fi
 
