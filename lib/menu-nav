@@ -136,8 +136,8 @@ run_menu() {
         local key
         IFS= read -s -n1 key 2>/dev/null || true
 
-        # Empty = Enter
-        if [[ -z "$key" ]]; then
+        # Empty, \r, or \n = Enter
+        if [[ -z "$key" || "$key" == $'\r' || "$key" == $'\n' ]]; then
             key=$'\n'
         fi
 
@@ -173,8 +173,8 @@ run_menu() {
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
                 ;;
-            $'\n')
-                # Enter — select current item
+            *)
+                # Any key (Enter/Space/letters) — select current item
                 local typ="${v_types[$cursor]}"
                 local action="${v_actions[$cursor]}"
 
