@@ -175,6 +175,11 @@ run_menu() {
         local key
         key=$(_m_read_key)
 
+        # Ctrl+C (0x03) — exit
+        if [[ "$key" == $'\x03' ]]; then
+            exit 0
+        fi
+
         # Empty = Enter — select
         if [[ -z "$key" ]]; then
             local typ="${v_types[$cursor]}"
