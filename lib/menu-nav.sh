@@ -3,36 +3,45 @@
 # menu-nav.sh — TUI menu navigation engine (pure bash, no whiptail)
 #
 # Provides:
-#   run_menu()      — display an interactive menu (arrow key navigation)
-#   reorder_list()  — reorder items (numbered checklist)
+#   run_menu() — flat interactive menu with section separators
+#
+# Item format:
+#   "LABEL|fn|function_name"  — run bash function
+#   "LABEL|sep|"              — section divider (label = section name)
+#   "BACK|back|"              — exit menu
 #
 # Usage:
-#   source "$(dirname "$0")/lib/menu-nav.sh"
-#
-#   main_menu=(
-#     "START|fn|server_start"
-#     "STOP|fn|server_stop"
-#     "─|sep|"
-#     "ADVANCED|menu|advanced_menu"
-#     "BACK|back|"
-#   )
-#   run_menu "MY TITLE" "${main_menu[@]}"
+#   source lib/menu-nav.sh
+#   run_menu "Title" "ssh_host" "modpack_dir" "needs_restart_flag" "${items[@]}"
 #
 
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions (self-contained, no dependency on common.sh)
+# Color definitions
 # ────────────────────────────────────────────────────────────
-readonly C_GREEN='\033[0;32m'
-readonly C_YELLOW='\033[1;33m'
-readonly C_CYAN='\033[0;36m'
-readonly C_RED='\033[0;31m'
+readonly C_RESET='\033[0m'
+readonly C_BOLD='\033[1m'
+readonly C_DIM='\033[2m'
+readonly C_REV='\033[7m'
+
+readonly C_BLACK='\033[30m'
+readonly C_RED='\033[31m'
+readonly C_GREEN='\033[32m'
+readonly C_YELLOW='\033[33m'
+readonly C_BLUE='\033[34m'
+readonly C_MAGENTA='\033[35m'
+readonly C_CYAN='\033[36m'
+readonly C_WHITE='\033[37m'
+readonly C_GRAY='\033[90m'
+
 readonly C_BG_BLUE='\033[44m'
-readonly C_NC='\033[0m'
+readonly C_BG_CYAN='\033[46m'
+readonly C_BG_GRAY='\033[100m'
+readonly C_BG_WHITE='\033[107m'
 
 # ────────────────────────────────────────────────────────────
-# Key codes (for arrow key detection)
+# Key codes
 # ────────────────────────────────────────────────────────────
 readonly KEY_UP=$'\e[A'
 readonly KEY_DOWN=$'\e[B'
@@ -40,206 +49,206 @@ readonly KEY_ENTER=$'\n'
 readonly KEY_ESC=$'\e'
 
 # ────────────────────────────────────────────────────────────
-# run_menu — display an interactive menu (arrow key navigation)
+# print_boxed_header — draw fancy top header
+# ────────────────────────────────────────────────────────────
+print_boxed_header() {
+    local title="$1"
+    local width=64
+    local title_len=${#title}
+    local pad=$(( (width - title_len - 2) / 2 ))
+    [[ $pad -lt 0 ]] && pad=0
+    local right_pad=$((width - pad - title_len - 2))
+    [[ $right_pad -lt 0 ]] && right_pad=0
+
+    printf "\n"
+    printf "${C_CYAN}╭"
+    printf "─%.0s" $(seq 1 $width)
+    printf "╮${C_RESET}\n"
+
+    printf "${C_CYAN}│${C_RESET}"
+    printf "%*s" $pad ""
+    printf "${C_BOLD}${C_YELLOW} %s ${C_RESET}" "$title"
+    printf "%*s" $right_pad ""
+    printf "${C_CYAN}│${C_RESET}\n"
+
+    printf "${C_CYAN}╰"
+    printf "─%.0s" $(seq 1 $width)
+    printf "╯${C_RESET}\n"
+}
+
+# ────────────────────────────────────────────────────────────
+# run_menu — flat interactive menu with sections & info line
 #
-# Item format: "LABEL|type|action"
-#   fn    — run bash function (in real terminal, no subshell)
-#   menu  — open submenu (action = array name)
-#   sep   — divider line (ignored)
-#   back  — return to previous menu
+# Usage: run_menu "TITLE" "SSH_HOST" "MODPACK_DIR" "NEEDS_RESTART" item1 item2 ...
 # ────────────────────────────────────────────────────────────
 run_menu() {
-    local title="$1"
+    local menu_title="$1"
+    shift
+    local ssh_host="${1:-}"
+    shift
+    local modpack_dir="${1:-}"
+    shift
+    local needs_restart="${1:-}"
     shift
     local items=("$@")
 
-    # Check needs_restart once per menu open — cached, no SSH on every render
-    local restart_warn=""
-    if [[ -n "${SSH_HOST:-}" ]]; then
-        if ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
-            restart_warn="[RESTART REQUIRED]"
-        fi
-    fi
+    # Build visible arrays
+    local -a v_labels=()
+    local -a v_types=()
+    local -a v_actions=()
 
-    # Build visible items (skip separators), store index mapping
-    local -a vis_items=()
-    local -a vis_indices=()
     local i
     for ((i=0; i<${#items[@]}; i++)); do
         local item="${items[$i]}"
         local label="${item%%|*}"
         local rest="${item#*|}"
         local type="${rest%%|*}"
-        [[ "$type" == "sep" ]] && continue
+        local action="${rest#*|}"
 
-        local display="$label"
-        [[ "$type" == "menu" ]] && display="$label →"
-        [[ "$type" == "back" ]] && display="← Back"
-
-        vis_items+=("$display")
-        vis_indices+=($i)
+        v_labels+=("$label")
+        v_types+=("$type")
+        v_actions+=("$action")
     done
 
-    local vis_count=${#vis_items[@]}
+    local count=${#v_labels[@]}
     local cursor=0
 
+    # Count only selectable (fn) items for wrapping
+    local fn_count=0
+    for ((i=0; i<count; i++)); do
+        [[ "${v_types[$i]}" == "fn" ]] && ((fn_count++))
+    done
+
+    # Build a mapping from fn-only index to actual index
+    local -a fn_map=()
+    for ((i=0; i<count; i++)); do
+        [[ "${v_types[$i]}" == "fn" ]] && fn_map+=($i)
+    done
+    local fn_total=${#fn_map[@]}
+
     while true; do
-        # Move cursor home, clear screen below — no full terminal reset (\033c)
+        # Move to top, clear
         printf "\033[H\033[J"
 
-        print_header "$title"
+        # ─── Header ───
+        print_boxed_header "$menu_title"
 
-        # Header line
-        local header="${SSH_HOST:-<not set>}"
-        [[ -n "$restart_warn" ]] && header="$restart_warn — $header"
-        echo ""
-        echo -e "  ${C_CYAN}${header}${C_NC}"
-        echo ""
+        # Info line
+        local info=""
+        if [[ -n "$ssh_host" ]]; then
+            info="${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}"
+        fi
+        if [[ -n "$modpack_dir" ]]; then
+            [[ -n "$info" ]] && info="$info  "
+            info="${info}${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack_dir}${C_RESET}"
+        fi
+        if [[ "$needs_restart" == "1" ]]; then
+            [[ -n "$info" ]] && info="$info  "
+            info="${info}${C_RED}${C_BOLD}[!] Restart required${C_RESET}"
+        fi
+        if [[ -z "$info" ]]; then
+            printf "${C_GRAY}  <not configured>${C_RESET}\n\n"
+        else
+            printf "  %s\n\n" "$info"
+        fi
 
-        # Render all items
-        local j
-        for ((j=0; j<vis_count; j++)); do
-            local num=$((j + 1))
-            local text="${vis_items[$j]}"
-            printf "  "
-            if [[ $j -eq $cursor ]]; then
-                printf "${C_BG_BLUE}${C_YELLOW}%2d) %s${C_NC}" "$num" "$text"
-            else
-                printf "${C_GREEN}%2d)${C_NC} %s" "$num" "$text"
+        # ─── Items ───
+        for ((i=0; i<count; i++)); do
+            local typ="${v_types[$i]}"
+            local lbl="${v_labels[$i]}"
+
+            if [[ "$typ" == "sep" ]]; then
+                # Section divider
+                printf "  ${C_GRAY}${C_DIM}─── ${lbl} ─────────────────────────────────────────────${C_RESET}\n"
+            elif [[ "$typ" == "fn" ]]; then
+                local num=$((i + 1))
+                if [[ $i -eq $cursor ]]; then
+                    printf "  ${C_BG_BLUE}${C_WHITE}${C_BOLD} %2d) %s${C_RESET}\n" "$num" "$lbl"
+                else
+                    printf "  ${C_GREEN}%2d)${C_RESET} %s\n" "$num" "$lbl"
+                fi
+            elif [[ "$typ" == "back" ]]; then
+                if [[ $i -eq $cursor ]]; then
+                    printf "  ${C_BG_BLUE}${C_WHITE}${C_BOLD}   %s${C_RESET}\n" "$lbl"
+                else
+                    printf "  ${C_GRAY}%s${C_RESET}\n" "$lbl"
+                fi
             fi
-            echo ""
         done
 
-        echo ""
-        printf "  Arrow keys to move, Enter to select\n"
+        printf "\n  ${C_DIM}${C_GRAY}↑↓ navigate  Enter select  q/ESC exit${C_RESET}\n"
 
-        # Read a single keypress
+        # ─── Key input ───
         local key
         IFS= read -s -n1 key 2>/dev/null || true
 
-        # If it's an escape sequence, read two more bytes for arrow code
         if [[ "$key" == $KEY_ESC ]]; then
             local seq
             IFS= read -s -n2 -t 0.1 seq 2>/dev/null || true
             key="$key$seq"
         fi
-
-        # If Enter (empty key)
         if [[ -z "$key" ]]; then
             key=$KEY_ENTER
         fi
 
         case "$key" in
-            $KEY_UP)
-                cursor=$((cursor - 1))
-                [[ $cursor -lt 0 ]] && cursor=$((vis_count - 1))
+            $KEY_UP|k|K)
+                # Move to previous fn item
+                if [[ $fn_total -gt 0 ]]; then
+                    local cur_fn_idx=0
+                    for ((i=0; i<fn_total; i++)); do
+                        if [[ ${fn_map[$i]} -eq $cursor ]]; then
+                            cur_fn_idx=$i
+                            break
+                        fi
+                    done
+                    cur_fn_idx=$((cur_fn_idx - 1))
+                    [[ $cur_fn_idx -lt 0 ]] && cur_fn_idx=$((fn_total - 1))
+                    cursor=${fn_map[$cur_fn_idx]}
+                fi
                 ;;
-            $KEY_DOWN)
-                cursor=$((cursor + 1))
-                [[ $cursor -ge $vis_count ]] && cursor=0
+            $KEY_DOWN|j|J)
+                # Move to next fn item
+                if [[ $fn_total -gt 0 ]]; then
+                    local cur_fn_idx=0
+                    for ((i=0; i<fn_total; i++)); do
+                        if [[ ${fn_map[$i]} -eq $cursor ]]; then
+                            cur_fn_idx=$i
+                            break
+                        fi
+                    done
+                    cur_fn_idx=$((cur_fn_idx + 1))
+                    [[ $cur_fn_idx -ge $fn_total ]] && cur_fn_idx=0
+                    cursor=${fn_map[$cur_fn_idx]}
+                fi
+                ;;
+            q|Q)
+                return 0
                 ;;
             $KEY_ENTER|"")
-                # Resolve selected item
-                local sel_idx="${vis_indices[$cursor]}"
-                local sel_item="${items[$sel_idx]}"
-                local sel_label="${sel_item%%|*}"
-                local sel_rest="${sel_item#*|}"
-                local sel_type="${sel_rest%%|*}"
-                local sel_action="${sel_rest#*|}"
+                local typ="${v_types[$cursor]}"
+                local action="${v_actions[$cursor]}"
 
-                case "$sel_type" in
-                    fn)
-                        echo ""
-                        # Run function directly in real terminal
-                        "$sel_action"
-                        echo ""
-                        press_enter
-                        ;;
-                    menu)
-                        local -a submenu=()
-                        eval 'submenu=("${'"$sel_action"'[@]}")'
-                        if [[ ${#submenu[@]} -gt 0 ]]; then
-                            run_menu "$sel_label" "${submenu[@]}"
+                if [[ "$typ" == "fn" ]]; then
+                    echo ""
+                    # Run the function
+                    "$action"
+                    echo ""
+                    press_enter
+
+                    # After any fn, refresh needs_restart from server
+                    if [[ -n "$ssh_host" ]]; then
+                        if ssh "$ssh_host" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
+                            needs_restart="1"
+                        else
+                            needs_restart=""
                         fi
-                        ;;
-                    back|"")
-                        return 0
-                        ;;
-                esac
+                    fi
+
+                elif [[ "$typ" == "back" ]]; then
+                    return 0
+                fi
                 ;;
-            # Any other key — ignore (stay in menu)
         esac
     done
-}
-
-# ────────────────────────────────────────────────────────────
-# reorder_list — display numbered items for multi-select
-# ────────────────────────────────────────────────────────────
-reorder_list() {
-    local title="$1"
-    shift
-    local -a items=("$@")
-
-    echo ""
-    echo "═══════════════════════════════════════════════"
-    echo "  $title"
-    echo "═══════════════════════════════════════════════"
-    echo ""
-
-    local i
-    for ((i=0; i<${#items[@]}; i++)); do
-        printf "  %2d) %s\n" $((i+1)) "${items[$i]}"
-    done
-
-    echo ""
-    echo "  Enter numbers separated by space, or empty for all:"
-    read -r -p "  > " raw_selection
-
-    if [[ -z "$raw_selection" ]]; then
-        local output=""
-        for item in "${items[@]}"; do
-            output="$output \"$item\""
-        done
-        echo "$output"
-        return 0
-    fi
-
-    local -a selected=()
-    for num in $raw_selection; do
-        [[ "$num" =~ ^[0-9]+$ ]] || continue
-        local idx=$((num - 1))
-        [[ $idx -ge 0 && $idx -lt ${#items[@]} ]] || continue
-        selected+=("${items[$idx]}")
-    done
-
-    if [[ ${#selected[@]} -eq 0 ]]; then
-        echo "  No valid selection."
-        return 1
-    fi
-
-    local output=""
-    for item in "${selected[@]}"; do
-        output="$output \"$item\""
-    done
-    echo "$output"
-    return 0
-}
-
-# ────────────────────────────────────────────────────────────
-# Screen utilities
-# ────────────────────────────────────────────────────────────
-clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
-
-print_header() {
-    local title="$1" width=60
-    local padding=$(( (width - ${#title} - 2) / 2 ))
-    local i
-    echo ""
-    printf "╔"
-    for ((i=0; i<width; i++)); do printf "═"; done
-    printf "╗\n"
-    printf "║%*s %s %*s║\n" $padding "" "$title" $padding ""
-    printf "╚"
-    for ((i=0; i<width; i++)); do printf "═"; done
-    printf "╝\n"
 }

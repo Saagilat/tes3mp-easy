@@ -25,77 +25,46 @@ ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
 CONFIG_FILE="$ADMIN_CONFIG"
 
 # ────────────────────────────────────────────────────────────
-# Submenu definitions
+# Flat menu definition — all items in one list with sections
 # ────────────────────────────────────────────────────────────
-
-control_menu=(
+admin_menu=(
+    # ─── Server Control ───
     "START|fn|server_start"
     "STOP|fn|server_stop"
     "RESTART|fn|server_restart"
     "STATUS|fn|server_status"
     "LOGS|fn|server_logs"
-    "─|sep|"
-    "BACK|back|"
-)
 
-modding_menu=(
-    "GENERATE REQUIRED DATA|fn|generate_required_data"
-    "─|sep|"
-    "EXPORT MODS|fn|export_mods"
-    "DEPLOY MODS|fn|deploy_mods_menu"
-    "DOWNLOAD MOD BACKUP|fn|download_mod_backup"
-    "─|sep|"
-    "BACK|back|"
-)
+    # ─── Section: Modding ───
+    "Modding|sep|"
+    "Generate Required Data|fn|generate_required_data"
+    "Export Mods|fn|export_mods"
+    "Deploy Mods|fn|deploy_mods_menu"
+    "Download Mod Backup|fn|download_mod_backup"
 
-snapshots_menu=(
-    "EXPORT PLAYERS|fn|export_players"
-    "EXPORT WORLD|fn|export_world"
-    "─|sep|"
-    "DEPLOY PLAYERS|fn|deploy_players_menu"
-    "DEPLOY WORLD|fn|deploy_world_menu"
-    "─|sep|"
-    "DOWNLOAD PLAYERS BACKUP|fn|download_players_backup"
-    "DOWNLOAD WORLD BACKUP|fn|download_world_backup"
-    "─|sep|"
-    "BACK|back|"
-)
+    # ─── Section: Snapshots ───
+    "Snapshots|sep|"
+    "Export Players|fn|export_players"
+    "Export World|fn|export_world"
+    "Deploy Players|fn|deploy_players_menu"
+    "Deploy World|fn|deploy_world_menu"
+    "Download Players Backup|fn|download_players_backup"
+    "Download World Backup|fn|download_world_backup"
 
-settings_menu=(
-    "EDIT CONFIGS|fn|edit_configs_menu"
-    "─|sep|"
-    "MANAGE ROLES|fn|player_roles_menu"
-    "─|sep|"
-    "BACK|back|"
-)
+    # ─── Section: Configs ───
+    "Configs|sep|"
+    "Server Config|fn|edit_server_cfg"
+    "Lua Settings|fn|edit_lua_config"
+    "Ban List|fn|edit_banlist"
+    "Manage Roles|fn|player_roles_menu"
+    "Admin Settings|fn|edit_admin_config"
 
-install_menu=(
-    "INSTALL SERVER|fn|install_server"
-    "─|sep|"
-    "UNINSTALL SERVER|fn|uninstall_server"
-    "─|sep|"
-    "BACK|back|"
-)
-
-system_menu=(
-    "SWITCH TO PLAYER MENU|fn|switch_to_player"
-    "─|sep|"
-    "SETTINGS|fn|edit_admin_config"
-    "─|sep|"
-    "EXIT|fn|menu_exit"
-    "BACK|back|"
-)
-
-# ────────────────────────────────────────────────────────────
-# Admin main menu
-# ────────────────────────────────────────────────────────────
-admin_menu=(
-    "CONTROL|menu|control_menu"
-    "MODDING|menu|modding_menu"
-    "SNAPSHOTS|menu|snapshots_menu"
-    "SETTINGS|menu|settings_menu"
-    "INSTALL|menu|install_menu"
-    "TES3MP-EASY|menu|system_menu"
+    # ─── Section: System ───
+    "System|sep|"
+    "Install Server|fn|install_server"
+    "Uninstall Server|fn|uninstall_server"
+    "Switch to Player Menu|fn|switch_to_player"
+    "Exit|fn|menu_exit"
 )
 
 # ────────────────────────────────────────────────────────────
@@ -140,6 +109,21 @@ dispatch_admin() {
         menu|"") show_admin_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'menu/admin.sh help' for available commands."; exit 1 ;;
     esac
+}
+
+# ────────────────────────────────────────────────────────────
+# check_restart_flag — query server for restart flag, cache locally
+# ────────────────────────────────────────────────────────────
+check_restart_flag() {
+    if [[ -n "${SSH_HOST:-}" ]]; then
+        if ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
+            echo "1"
+        else
+            echo ""
+        fi
+    else
+        echo ""
+    fi
 }
 
 # ────────────────────────────────────────────────────────────
@@ -357,7 +341,6 @@ switch_to_player() {
 
 edit_admin_config() {
     edit_config "$ADMIN_CONFIG" || true
-    # Reload config after editing so new values take effect immediately
     load_config "$ADMIN_CONFIG" 2>/dev/null || true
 }
 
@@ -371,13 +354,18 @@ menu_exit() {
 # show_admin_menu — entry point for interactive menu
 # ────────────────────────────────────────────────────────────
 show_admin_menu() {
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
 
-    # Loop forever so menu reopens after each action
-    while true; do
-        load_config "$ADMIN_CONFIG" 2>/dev/null || true
-        run_menu "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" "${admin_menu[@]}"
-    done
+    local restart_flag
+    restart_flag=$(check_restart_flag)
+
+    run_menu \
+        "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" \
+        "${SSH_HOST:-}" \
+        "${MODPACK_DIR:-}" \
+        "$restart_flag" \
+        "${admin_menu[@]}"
 }
 
 # ────────────────────────────────────────────────────────────
