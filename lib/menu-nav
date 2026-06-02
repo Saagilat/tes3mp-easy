@@ -156,20 +156,22 @@ run_menu() {
 
         # ─── Key input ───
         local key
-        IFS= read -s -n1 key 2>/dev/null || true
+        IFS= read -s -r -n1 key 2>/dev/null || true
 
-        if [[ "$key" == $KEY_ESC ]]; then
-            local seq
-            IFS= read -s -n2 -t 0.1 seq 2>/dev/null || true
-            key="$key$seq"
-        fi
-
-        if [[ -z "$key" ]]; then
+        # Enter on most terminals returns empty or \r — treat either as Enter
+        if [[ -z "$key" || "$key" == $'\r' ]]; then
             key=$'\n'
         fi
 
+        # Escape sequence (arrow keys)
+        if [[ "$key" == $KEY_ESC ]]; then
+            local seq
+            IFS= read -s -r -n2 -t 0.1 seq 2>/dev/null || true
+            key="$key$seq"
+        fi
+
         case "$key" in
-            $KEY_UP|k|K)
+            $KEY_UP)
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -180,7 +182,7 @@ run_menu() {
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
                 ;;
-            $KEY_DOWN|j|J)
+            $KEY_DOWN)
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
