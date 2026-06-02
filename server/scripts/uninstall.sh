@@ -102,7 +102,7 @@ main() {
     # Check if installed
     if [[ ! -d "$DEST" ]]; then
         info "TES3MP server is not installed ($DEST does not exist). Nothing to uninstall."
-        exit 0
+        exit 2
     fi
 
     # ── Step 1: Show what will be deleted ──

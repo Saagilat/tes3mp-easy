@@ -193,6 +193,8 @@ uninstall_server() {
         local rc=$?
         if [[ $rc -eq 1 ]]; then
             info "Uninstall was cancelled on the server."
+        elif [[ $rc -eq 2 ]]; then
+            info "TES3MP server is not installed on $SSH_HOST — nothing to do."
         else
             err "Uninstall failed on $SSH_HOST"
             err "Check the output above for details."
