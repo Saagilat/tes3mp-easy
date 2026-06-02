@@ -30,11 +30,11 @@ CONFIG_FILE="$ADMIN_CONFIG"
 admin_menu=(
     # ─── Section: Server Control ───
     "Server Control|sep|"
-    "START|fn|server_start"
-    "STOP|fn|server_stop"
-    "RESTART|fn|server_restart"
-    "STATUS|fn|server_status"
-    "LOGS|fn|server_logs"
+    "Start|fn|server_start"
+    "Stop|fn|server_stop"
+    "Restart|fn|server_restart"
+    "Status|fn|server_status"
+    "Logs|fn|server_logs"
     "Install Server|fn|install_server"
     "Uninstall Server|fn|uninstall_server"
 
@@ -63,7 +63,7 @@ admin_menu=(
 
     # ─── Section: System ───
     "System|sep|"
-    "Menu Settings|fn|edit_admin_config"
+    "Admin Menu Settings|fn|edit_admin_config"
     "Switch to Player Menu|fn|switch_to_player"
     "Exit|fn|menu_exit"
 )

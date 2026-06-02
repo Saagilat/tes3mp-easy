@@ -2,18 +2,16 @@
 #
 # menu-nav.sh — TUI menu navigation engine (pure bash, no whiptail)
 #
-# Provides:
-#   run_menu() — flat interactive menu with section separators
-#
 
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions (ANSI-C quoted $'...' — contains real ESC byte)
+# Color definitions (ANSI-C quoted $'...' — real ESC byte)
 # ────────────────────────────────────────────────────────────
 readonly C_RESET=$'\033[0m'
 readonly C_BOLD=$'\033[1m'
 
+readonly C_BLACK=$'\033[30m'
 readonly C_RED=$'\033[31m'
 readonly C_GREEN=$'\033[32m'
 readonly C_YELLOW=$'\033[33m'
@@ -21,7 +19,7 @@ readonly C_CYAN=$'\033[36m'
 readonly C_WHITE=$'\033[37m'
 readonly C_GRAY=$'\033[90m'
 
-readonly C_BG_BLUE=$'\033[44m'
+readonly C_BG_YELLOW=$'\033[43m'
 
 # ────────────────────────────────────────────────────────────
 # Key codes
@@ -58,25 +56,20 @@ print_boxed_header() {
 # ────────────────────────────────────────────────────────────
 # run_menu — flat interactive menu with sections & info line
 #
-# Usage: run_menu "TITLE" "SSH_HOST" "MODPACK_DIR" "NEEDS_RESTART" item1 item2 ...
-#   After each fn action, the function source() the config to refresh
-#   ssh_host and modpack_dir from CONFIG_FILE.
+# Usage: run_menu "TITLE" "SSH_HOST" "MODPACK_DIR" "CONFIG_FILE" "RESTART_FLAG" items...
 # ────────────────────────────────────────────────────────────
 run_menu() {
     local menu_title="$1"
     shift
-    local ssh_host_def="${1:-}"
+    local ssh_host="${1:-}"
     shift
-    local modpack_dir_def="${1:-}"
+    local modpack="${1:-}"
     shift
     local config_file="${1:-}"
     shift
     local needs_restart="${1:-}"
     shift
     local items=("$@")
-
-    local ssh_host="$ssh_host_def"
-    local modpack="$modpack_dir_def"
 
     # Build visible arrays
     local -a v_labels=()
@@ -113,37 +106,35 @@ run_menu() {
         # ─── Header ───
         print_boxed_header "$menu_title"
 
-        # Info line
-        local info_parts=""
+        # ─── Info lines (each on its own row) ───
+        echo ""
         if [[ -n "$ssh_host" ]]; then
-            info_parts="${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}"
+            printf "  ${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}\n"
         fi
         if [[ -n "$modpack" ]]; then
-            [[ -n "$info_parts" ]] && info_parts="${info_parts}  "
-            info_parts="${info_parts}${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack}${C_RESET}"
+            printf "  ${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack}${C_RESET}\n"
         fi
         if [[ "$needs_restart" == "1" ]]; then
-            [[ -n "$info_parts" ]] && info_parts="${info_parts}  "
-            info_parts="${info_parts}${C_RED}${C_BOLD}[!] Restart required${C_RESET}"
+            printf "  ${C_RED}${C_BOLD}[!] Restart required${C_RESET}\n"
         fi
-        if [[ -z "$info_parts" ]]; then
-            printf "${C_GRAY}  <not configured>${C_RESET}\n\n"
-        else
-            printf "  ${info_parts}\n\n"
+        if [[ -z "$ssh_host" && -z "$modpack" && "$needs_restart" != "1" ]]; then
+            printf "  ${C_GRAY}<not configured>${C_RESET}\n"
         fi
+        echo ""
 
-        # ─── Items ───
+        # ─── Items (sequential number per fn-item) ───
+        local fn_counter=0
         for ((i=0; i<count; i++)); do
             local typ="${v_types[$i]}"
             local lbl="${v_labels[$i]}"
 
             if [[ "$typ" == "sep" ]]; then
-                # Section divider — bright cyan, no dim
                 printf "  ${C_CYAN}${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
             elif [[ "$typ" == "fn" ]]; then
-                local num=$((i + 1))
+                fn_counter=$((fn_counter + 1))
+                local num=$fn_counter
                 if [[ $i -eq $cursor ]]; then
-                    printf "  ${C_BG_BLUE}${C_WHITE}${C_BOLD} %2d) %s${C_RESET}\n" "$num" "$lbl"
+                    printf "  ${C_BG_YELLOW}${C_BLACK}${C_BOLD} %2d) %s${C_RESET}\n" "$num" "$lbl"
                 else
                     printf "  ${C_GREEN}%2d)${C_RESET} %s\n" "$num" "$lbl"
                 fi
@@ -203,12 +194,10 @@ run_menu() {
 
                 if [[ "$typ" == "fn" ]]; then
                     echo ""
-                    # Run the function
                     "$action"
                     echo ""
                     press_enter
 
-                    # After any fn action — refresh config and restart flag
                     if [[ -n "$config_file" && -f "$config_file" ]]; then
                         source "$config_file" 2>/dev/null || true
                         ssh_host="${SSH_HOST:-}"
