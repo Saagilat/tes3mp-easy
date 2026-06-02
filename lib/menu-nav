@@ -41,15 +41,52 @@ print_boxed_header() {
     local title_len=${#title}
     local pad=$(( (W - title_len - 2) / 2 ))
     [[ $pad -lt 0 ]] && pad=0
-
     local line
     printf -v line "%${W}s" ""
     line="${line// /$H}"
-
     printf "\n${T_CYN}${TL}${line}${TR}${T_RESET}\n"
     printf "${T_CYN}${V}${T_RESET}%*s${T_BLD}${T_YLW} %s ${T_RESET}%*s${T_CYN}${V}${T_RESET}\n" \
         $pad "" "$title" $((W - pad - title_len - 2)) ""
     printf "${T_CYN}${BL}${line}${BR}${T_RESET}\n"
+}
+
+__saved_stty=""
+
+__restore_tty() {
+    if [[ -n "$__saved_stty" ]]; then
+        stty "$__saved_stty" 2>/dev/null || true
+        __saved_stty=""
+    fi
+}
+
+__read_key() {
+    __saved_stty=$(stty -g 2>/dev/null || echo "")
+    trap __restore_tty EXIT INT TERM
+    stty raw -echo -icanon min 1 time 0 2>/dev/null
+
+    # Read 1 byte (blocks)
+    local b1
+    b1=$(dd bs=1 count=1 2>/dev/null; printf x)
+    b1="${b1%x}"
+
+    local result="$b1"
+
+    # If ESC, read up to 2 more bytes (non-blocking with 100ms timeout)
+    if [[ "$b1" == $'\e' ]]; then
+        stty raw -echo -icanon min 1 time 1 2>/dev/null
+        local b2 b3
+        b2=$(dd bs=1 count=1 2>/dev/null; printf x)
+        b2="${b2%x}"
+        result="$result$b2"
+        if [[ -n "$b2" ]]; then
+            b3=$(dd bs=1 count=1 2>/dev/null; printf x)
+            b3="${b3%x}"
+            result="$result$b3"
+        fi
+    fi
+
+    __restore_tty
+    printf "%s" "$result"
 }
 
 run_menu() {
@@ -64,6 +101,8 @@ run_menu() {
     local needs_restart="${1:-}"
     shift
     local items=("$@")
+
+    stty sane 2>/dev/null || true
 
     local -a v_labels=()
     local -a v_types=()
@@ -134,23 +173,10 @@ run_menu() {
 
         # ─── Read a single keypress ───
         local key
-        IFS= read -s -n1 key 2>/dev/null || true
-
-        # Empty, \r, or \n = Enter
-        if [[ -z "$key" || "$key" == $'\r' || "$key" == $'\n' ]]; then
-            key=$'\n'
-        fi
-
-        # ESC — try to read arrow key sequence
-        if [[ "$key" == $'\e' ]]; then
-            local seq
-            IFS= read -s -n2 -t 0.1 seq 2>/dev/null || true
-            key="$key$seq"
-        fi
+        key=$(__read_key)
 
         case "$key" in
             $'\e[A')
-                # Up arrow — move cursor up
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -162,7 +188,6 @@ run_menu() {
                 fi
                 ;;
             $'\e[B')
-                # Down arrow — move cursor down
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -173,8 +198,11 @@ run_menu() {
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
                 ;;
+            $'\e'*)
+                # Any other ESC sequence — ignore
+                ;;
             *)
-                # Any key (Enter/Space/letters) — select current item
+                # Enter (\r) or any key — select
                 local typ="${v_types[$cursor]}"
                 local action="${v_actions[$cursor]}"
 
