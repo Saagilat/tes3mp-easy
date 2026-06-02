@@ -3,7 +3,7 @@
 # menu-nav.sh — TUI menu navigation engine (pure bash, no whiptail)
 #
 # Provides:
-#   run_menu()      — display an interactive menu
+#   run_menu()      — display an interactive menu (arrow keys via select)
 #   reorder_list()  — reorder items (numbered checklist)
 #
 # Usage:
@@ -31,7 +31,7 @@ readonly C_RED='\033[0;31m'
 readonly C_NC='\033[0m'
 
 # ────────────────────────────────────────────────────────────
-# run_menu — display an interactive menu
+# run_menu — display an interactive menu (arrow keys via select)
 #
 # Item format: "LABEL|type|action"
 #   fn    — run bash function (in real terminal, no subshell)
@@ -63,9 +63,9 @@ run_menu() {
         echo -e "  ${C_CYAN}${header}${C_NC}"
         echo ""
 
-        # Build display items (skip separators)
+        # Build select options (skip separators)
+        local -a options=()
         local -a indices=()
-        local tag=1
         local i
         for ((i=0; i<${#items[@]}; i++)); do
             local item="${items[$i]}"
@@ -73,67 +73,72 @@ run_menu() {
             local rest="${item#*|}"
             local type="${rest%%|*}"
             [[ "$type" == "sep" ]] && continue
-            indices[$tag]=$i
 
             local display="$label"
-            [[ "$type" == "menu" ]] && display="${label} →"
+            [[ "$type" == "menu" ]] && display="$label →"
             [[ "$type" == "back" ]] && display="← Back"
 
-            printf "  ${C_GREEN}%2d)${C_NC} %s\n" "$tag" "$display"
-            ((tag++))
+            options+=("$display")
+            indices[${#options[@]}]=$i
         done
 
-        local last_idx=$((tag - 1))
-        echo ""
-        printf "  ${C_YELLOW} 0)${C_NC} ← Back / Exit\n"
-        echo ""
+        local saved_ps3="$PS3"
+        saved_columns="${COLUMNS:-80}"
+        COLUMNS=1
+        PS3="  → "
 
-        local choice
-        read -r -p "  Select [0-${last_idx}]: " choice
+        select opt in "${options[@]}"; do
+            COLUMNS="$saved_columns"
+            # Empty = Ctrl+D / invalid — stay in select
+            [[ -z "$opt" ]] && continue
 
-        # 0 or empty = back/exit
-        if [[ -z "$choice" || "$choice" == "0" ]]; then
+            local sel_idx="${indices[$REPLY]:-}"
+            if [[ -z "$sel_idx" ]]; then
+                # Should not happen for valid indices, but safety check
+                continue
+            fi
+
+            local sel_item="${items[$sel_idx]}"
+            local sel_label="${sel_item%%|*}"
+            local sel_rest="${sel_item#*|}"
+            local sel_type="${sel_rest%%|*}"
+            local sel_action="${sel_rest#*|}"
+
+            case "$sel_type" in
+                fn)
+                    echo ""
+                    # Run function directly in real terminal —
+                    # no subshell capture, so ssh -t / nano etc work fine
+                    "$sel_action"
+                    echo ""
+                    press_enter
+                    # break from select → while loop continues → redraw
+                    break
+                    ;;
+                menu)
+                    local -a submenu=()
+                    eval 'submenu=("${'"$sel_action"'[@]}")'
+                    if [[ ${#submenu[@]} -gt 0 ]]; then
+                        run_menu "$sel_label" "${submenu[@]}"
+                    fi
+                    # break from select → redraw
+                    break
+                    ;;
+                back|"")
+                    # break from select AND while loop → return to parent
+                    PS3="$saved_ps3"
+                    break 2
+                    ;;
+            esac
             break
-        fi
+        done
 
-        # Validate numeric
-        [[ ! "$choice" =~ ^[0-9]+$ ]] && continue
-
-        local idx="${indices[$choice]:-}"
-        [[ -z "$idx" ]] && continue
-
-        local sel_item="${items[$idx]}"
-        local sel_label="${sel_item%%|*}"
-        local sel_rest="${sel_item#*|}"
-        local sel_type="${sel_rest%%|*}"
-        local sel_action="${sel_rest#*|}"
-
-        case "$sel_type" in
-            fn)
-                echo ""
-                # Run function directly in real terminal —
-                # no subshell capture, so ssh -t / nano etc work fine
-                "$sel_action"
-                echo ""
-                press_enter
-                ;;
-            menu)
-                local -a submenu=()
-                eval 'submenu=("${'"$sel_action"'[@]}")'
-                if [[ ${#submenu[@]} -gt 0 ]]; then
-                    run_menu "$sel_label" "${submenu[@]}"
-                fi
-                ;;
-            back|"")
-                break
-                ;;
-        esac
+        PS3="$saved_ps3"
     done
 }
 
 # ────────────────────────────────────────────────────────────
 # reorder_list — display numbered items for multi-select
-# (replaces old whiptail checklist)
 # ────────────────────────────────────────────────────────────
 reorder_list() {
     local title="$1"
@@ -156,7 +161,6 @@ reorder_list() {
     read -r -p "  > " raw_selection
 
     if [[ -z "$raw_selection" ]]; then
-        # Return all items
         local output=""
         for item in "${items[@]}"; do
             output="$output \"$item\""
