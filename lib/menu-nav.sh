@@ -150,7 +150,7 @@ run_menu() {
             fi
         done
 
-        printf "\n  ${C_GRAY}↑↓ navigate · Enter select · q/ESC exit${C_RESET}\n"
+        printf "\n  ${C_WHITE}↑↓ navigate · Enter select · q/ESC exit${C_RESET}\n"
 
         # ─── Key input ───
         local key

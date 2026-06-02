@@ -28,12 +28,15 @@ CONFIG_FILE="$ADMIN_CONFIG"
 # Flat menu definition — all items in one list with sections
 # ────────────────────────────────────────────────────────────
 admin_menu=(
-    # ─── Server Control ───
+    # ─── Section: Server Control ───
+    "Server Control|sep|"
     "START|fn|server_start"
     "STOP|fn|server_stop"
     "RESTART|fn|server_restart"
     "STATUS|fn|server_status"
     "LOGS|fn|server_logs"
+    "Install Server|fn|install_server"
+    "Uninstall Server|fn|uninstall_server"
 
     # ─── Section: Modding ───
     "Modding|sep|"
@@ -57,12 +60,10 @@ admin_menu=(
     "Lua Settings|fn|edit_lua_config"
     "Ban List|fn|edit_banlist"
     "Manage Roles|fn|player_roles_menu"
-    "Menu Settings|fn|edit_admin_config"
 
     # ─── Section: System ───
     "System|sep|"
-    "Install Server|fn|install_server"
-    "Uninstall Server|fn|uninstall_server"
+    "Menu Settings|fn|edit_admin_config"
     "Switch to Player Menu|fn|switch_to_player"
     "Exit|fn|menu_exit"
 )
