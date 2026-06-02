@@ -1,385 +1,150 @@
 #!/bin/bash
 #
-# menu-nav.sh — Arrow key menu navigation engine for bash
+# menu-nav.sh — TUI menu navigation engine using whiptail
 #
 # Provides:
-#   run_menu()      — render an interactive menu with arrow keys
-#   reorder_list()  — reorder items with left/right arrows
+#   run_menu()      — display an interactive menu
+#   reorder_list()  — reorder items with whiptail
 #
 # Usage:
 #   source "$(dirname "$0")/lib/menu-nav.sh"
 #
 #   main_menu=(
-#     "START SERVER|fn|server_start"
-#     "STOP SERVER|fn|server_stop"
-#     "━|sep|"
+#     "START|fn|server_start"
+#     "STOP|fn|server_stop"
+#     "─|sep|"
 #     "ADVANCED|menu|advanced_menu"
 #     "BACK|back|"
 #   )
 #   run_menu "MY TITLE" "${main_menu[@]}"
 #
 
-# No strict guard needed — run_menu() works standalone with common.sh
-# common.sh sets LIB_DIR, colors, etc.
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
-
-# ────────────────────────────────────────────────────────────
-# Internal: read a single keypress
-# Returns: KEY_UP, KEY_DOWN, KEY_RIGHT, KEY_LEFT, KEY_ENTER,
-#          KEY_Q, or raw character
-# ────────────────────────────────────────────────────────────
-_read_key() {
-    # Save terminal settings — handle empty output from stty -g
-    local old_settings
-    old_settings=$(stty -g 2>/dev/null) || true
-    if [[ -z "$old_settings" ]]; then
-        old_settings="sane"
-    fi
-
-    # Restore terminal on exit
-    trap 'stty "$old_settings" 2>/dev/null; stty echo 2>/dev/null || true' RETURN
-
-    # Set raw mode — properly
-    stty -icanon -echo min 1 time 0 2>/dev/null || true
-
-    local char=""
-    
-    # Read one byte
-    read -r -s -n1 char 2>/dev/null || true
-    # Wait a tiny bit for more bytes (escape sequences)
-    if [[ "$char" == $'\e' ]]; then
-        local seq=""
-        read -r -s -n1 -t 0.01 seq 2>/dev/null || true
-        if [[ "$seq" == "[" ]]; then
-            local dir=""
-            read -r -s -n1 -t 0.01 dir 2>/dev/null || true
-            case "$dir" in
-                A) echo "KEY_UP" ;;
-                B) echo "KEY_DOWN" ;;
-                C) echo "KEY_RIGHT" ;;
-                D) echo "KEY_LEFT" ;;
-                *) echo "KEY_UNKNOWN" ;;
-            esac
-            return
-        fi
-        echo "KEY_UNKNOWN"
-        return
-    fi
-
-    case "$char" in
-        "")    echo "KEY_ENTER" ;;
-        $'\n') echo "KEY_ENTER" ;;
-        $'\r') echo "KEY_ENTER" ;;
-        q|Q)   echo "KEY_Q" ;;
-        *)     echo "$char" ;;
-    esac
-}
 
 # ────────────────────────────────────────────────────────────
 # run_menu — display an interactive menu
 #
-# Usage:
-#   run_menu "TITLE" "ITEM1|type|action" "ITEM2|type|action" ...
-#
-# Item types:
-#   fn    — run bash function (action = function name)
-#   menu  — open submenu (action = array name with items)
-#   sep   — divider line (label used as text)
-#   back  — "go back" item
-#
-# Returns when user selects "back" or presses q.
-# Selected action is executed by calling the function.
+# Item format: "LABEL|type|action"
+#   fn    — run bash function
+#   menu  — open submenu (action = array name)
+#   sep   — divider line (ignored)
+#   back  — return to previous menu
 # ────────────────────────────────────────────────────────────
 run_menu() {
     local title="$1"
     shift
     local items=("$@")
-    local selected=0
-    local key=""
-    local running=true
 
-    # Check needs_restart ONCE before the loop (not every frame)
-    local needs_restart=false
+    # Check needs_restart once
+    local restart_warn=""
     if [[ -n "${SSH_HOST:-}" ]]; then
         if ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
-            needs_restart=true
+            restart_warn="[RESTART REQUIRED]"
         fi
     fi
 
-    # Save terminal settings
-    local old_settings
-    old_settings=$(stty -g 2>/dev/null || echo "")
+    while true; do
+        # Build whiptail arguments dynamically
+        local whiptail_items=()
+        local indices=()
+        local tag=1
+        local i
+        for ((i=0; i<${#items[@]}; i++)); do
+            local item="${items[$i]}"
+            local label="${item%%|*}"
+            local rest="${item#*|}"
+            local type="${rest%%|*}"
+            [[ "$type" == "sep" ]] && continue
+            indices[tag]=$i
+            local display="$label"
+            [[ "$type" == "menu" ]] && display="$label →"
+            [[ "$type" == "back" ]] && display="← Back"
+            whiptail_items+=("$tag" "$display")
+            ((tag++))
+        done
 
-    while $running; do
-        # Render menu
-        clear_screen
-        _render_menu "$title" "$selected" "$needs_restart" "${items[@]}"
+        local count=${#whiptail_items[@]}
+        local height=$(( (count / 2) + 7 ))
+        [[ "$height" -lt 10 ]] && height=10
+        [[ "$height" -gt 25 ]] && height=25
+        local width=65
 
-        # Read key
-        stty -icanon -echo 2>/dev/null || true
-        key=$(_read_key)
+        local header="${SSH_HOST:-<not set>}"
+        [[ -n "$restart_warn" ]] && header="$restart_warn — $header"
 
-        case "$key" in
-            KEY_UP)
-                local new_sel=$selected
-                while [[ $new_sel -gt 0 ]]; do
-                    new_sel=$((new_sel - 1))
-                    local item_type="${items[$new_sel]#*|}"
-                    item_type="${item_type%%|*}"
-                    [[ "$item_type" != "sep" ]] && break
-                done
-                selected=$new_sel
-                ;;
-            KEY_DOWN)
-                local new_sel=$selected
-                while [[ $new_sel -lt $((${#items[@]} - 1)) ]]; do
-                    new_sel=$((new_sel + 1))
-                    local item_type="${items[$new_sel]#*|}"
-                    item_type="${item_type%%|*}"
-                    [[ "$item_type" != "sep" ]] && break
-                done
-                selected=$new_sel
-                ;;
-            KEY_RIGHT|KEY_ENTER)
-                local item="${items[$selected]}"
-                local label="${item%%|*}"
-                local rest="${item#*|}"
-                local item_type="${rest%%|*}"
-                local action="${rest#*|}"
+        # Use positional parameters to pass items to whiptail
+        local old_ifs="$IFS"
+        IFS='|'
+        # Build a string with | separator, then use eval to call whiptail
+        IFS="$old_ifs"
 
-                case "$item_type" in
-                    fn)
-                        # If SSH_HOST needed and not set, show warning
-                        if [[ -z "${SSH_HOST:-}" ]] && type "$action" 2>/dev/null | grep -q 'SSH_HOST'; then
-                            stty "$old_settings" 2>/dev/null || true
-                            clear_screen
-                            err "SSH_HOST is not set. Use Settings to configure it."
-                            echo ""
-                            read -r -p "  Press Enter to continue..." dummy 2>/dev/null || true
-                        else
-                            stty "$old_settings" 2>/dev/null || true
-                            clear_screen
-                            if type "$action" &>/dev/null 2>&1; then
-                                "$action"
-                            fi
-                        fi
-                        stty "$old_settings" 2>/dev/null || true
-                        # After function, wait for key then return to menu
-                        echo ""
-                        read -r -p "  Press Enter to continue..." dummy 2>/dev/null || true
-                        ;;
-                    menu)
-                        stty "$old_settings" 2>/dev/null || true
-                        _run_submenu "$title" "$label" "$action"
-                        stty "$old_settings" 2>/dev/null || true
-                        ;;
-                    back|"")
-                        running=false
-                        ;;
-                esac
-                ;;
-            KEY_LEFT)
-                running=false
-                ;;
-            KEY_Q)
-                running=false
-                ;;
-        esac
-    done
+        local choice
+        choice=$(whiptail --title "$title" --menu "$header" \
+            "$height" "$width" 0 \
+            "${whiptail_items[@]}" \
+            3>&1 1>&2 2>&3)
+        local rc=$?
 
-    stty "$old_settings" 2>/dev/null || true
-}
+        # ESC/Cancel
+        [[ $rc -ne 0 ]] && break
 
-# ────────────────────────────────────────────────────────────
-# _run_submenu — run a submenu defined by a variable name
-# ────────────────────────────────────────────────────────────
-_run_submenu() {
-    local parent_title="$1"
-    local menu_label="$2"
-    local array_name="$3"
+        # Resolve selected item
+        local idx="${indices[$choice]}"
+        local sel_item="${items[$idx]}"
+        local sel_label="${sel_item%%|*}"
+        local sel_rest="${sel_item#*|}"
+        local sel_type="${sel_rest%%|*}"
+        local sel_action="${sel_rest#*|}"
 
-    # Get the array by name
-    local submenu=()
-    eval 'submenu=("${'"$array_name"'[@]}")'
-
-    if [[ ${#submenu[@]} -eq 0 ]]; then
-        err "Submenu '$menu_label' is empty or not found."
-        press_enter
-        return
-    fi
-
-    run_menu "$menu_label" "${submenu[@]}"
-}
-
-# ────────────────────────────────────────────────────────────
-# _render_menu — draw the menu on screen
-# ────────────────────────────────────────────────────────────
-_render_menu() {
-    local title="$1"
-    local selected="$2"
-    local needs_restart="$3"
-    shift 3
-    local items=("$@")
-
-    # Header
-    print_header "$title"
-
-    # Info line
-    local host_display="${SSH_HOST:-<not set>}"
-    local modpack_display="${MODPACK_DIR:--}"
-    echo "  HOST: $host_display"
-    echo "  MODPACK: $modpack_display"
-    echo ""
-
-    # Show restart warning (cached from run_menu, no SSH here)
-    if [[ "$needs_restart" == "true" ]]; then
-        echo -e "  ${RED}⚠ RESTART REQUIRED — USE RESTART TO APPLY${NC}"
-        echo ""
-    fi
-
-    # Render items
-    local idx=0
-    for item in "${items[@]}"; do
-        local label="${item%%|*}"
-        local rest="${item#*|}"
-        local item_type="${rest%%|*}"
-        local item_action="${rest#*|}"
-
-        local cursor="  "
-        local prefix=""
-        local suffix=""
-
-        if [[ "$idx" -eq "$selected" ]]; then
-            cursor="${GREEN}▸ ${NC}"
-        fi
-
-        case "$item_type" in
-            sep)
-                echo -e "  ${YELLOW}${label}${NC}"
+        case "$sel_type" in
+            fn)
+                clear
+                if type "$sel_action" &>/dev/null 2>&1; then
+                    "$sel_action"
+                fi
+                read -r -p "Press Enter to continue..." dummy 2>/dev/null || true
+                clear
                 ;;
             menu)
-                suffix=" →"
-                if [[ "$idx" -eq "$selected" ]]; then
-                    echo -e "  ${cursor}${label}${suffix}"
-                else
-                    echo -e "  ${cursor}${label}${suffix}"
+                local submenu=()
+                eval 'submenu=("${'"$sel_action"'[@]}")'
+                if [[ ${#submenu[@]} -gt 0 ]]; then
+                    run_menu "$sel_label" "${submenu[@]}"
                 fi
                 ;;
-            back)
-                echo "  ${cursor}${label}"
-                ;;
-            fn)
-                echo -e "  ${cursor}${label}"
+            back|"")
+                break
                 ;;
         esac
-
-        idx=$((idx + 1))
     done
-
-    echo ""
-    echo -e "  ${BLUE}↑/↓${NC} NAVIGATE  ${BLUE}→${NC} SELECT  ${BLUE}←${NC} BACK  ${BLUE}Q${NC} QUIT"
 }
 
 # ────────────────────────────────────────────────────────────
-# reorder_list — interactive reordering of items
-#
-# Usage:
-#   result=$(reorder_list "TITLE" "item1" "item2" ...)
-#   eval "sorted=($result)"
-#
-# Controls:
-#   ↑/↓ — move cursor
-#   ←/→ — move item up/down one position
-#   Enter — confirm
-#   q — cancel (returns empty)
+# reorder_list — display items in a checklist
 # ────────────────────────────────────────────────────────────
 reorder_list() {
     local title="$1"
     shift
     local items=("$@")
-    local selected=0
-    local running=true
 
-    local old_settings
-    old_settings=$(stty -g 2>/dev/null || echo "")
+    local result
+    result=$(whiptail --title "$title" --checklist \
+        "SPACE toggle  ENTER confirm  ESC cancel" \
+        20 60 10 \
+        $(for i in "${!items[@]}"; do echo "$((i+1)) ${items[$i]} ON"; done) \
+        3>&1 1>&2 2>&3)
+    [[ $? -ne 0 ]] && return 1
 
-    while $running; do
-        # Render
-        clear_screen
-        echo ""
-        echo "  ╔══════════════════════════════════════╗"
-        printf "  ║  %-36s║\n" "$title"
-        echo "  ╚══════════════════════════════════════╝"
-        echo ""
-
-        local idx=0
-        for item in "${items[@]}"; do
-            local num=$((idx + 1))
-            if [[ "$idx" -eq "$selected" ]]; then
-                echo -e "  ${GREEN}▸${NC} ${num}. ${item}"
-            else
-                echo "    ${num}. ${item}"
-            fi
-            idx=$((idx + 1))
-        done
-
-        echo ""
-        echo -e "  ${BLUE}↑/↓${NC} NAVIGATE  ${BLUE}←/→${NC} MOVE  ${BLUE}ENTER${NC} CONFIRM  ${BLUE}Q${NC} CANCEL"
-
-        # Read key
-        stty -icanon -echo 2>/dev/null || true
-        local key
-        key=$(_read_key)
-
-        case "$key" in
-            KEY_UP)
-                [[ $selected -gt 0 ]] && selected=$((selected - 1))
-                ;;
-            KEY_DOWN)
-                [[ $selected -lt $((${#items[@]} - 1)) ]] && selected=$((selected + 1))
-                ;;
-            KEY_RIGHT)
-                # Move item down (->)
-                if [[ $selected -lt $((${#items[@]} - 1)) ]]; then
-                    local tmp="${items[$selected]}"
-                    items[$selected]="${items[$((selected + 1))]}"
-                    items[$((selected + 1))]="$tmp"
-                    selected=$((selected + 1))
-                fi
-                ;;
-            KEY_LEFT)
-                # Move item up (<-)
-                if [[ $selected -gt 0 ]]; then
-                    local tmp="${items[$selected]}"
-                    items[$selected]="${items[$((selected - 1))]}"
-                    items[$((selected - 1))]="$tmp"
-                    selected=$((selected - 1))
-                fi
-                ;;
-            KEY_ENTER)
-                running=false
-                stty "$old_settings" 2>/dev/null || true
-                # Return the reordered list as quoted array
-                local result=""
-                for item in "${items[@]}"; do
-                    result="$result \"$item\""
-                done
-                echo "$result"
-                return 0
-                ;;
-            KEY_Q)
-                running=false
-                stty "$old_settings" 2>/dev/null || true
-                return 1
-                ;;
-        esac
+    local output=""
+    for item in "${items[@]}"; do
+        output="$output \"$item\""
     done
-
-    stty "$old_settings" 2>/dev/null || true
+    echo "$output"
+    return 0
 }
 
 # ────────────────────────────────────────────────────────────
-# Screen utilities (used by run_menu)
+# Screen utilities (kept for compatibility)
 # ────────────────────────────────────────────────────────────
 clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
 
