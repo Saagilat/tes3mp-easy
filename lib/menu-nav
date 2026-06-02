@@ -44,7 +44,25 @@ BR="$THEME_BORDER_BR"
 # ────────────────────────────────────────────────────────────
 readonly KEY_UP=$'\e[A'
 readonly KEY_DOWN=$'\e[B'
-readonly KEY_ESC=$'\e'
+
+# ────────────────────────────────────────────────────────────
+# _read_key — read a single keypress using stty raw
+# Outputs: up to 3 bytes to stdout
+# ────────────────────────────────────────────────────────────
+_read_key() {
+    local old_stty key seq
+    old_stty=$(stty -g 2>/dev/null)
+    stty raw -echo -icanon 2>/dev/null
+    # Read one byte
+    key=$(dd bs=1 count=1 2>/dev/null)
+    # If escape, read up to 2 more bytes (arrow sequence)
+    if [[ "$key" == $'\e' ]]; then
+        seq=$(dd bs=1 count=2 2>/dev/null)
+        key="$key$seq"
+    fi
+    stty "$old_stty" 2>/dev/null
+    printf "%s" "$key"
+}
 
 # ────────────────────────────────────────────────────────────
 # print_boxed_header
@@ -155,18 +173,11 @@ run_menu() {
         printf "\n  ↑↓ navigate · Enter select · Ctrl+C exit\n"
 
         # ─── Key input ───
-        local key seq
-        # Read exactly 1 byte (-N1 = raw, no delimiter processing)
-        IFS= read -s -N1 key 2>/dev/null || true
-
-        # Arrow keys start with ESC (0x1b)
-        if [[ "$key" == $'\e' ]]; then
-            IFS= read -s -N2 -t 0.1 seq 2>/dev/null || true
-            key="$key$seq"
-        fi
+        local key
+        key=$(_read_key)
 
         case "$key" in
-            $KEY_UP)
+            $'\e[A'|$'\eOA')
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -177,7 +188,7 @@ run_menu() {
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
                 ;;
-            $KEY_DOWN)
+            $'\e[B'|$'\eOB')
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
@@ -189,7 +200,7 @@ run_menu() {
                 fi
                 ;;
             *)
-                # Any other key = Enter (select item)
+                # Enter = select current item
                 local typ="${v_types[$cursor]}"
                 local action="${v_actions[$cursor]}"
 
