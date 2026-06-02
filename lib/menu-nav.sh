@@ -125,7 +125,7 @@ run_menu() {
             fi
         done
 
-        printf "\n  ↑↓ navigate · Enter select · q/ESC exit\n"
+        printf "\n  ↑↓ navigate · Enter select · Ctrl+C exit\n"
 
         # ─── Key input ───
         local key
@@ -165,9 +165,6 @@ run_menu() {
                     [[ $cur_fn_idx -ge $fn_total ]] && cur_fn_idx=0
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
-                ;;
-            q|Q|$KEY_ESC)
-                return 0
                 ;;
             $'\n'|"")
                 local typ="${v_types[$cursor]}"
