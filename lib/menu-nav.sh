@@ -97,14 +97,18 @@ run_menu() {
         local sel_action="${sel_rest#*|}"
 
         case "$sel_type" in
-            fn)
-                clear
-                if type "$sel_action" &>/dev/null 2>&1; then
-                    "$sel_action"
-                fi
-                read -r -p "Press Enter to continue..." dummy 2>/dev/null || true
-                clear
-                ;;
+                fn)
+                    # Run function, capture output, show in msgbox (no terminal flash)
+                    local fn_out
+                    fn_out=$("$sel_action" 2>&1) || true
+                    local fn_msg
+                    if [[ -n "$fn_out" ]]; then
+                        fn_msg=$(echo "$fn_out" | tail -15)
+                    else
+                        fn_msg="Done."
+                    fi
+                    whiptail --title "$sel_label" --msgbox "$fn_msg" 15 60 2>/dev/null || true
+                    ;;
             menu)
                 local submenu=()
                 eval 'submenu=("${'"$sel_action"'[@]}")'
