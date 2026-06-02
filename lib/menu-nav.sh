@@ -6,13 +6,11 @@
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions — minimal palette
+# Color definitions — 3 colors only
 # ────────────────────────────────────────────────────────────
 readonly C_RESET=$'\033[0m'
 readonly C_BOLD=$'\033[1m'
 
-readonly C_RED=$'\033[31m'
-readonly C_GREEN=$'\033[32m'
 readonly C_YELLOW=$'\033[33m'
 readonly C_CYAN=$'\033[36m'
 readonly C_GRAY=$'\033[90m'
@@ -104,7 +102,7 @@ run_menu() {
             printf "  ${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack}${C_RESET}\n"
         fi
         if [[ "$needs_restart" == "1" ]]; then
-            printf "  ${C_RED}${C_BOLD}[!] Restart required${C_RESET}\n"
+            printf "  ${C_GRAY}${C_BOLD}[!] Restart required${C_RESET}\n"
         fi
         if [[ -z "$ssh_host" && -z "$modpack" && "$needs_restart" != "1" ]]; then
             printf "  ${C_GRAY}<not configured>${C_RESET}\n"
@@ -122,9 +120,9 @@ run_menu() {
             elif [[ "$typ" == "fn" ]]; then
                 fn_counter=$((fn_counter + 1))
                 if [[ $i -eq $cursor ]]; then
-                    printf "  ${C_YELLOW}${C_BOLD} %2d) %s${C_RESET}\n" "$fn_counter" "$lbl"
+                    printf "  ${C_YELLOW}${C_BOLD}%2d) %s${C_RESET}\n" "$fn_counter" "$lbl"
                 else
-                    printf "  ${C_GREEN}%2d)${C_RESET} %s\n" "$fn_counter" "$lbl"
+                    printf "  %2d) %s\n" "$fn_counter" "$lbl"
                 fi
             fi
         done
