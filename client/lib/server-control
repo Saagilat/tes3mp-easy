@@ -43,6 +43,7 @@ docker_compose() {
     else
         ssh "$SSH_HOST" "$cmd"
     fi
+    return $?
 }
 
 # ────────────────────────────────────────────────────────────
@@ -81,7 +82,10 @@ server_start() {
     echo "  Starting TES3MP Server"
     echo "═══════════════════════════════════════════════"
     echo ""
-    docker_compose "up -d"
+    docker_compose "up -d" || {
+        err "Failed to start server on $SSH_HOST"
+        return 1
+    }
     needs_restart_clear
     ok "Server started on $SSH_HOST"
 }
@@ -96,7 +100,10 @@ server_stop() {
     echo "  Stopping TES3MP Server"
     echo "═══════════════════════════════════════════════"
     echo ""
-    docker_compose "down"
+    docker_compose "down" || {
+        err "Failed to stop server on $SSH_HOST"
+        return 1
+    }
     ok "Server stopped on $SSH_HOST"
 }
 
@@ -110,7 +117,10 @@ server_restart() {
     echo "  Restarting TES3MP Server"
     echo "═══════════════════════════════════════════════"
     echo ""
-    docker_compose "restart"
+    docker_compose "restart" || {
+        err "Failed to restart server on $SSH_HOST"
+        return 1
+    }
     needs_restart_clear
     ok "Server restarted on $SSH_HOST"
 }
