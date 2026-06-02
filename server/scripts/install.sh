@@ -193,7 +193,7 @@ setup_files() {
 
     # Download common.sh to dest root (not scripts/)
     info "Downloading common.sh..."
-    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/common.sh" -O "$dest/common.sh" || {
+    wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/common" -O "$dest/common.sh" || {
         err "Failed to download common.sh"
         exit 1
     }
