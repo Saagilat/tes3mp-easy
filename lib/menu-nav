@@ -39,7 +39,6 @@ TR="$THEME_BORDER_TR"
 BL="$THEME_BORDER_BL"
 BR="$THEME_BORDER_BR"
 
-
 # ────────────────────────────────────────────────────────────
 # print_boxed_header
 # ────────────────────────────────────────────────────────────
@@ -146,51 +145,74 @@ run_menu() {
             fi
         done
 
-        printf "\n  Enter number or press Enter for current item · Ctrl+C exit\n"
+        printf "\n  ↑↓ navigate · Enter select · Ctrl+C exit\n"
 
-        # ─── Key input via read -p ───
-        echo ""
-        local choice
-        read -r -p "  Select number or press Enter for current: " choice
+        # ─── Raw key input ───
+        local old_tty key seq
+        old_tty=$(stty -g 2>/dev/null)
+        stty raw -echo 2>/dev/null
 
-        if [[ -n "$choice" && "$choice" =~ ^[0-9]+$ ]]; then
-            # Try to map number to fn item
-            local target_idx=0
-            local fn_c=0
-            for ((i=0; i<count; i++)); do
-                [[ "${v_types[$i]}" == "fn" ]] && ((fn_c++))
-                if [[ $fn_c -eq $choice ]]; then
-                    target_idx=$i
-                    break
-                fi
-            done
-            if [[ $target_idx -ge 0 && $target_idx -lt count ]]; then
-                cursor=$target_idx
-            fi
+        # Read first byte (blocks)
+        key=$(dd bs=1 count=1 2>/dev/null)
+
+        # If ESC, try to read arrow sequence
+        if [[ "$key" == $'\e' ]]; then
+            seq=$(dd bs=1 count=2 2>/dev/null)
+            key="$key$seq"
         fi
 
-        # Execute selected item
-        local typ="${v_types[$cursor]}"
-        local action="${v_actions[$cursor]}"
+        stty "$old_tty" 2>/dev/null
 
-        if [[ "$typ" == "fn" ]]; then
-            echo ""
-            "$action"
-            echo ""
-            press_enter
-
-            if [[ -n "$config_file" && -f "$config_file" ]]; then
-                source "$config_file" 2>/dev/null || true
-                ssh_host="${SSH_HOST:-}"
-                modpack="${MODPACK_DIR:-}"
-            fi
-            if [[ -n "$ssh_host" ]]; then
-                if ssh "$ssh_host" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
-                    needs_restart="1"
-                else
-                    needs_restart=""
+        case "$key" in
+            $'\e[A')
+                # Up arrow
+                if [[ $fn_total -gt 0 ]]; then
+                    local cur_fn_idx=0
+                    for ((i=0; i<fn_total; i++)); do
+                        [[ ${fn_map[$i]} -eq $cursor ]] && { cur_fn_idx=$i; break; }
+                    done
+                    cur_fn_idx=$((cur_fn_idx - 1))
+                    [[ $cur_fn_idx -lt 0 ]] && cur_fn_idx=$((fn_total - 1))
+                    cursor=${fn_map[$cur_fn_idx]}
                 fi
-            fi
-        fi
+                ;;
+            $'\e[B')
+                # Down arrow
+                if [[ $fn_total -gt 0 ]]; then
+                    local cur_fn_idx=0
+                    for ((i=0; i<fn_total; i++)); do
+                        [[ ${fn_map[$i]} -eq $cursor ]] && { cur_fn_idx=$i; break; }
+                    done
+                    cur_fn_idx=$((cur_fn_idx + 1))
+                    [[ $cur_fn_idx -ge $fn_total ]] && cur_fn_idx=0
+                    cursor=${fn_map[$cur_fn_idx]}
+                fi
+                ;;
+            *)
+                # Enter or any other key — select current item
+                local typ="${v_types[$cursor]}"
+                local action="${v_actions[$cursor]}"
+
+                if [[ "$typ" == "fn" ]]; then
+                    echo ""
+                    "$action"
+                    echo ""
+                    press_enter
+
+                    if [[ -n "$config_file" && -f "$config_file" ]]; then
+                        source "$config_file" 2>/dev/null || true
+                        ssh_host="${SSH_HOST:-}"
+                        modpack="${MODPACK_DIR:-}"
+                    fi
+                    if [[ -n "$ssh_host" ]]; then
+                        if ssh "$ssh_host" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
+                            needs_restart="1"
+                        else
+                            needs_restart=""
+                        fi
+                    fi
+                fi
+                ;;
+        esac
     done
 }
