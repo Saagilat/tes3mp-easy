@@ -65,7 +65,6 @@ admin_menu=(
     "System|sep|"
     "Admin Menu Settings|fn|edit_admin_config"
     "Switch to Player Menu|fn|switch_to_player"
-    "Exit|fn|menu_exit"
 )
 
 # ────────────────────────────────────────────────────────────

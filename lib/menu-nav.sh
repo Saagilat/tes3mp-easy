@@ -6,20 +6,16 @@
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions (ANSI-C quoted $'...' — real ESC byte)
+# Color definitions — minimal palette
 # ────────────────────────────────────────────────────────────
 readonly C_RESET=$'\033[0m'
 readonly C_BOLD=$'\033[1m'
 
-readonly C_BLACK=$'\033[30m'
 readonly C_RED=$'\033[31m'
 readonly C_GREEN=$'\033[32m'
 readonly C_YELLOW=$'\033[33m'
 readonly C_CYAN=$'\033[36m'
-readonly C_WHITE=$'\033[37m'
 readonly C_GRAY=$'\033[90m'
-
-readonly C_BG_YELLOW=$'\033[43m'
 
 # ────────────────────────────────────────────────────────────
 # Key codes
@@ -38,8 +34,6 @@ print_boxed_header() {
     local title_len=${#title}
     local pad=$(( (width - title_len - 2) / 2 ))
     [[ $pad -lt 0 ]] && pad=0
-    local right_pad=$((width - pad - title_len - 2))
-    [[ $right_pad -lt 0 ]] && right_pad=0
 
     local line
     printf -v line "%64s" ""
@@ -47,16 +41,12 @@ print_boxed_header() {
 
     printf "\n${C_CYAN}╭${line}╮${C_RESET}\n"
     printf "${C_CYAN}│${C_RESET}%*s${C_BOLD}${C_YELLOW} %s ${C_RESET}%*s${C_CYAN}│${C_RESET}\n" \
-        $(( (width - title_len - 2) / 2 )) "" \
-        "$title" \
-        $(( width - (width - title_len - 2) / 2 - title_len - 2 )) ""
+        $pad "" "$title" $((width - pad - title_len - 2)) ""
     printf "${C_CYAN}╰${line}╯${C_RESET}\n"
 }
 
 # ────────────────────────────────────────────────────────────
-# run_menu — flat interactive menu with sections & info line
-#
-# Usage: run_menu "TITLE" "SSH_HOST" "MODPACK_DIR" "CONFIG_FILE" "RESTART_FLAG" items...
+# run_menu — flat interactive menu with sections
 # ────────────────────────────────────────────────────────────
 run_menu() {
     local menu_title="$1"
@@ -92,7 +82,7 @@ run_menu() {
     local count=${#v_labels[@]}
     local cursor=0
 
-    # Build a mapping from fn-only index to actual index
+    # Build fn-only index mapping
     local -a fn_map=()
     for ((i=0; i<count; i++)); do
         [[ "${v_types[$i]}" == "fn" ]] && fn_map+=($i)
@@ -100,13 +90,12 @@ run_menu() {
     local fn_total=${#fn_map[@]}
 
     while true; do
-        # Move to top, clear
         printf "\033[H\033[J"
 
         # ─── Header ───
         print_boxed_header "$menu_title"
 
-        # ─── Info lines (each on its own row) ───
+        # ─── Info ───
         echo ""
         if [[ -n "$ssh_host" ]]; then
             printf "  ${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}\n"
@@ -122,26 +111,25 @@ run_menu() {
         fi
         echo ""
 
-        # ─── Items (sequential number per fn-item) ───
+        # ─── Items ───
         local fn_counter=0
         for ((i=0; i<count; i++)); do
             local typ="${v_types[$i]}"
             local lbl="${v_labels[$i]}"
 
             if [[ "$typ" == "sep" ]]; then
-                printf "  ${C_CYAN}${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
+                printf "  ${C_GRAY}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
             elif [[ "$typ" == "fn" ]]; then
                 fn_counter=$((fn_counter + 1))
-                local num=$fn_counter
                 if [[ $i -eq $cursor ]]; then
-                    printf "  ${C_BG_YELLOW}${C_BLACK}${C_BOLD} %2d) %s${C_RESET}\n" "$num" "$lbl"
+                    printf "  ${C_YELLOW}${C_BOLD} %2d) %s${C_RESET}\n" "$fn_counter" "$lbl"
                 else
-                    printf "  ${C_GREEN}%2d)${C_RESET} %s\n" "$num" "$lbl"
+                    printf "  ${C_GREEN}%2d)${C_RESET} %s\n" "$fn_counter" "$lbl"
                 fi
             fi
         done
 
-        printf "\n  ${C_WHITE}↑↓ navigate · Enter select · q/ESC exit${C_RESET}\n"
+        printf "\n  ${C_GRAY}↑↓ navigate · Enter select · q/ESC exit${C_RESET}\n"
 
         # ─── Key input ───
         local key
@@ -161,10 +149,7 @@ run_menu() {
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
-                        if [[ ${fn_map[$i]} -eq $cursor ]]; then
-                            cur_fn_idx=$i
-                            break
-                        fi
+                        [[ ${fn_map[$i]} -eq $cursor ]] && { cur_fn_idx=$i; break; }
                     done
                     cur_fn_idx=$((cur_fn_idx - 1))
                     [[ $cur_fn_idx -lt 0 ]] && cur_fn_idx=$((fn_total - 1))
@@ -175,10 +160,7 @@ run_menu() {
                 if [[ $fn_total -gt 0 ]]; then
                     local cur_fn_idx=0
                     for ((i=0; i<fn_total; i++)); do
-                        if [[ ${fn_map[$i]} -eq $cursor ]]; then
-                            cur_fn_idx=$i
-                            break
-                        fi
+                        [[ ${fn_map[$i]} -eq $cursor ]] && { cur_fn_idx=$i; break; }
                     done
                     cur_fn_idx=$((cur_fn_idx + 1))
                     [[ $cur_fn_idx -ge $fn_total ]] && cur_fn_idx=0
