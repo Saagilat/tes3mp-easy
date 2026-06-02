@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-# menu-nav.sh — TUI menu navigation engine using whiptail
+# menu-nav.sh — TUI menu navigation engine (pure bash, no whiptail)
 #
 # Provides:
 #   run_menu()      — display an interactive menu
-#   reorder_list()  — reorder items with whiptail
+#   reorder_list()  — reorder items (numbered checklist)
 #
 # Usage:
 #   source "$(dirname "$0")/lib/menu-nav.sh"
@@ -22,10 +22,19 @@
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
+# Color definitions (self-contained, no dependency on common.sh)
+# ────────────────────────────────────────────────────────────
+readonly C_GREEN='\033[0;32m'
+readonly C_YELLOW='\033[1;33m'
+readonly C_CYAN='\033[0;36m'
+readonly C_RED='\033[0;31m'
+readonly C_NC='\033[0m'
+
+# ────────────────────────────────────────────────────────────
 # run_menu — display an interactive menu
 #
 # Item format: "LABEL|type|action"
-#   fn    — run bash function
+#   fn    — run bash function (in real terminal, no subshell)
 #   menu  — open submenu (action = array name)
 #   sep   — divider line (ignored)
 #   back  — return to previous menu
@@ -35,7 +44,7 @@ run_menu() {
     shift
     local items=("$@")
 
-    # Check needs_restart once
+    # Check needs_restart once per menu open — cached, no SSH on every render
     local restart_warn=""
     if [[ -n "${SSH_HOST:-}" ]]; then
         if ssh "$SSH_HOST" "test -f /tes3mp-easy/needs_restart.flag" 2>/dev/null; then
@@ -44,9 +53,18 @@ run_menu() {
     fi
 
     while true; do
-        # Build whiptail arguments dynamically
-        local whiptail_items=()
-        local indices=()
+        clear_screen
+        print_header "$title"
+
+        # Header line
+        local header="${SSH_HOST:-<not set>}"
+        [[ -n "$restart_warn" ]] && header="$restart_warn — $header"
+        echo ""
+        echo -e "  ${C_CYAN}${header}${C_NC}"
+        echo ""
+
+        # Build display items (skip separators)
+        local -a indices=()
         local tag=1
         local i
         for ((i=0; i<${#items[@]}; i++)); do
@@ -55,41 +73,35 @@ run_menu() {
             local rest="${item#*|}"
             local type="${rest%%|*}"
             [[ "$type" == "sep" ]] && continue
-            indices[tag]=$i
+            indices[$tag]=$i
+
             local display="$label"
-            [[ "$type" == "menu" ]] && display="$label →"
+            [[ "$type" == "menu" ]] && display="${label} →"
             [[ "$type" == "back" ]] && display="← Back"
-            whiptail_items+=("$tag" "$display")
+
+            printf "  ${C_GREEN}%2d)${C_NC} %s\n" "$tag" "$display"
             ((tag++))
         done
 
-        local count=${#whiptail_items[@]}
-        local height=$(( (count / 2) + 7 ))
-        [[ "$height" -lt 10 ]] && height=10
-        [[ "$height" -gt 25 ]] && height=25
-        local width=65
-
-        local header="${SSH_HOST:-<not set>}"
-        [[ -n "$restart_warn" ]] && header="$restart_warn — $header"
-
-        # Use positional parameters to pass items to whiptail
-        local old_ifs="$IFS"
-        IFS='|'
-        # Build a string with | separator, then use eval to call whiptail
-        IFS="$old_ifs"
+        local last_idx=$((tag - 1))
+        echo ""
+        printf "  ${C_YELLOW} 0)${C_NC} ← Back / Exit\n"
+        echo ""
 
         local choice
-        choice=$(whiptail --title "$title" --menu "$header" \
-            "$height" "$width" 0 \
-            "${whiptail_items[@]}" \
-            3>&1 1>&2 2>&3)
-        local rc=$?
+        read -r -p "  Select [0-${last_idx}]: " choice
 
-        # ESC/Cancel
-        [[ $rc -ne 0 ]] && break
+        # 0 or empty = back/exit
+        if [[ -z "$choice" || "$choice" == "0" ]]; then
+            break
+        fi
 
-        # Resolve selected item
-        local idx="${indices[$choice]}"
+        # Validate numeric
+        [[ ! "$choice" =~ ^[0-9]+$ ]] && continue
+
+        local idx="${indices[$choice]:-}"
+        [[ -z "$idx" ]] && continue
+
         local sel_item="${items[$idx]}"
         local sel_label="${sel_item%%|*}"
         local sel_rest="${sel_item#*|}"
@@ -97,20 +109,16 @@ run_menu() {
         local sel_action="${sel_rest#*|}"
 
         case "$sel_type" in
-                fn)
-                    # Run function, capture output, show in msgbox (no terminal flash)
-                    local fn_out
-                    fn_out=$("$sel_action" 2>&1) || true
-                    local fn_msg
-                    if [[ -n "$fn_out" ]]; then
-                        fn_msg=$(echo "$fn_out" | tail -15)
-                    else
-                        fn_msg="Done."
-                    fi
-                    whiptail --title "$sel_label" --msgbox "$fn_msg" 15 60 2>/dev/null || true
-                    ;;
+            fn)
+                echo ""
+                # Run function directly in real terminal —
+                # no subshell capture, so ssh -t / nano etc work fine
+                "$sel_action"
+                echo ""
+                press_enter
+                ;;
             menu)
-                local submenu=()
+                local -a submenu=()
                 eval 'submenu=("${'"$sel_action"'[@]}")'
                 if [[ ${#submenu[@]} -gt 0 ]]; then
                     run_menu "$sel_label" "${submenu[@]}"
@@ -124,23 +132,54 @@ run_menu() {
 }
 
 # ────────────────────────────────────────────────────────────
-# reorder_list — display items in a checklist
+# reorder_list — display numbered items for multi-select
+# (replaces old whiptail checklist)
 # ────────────────────────────────────────────────────────────
 reorder_list() {
     local title="$1"
     shift
-    local items=("$@")
+    local -a items=("$@")
 
-    local result
-    result=$(whiptail --title "$title" --checklist \
-        "SPACE toggle  ENTER confirm  ESC cancel" \
-        20 60 10 \
-        $(for i in "${!items[@]}"; do echo "$((i+1)) ${items[$i]} ON"; done) \
-        3>&1 1>&2 2>&3)
-    [[ $? -ne 0 ]] && return 1
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  $title"
+    echo "═══════════════════════════════════════════════"
+    echo ""
+
+    local i
+    for ((i=0; i<${#items[@]}; i++)); do
+        printf "  %2d) %s\n" $((i+1)) "${items[$i]}"
+    done
+
+    echo ""
+    echo "  Enter numbers separated by space, or empty for all:"
+    read -r -p "  > " raw_selection
+
+    if [[ -z "$raw_selection" ]]; then
+        # Return all items
+        local output=""
+        for item in "${items[@]}"; do
+            output="$output \"$item\""
+        done
+        echo "$output"
+        return 0
+    fi
+
+    local -a selected=()
+    for num in $raw_selection; do
+        [[ "$num" =~ ^[0-9]+$ ]] || continue
+        local idx=$((num - 1))
+        [[ $idx -ge 0 && $idx -lt ${#items[@]} ]] || continue
+        selected+=("${items[$idx]}")
+    done
+
+    if [[ ${#selected[@]} -eq 0 ]]; then
+        echo "  No valid selection."
+        return 1
+    fi
 
     local output=""
-    for item in "${items[@]}"; do
+    for item in "${selected[@]}"; do
         output="$output \"$item\""
     done
     echo "$output"
@@ -148,7 +187,7 @@ reorder_list() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Screen utilities (kept for compatibility)
+# Screen utilities
 # ────────────────────────────────────────────────────────────
 clear_screen() { printf "\033c" 2>/dev/null || clear 2>/dev/null || true; }
 
