@@ -6,7 +6,7 @@
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────
-# Color definitions — 2 colors
+# Color definitions
 # ────────────────────────────────────────────────────────────
 readonly C_RESET=$'\033[0m'
 readonly C_BOLD=$'\033[1m'
@@ -19,11 +19,10 @@ readonly C_CYAN=$'\033[36m'
 # ────────────────────────────────────────────────────────────
 readonly KEY_UP=$'\e[A'
 readonly KEY_DOWN=$'\e[B'
-readonly KEY_ENTER=$'\n'
 readonly KEY_ESC=$'\e'
 
 # ────────────────────────────────────────────────────────────
-# print_boxed_header — draw fancy top header
+# print_boxed_header
 # ────────────────────────────────────────────────────────────
 print_boxed_header() {
     local title="$1"
@@ -43,7 +42,7 @@ print_boxed_header() {
 }
 
 # ────────────────────────────────────────────────────────────
-# run_menu — flat interactive menu with sections
+# run_menu
 # ────────────────────────────────────────────────────────────
 run_menu() {
     local menu_title="$1"
@@ -115,11 +114,11 @@ run_menu() {
             local lbl="${v_labels[$i]}"
 
             if [[ "$typ" == "sep" ]]; then
-                printf "  ${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
+                printf "  ${C_CYAN}${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
             elif [[ "$typ" == "fn" ]]; then
                 fn_counter=$((fn_counter + 1))
                 if [[ $i -eq $cursor ]]; then
-                    printf "  ${C_YELLOW}${C_BOLD}%2d) %s${C_RESET}\n" "$fn_counter" "$lbl"
+                    printf "  ${C_YELLOW}%2d) %s${C_RESET}\n" "$fn_counter" "$lbl"
                 else
                     printf "  %2d) %s\n" "$fn_counter" "$lbl"
                 fi
@@ -132,13 +131,16 @@ run_menu() {
         local key
         IFS= read -s -n1 key 2>/dev/null || true
 
+        # Check for ESC
         if [[ "$key" == $KEY_ESC ]]; then
             local seq
             IFS= read -s -n2 -t 0.1 seq 2>/dev/null || true
             key="$key$seq"
         fi
+
+        # Empty = Enter
         if [[ -z "$key" ]]; then
-            key=$KEY_ENTER
+            key=$'\n'
         fi
 
         case "$key" in
@@ -164,10 +166,10 @@ run_menu() {
                     cursor=${fn_map[$cur_fn_idx]}
                 fi
                 ;;
-            q|Q)
+            q|Q|$KEY_ESC)
                 return 0
                 ;;
-            $KEY_ENTER|"")
+            $'\n'|"")
                 local typ="${v_types[$cursor]}"
                 local action="${v_actions[$cursor]}"
 
