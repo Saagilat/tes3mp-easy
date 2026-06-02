@@ -6,15 +6,15 @@
 if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
-    source "$LIB_DIR/common.sh"
-    source "$LIB_DIR/lang.sh"
-    source "$LIB_DIR/config.sh"
-    source "$LIB_DIR/menu-nav.sh"
-    source "$LIB_DIR/import-client.sh"
-    source "$LIB_DIR/client-install.sh"
-    source "$LIB_DIR/client-configs.sh"
-    source "$LIB_DIR/localization.sh"
-    source "$LIB_DIR/required-data.sh"
+    source "$LIB_DIR/common"
+    source "$LIB_DIR/lang"
+    source "$LIB_DIR/config"
+    source "$LIB_DIR/menu-nav"
+    source "$LIB_DIR/import-client"
+    source "$LIB_DIR/client-install"
+    source "$LIB_DIR/client-configs"
+    source "$LIB_DIR/localization"
+    source "$LIB_DIR/required-data"
 fi
 
 PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
@@ -79,7 +79,7 @@ dispatch_player() {
         generate-required-data) generate_required_data ;;
         config) edit_config "$PLAYER_CONFIG" ;;
         admin-menu)
-            local am="${SCRIPT_DIR}/menu/admin.sh"
+            local am="${SCRIPT_DIR}/menu/admin"
             [[ -f "$am" ]] && exec bash "$am" || err "menu/admin.sh not found"
             ;;
         uninstall)
@@ -107,7 +107,7 @@ dispatch_player() {
 # Helper functions
 # ────────────────────────────────────────────────────────────
 switch_to_admin() {
-    local am="${SCRIPT_DIR}/menu/admin.sh"
+    local am="${SCRIPT_DIR}/menu/admin"
     if [[ -f "$am" ]]; then
         info "${MSG_SWITCHING_ADMIN:-Switching to admin menu...}"
         sleep 1

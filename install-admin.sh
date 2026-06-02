@@ -23,7 +23,7 @@ echo ""
 echo "Downloading TES3MP Easy admin scripts..."
 mkdir -p "$UPDATE_DIR/lib" "$UPDATE_DIR/menu" "$UPDATE_DIR/lang"
 
-total=20
+total=21
 count=0
 
 download() {
@@ -38,25 +38,26 @@ download() {
     fi
 }
 
-download "lib/common.sh"          "$UPDATE_DIR/lib/common.sh"
-download "lib/lang.sh"            "$UPDATE_DIR/lib/lang.sh"
-download "lib/config.sh"          "$UPDATE_DIR/lib/config.sh"
-download "lib/menu-nav.sh"        "$UPDATE_DIR/lib/menu-nav.sh"
-download "lib/server-install.sh"  "$UPDATE_DIR/lib/server-install.sh"
-download "lib/server-control.sh"  "$UPDATE_DIR/lib/server-control.sh"
-download "lib/server-configs.sh"  "$UPDATE_DIR/lib/server-configs.sh"
-download "lib/export-mods.sh"     "$UPDATE_DIR/lib/export-mods.sh"
-download "lib/export-players.sh"  "$UPDATE_DIR/lib/export-players.sh"
-download "lib/export-world.sh"    "$UPDATE_DIR/lib/export-world.sh"
-download "lib/import-server.sh"   "$UPDATE_DIR/lib/import-server.sh"
-download "lib/import-client.sh"   "$UPDATE_DIR/lib/import-client.sh"
-download "lib/required-data.sh"   "$UPDATE_DIR/lib/required-data.sh"
-download "lib/client-install.sh"  "$UPDATE_DIR/lib/client-install.sh"
-download "lib/client-configs.sh"  "$UPDATE_DIR/lib/client-configs.sh"
-download "lib/localization.sh"    "$UPDATE_DIR/lib/localization.sh"
-download "lib/player-roles.sh"    "$UPDATE_DIR/lib/player-roles.sh"
-download "menu/admin.sh"          "$UPDATE_DIR/menu/admin.sh"
-download "menu/player.sh"         "$UPDATE_DIR/menu/player.sh"
+"lib/common"          "$UPDATE_DIR/lib/common"
+"lib/lang"            "$UPDATE_DIR/lib/lang"
+"lib/config"          "$UPDATE_DIR/lib/config"
+"lib/menu-nav"        "$UPDATE_DIR/lib/menu-nav"
+"lib/server-install"  "$UPDATE_DIR/lib/server-install"
+"lib/server-control"  "$UPDATE_DIR/lib/server-control"
+"lib/server-configs"  "$UPDATE_DIR/lib/server-configs"
+"lib/export-mods"     "$UPDATE_DIR/lib/export-mods"
+"lib/export-players"  "$UPDATE_DIR/lib/export-players"
+"lib/export-world"    "$UPDATE_DIR/lib/export-world"
+"lib/import-server"   "$UPDATE_DIR/lib/import-server"
+"lib/import-client"   "$UPDATE_DIR/lib/import-client"
+"lib/required-data"   "$UPDATE_DIR/lib/required-data"
+"lib/client-install"  "$UPDATE_DIR/lib/client-install"
+"lib/client-configs"  "$UPDATE_DIR/lib/client-configs"
+"lib/localization"    "$UPDATE_DIR/lib/localization"
+"lib/player-roles"    "$UPDATE_DIR/lib/player-roles"
+"lib/theme.ini"           "$UPDATE_DIR/lib/theme"
+download "menu/admin"          "$UPDATE_DIR/menu/admin"
+download "menu/player"         "$UPDATE_DIR/menu/player"
 
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
@@ -94,7 +95,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  To start the admin menu:"
-echo "    bash $UPDATE_DIR/menu/admin.sh"
+echo "    bash $UPDATE_DIR/menu/admin"
 echo ""
 echo "  Alias (add to ~/.bashrc):"
 echo "    alias tes3mp-easy-admin='bash $UPDATE_DIR/menu/admin.sh'"

@@ -6,19 +6,19 @@
 if [[ -z "${LIB_DIR:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
     LIB_DIR="$SCRIPT_DIR/lib"
-    source "$LIB_DIR/common.sh"
-    source "$LIB_DIR/lang.sh"
-    source "$LIB_DIR/config.sh"
-    source "$LIB_DIR/menu-nav.sh"
-    source "$LIB_DIR/server-install.sh"
-    source "$LIB_DIR/server-control.sh"
-    source "$LIB_DIR/server-configs.sh"
-    source "$LIB_DIR/export-mods.sh"
-    source "$LIB_DIR/export-players.sh"
-    source "$LIB_DIR/export-world.sh"
-    source "$LIB_DIR/import-server.sh"
-    source "$LIB_DIR/player-roles.sh"
-    source "$LIB_DIR/required-data.sh"
+    source "$LIB_DIR/common"
+    source "$LIB_DIR/lang"
+    source "$LIB_DIR/config"
+    source "$LIB_DIR/menu-nav"
+    source "$LIB_DIR/server-install"
+    source "$LIB_DIR/server-control"
+    source "$LIB_DIR/server-configs"
+    source "$LIB_DIR/export-mods"
+    source "$LIB_DIR/export-players"
+    source "$LIB_DIR/export-world"
+    source "$LIB_DIR/import-server"
+    source "$LIB_DIR/player-roles"
+    source "$LIB_DIR/required-data"
 fi
 
 ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
@@ -85,7 +85,7 @@ dispatch_admin() {
         generate-required-data) generate_required_data ;;
         config) edit_config "$ADMIN_CONFIG" ;;
         player-menu)
-            local pm="${SCRIPT_DIR}/menu/player.sh"
+            local pm="${SCRIPT_DIR}/menu/player"
             [[ -f "$pm" ]] && exec bash "$pm" || err "menu/player.sh not found"
             ;;
         uninstall-server) uninstall_server ;;
@@ -329,7 +329,7 @@ download_world_backup() {
 # Menu transitions
 # ────────────────────────────────────────────────────────────
 switch_to_player() {
-    local player_menu="$SCRIPT_DIR/menu/player.sh"
+    local player_menu="$SCRIPT_DIR/menu/player"
     if [[ -f "$player_menu" ]]; then
         info "${MSG_SWITCHING_PLAYER:-Switching to player menu...}"
         sleep 1

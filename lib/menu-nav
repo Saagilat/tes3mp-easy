@@ -5,14 +5,39 @@
 
 [ -z "${LIB_DIR:-}" ] && LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 2>/dev/null || true
 
-# ────────────────────────────────────────────────────────────
-# Color definitions
-# ────────────────────────────────────────────────────────────
-readonly C_RESET=$'\033[0m'
-readonly C_BOLD=$'\033[1m'
+# ─── Load theme from INI ───
+if [[ -f "$LIB_DIR/theme.ini" ]]; then
+    while IFS='=' read -r key val; do
+        key="${key// /}"
+        val="${val# }"
+        [[ -z "$key" || "$key" == \;* || "$key" == \#* ]] && continue
+        case "$key" in THEME_*) eval "$key=\"\$val\"" ;; esac
+    done < "$LIB_DIR/theme.ini"
+fi
 
-readonly C_YELLOW=$'\033[33m'
-readonly C_CYAN=$'\033[36m'
+# Fallback defaults
+THEME_MENU_WIDTH="${THEME_MENU_WIDTH:-64}"
+THEME_BORDER_TL="${THEME_BORDER_TL:-╭}"
+THEME_BORDER_TR="${THEME_BORDER_TR:-╮}"
+THEME_BORDER_BL="${THEME_BORDER_BL:-╰}"
+THEME_BORDER_BR="${THEME_BORDER_BR:-╯}"
+THEME_BORDER_H="${THEME_BORDER_H:-─}"
+THEME_BORDER_V="${THEME_BORDER_V:-│}"
+
+# Build ANSI escapes from numeric color values
+T_RESET=$'\033[0m'
+T_BLD=$'\033[1m'
+T_CYN=$'\033['"${THEME_CYAN:-36}"'m'
+T_YLW=$'\033['"${THEME_YELLOW:-33}"'m'
+
+# Shortcuts
+W="$THEME_MENU_WIDTH"
+H="$THEME_BORDER_H"
+V="$THEME_BORDER_V"
+TL="$THEME_BORDER_TL"
+TR="$THEME_BORDER_TR"
+BL="$THEME_BORDER_BL"
+BR="$THEME_BORDER_BR"
 
 # ────────────────────────────────────────────────────────────
 # Key codes
@@ -26,19 +51,18 @@ readonly KEY_ESC=$'\e'
 # ────────────────────────────────────────────────────────────
 print_boxed_header() {
     local title="$1"
-    local width=64
     local title_len=${#title}
-    local pad=$(( (width - title_len - 2) / 2 ))
+    local pad=$(( (W - title_len - 2) / 2 ))
     [[ $pad -lt 0 ]] && pad=0
 
     local line
-    printf -v line "%64s" ""
-    line="${line// /─}"
+    printf -v line "%${W}s" ""
+    line="${line// /$H}"
 
-    printf "\n${C_CYAN}╭${line}╮${C_RESET}\n"
-    printf "${C_CYAN}│${C_RESET}%*s${C_BOLD}${C_YELLOW} %s ${C_RESET}%*s${C_CYAN}│${C_RESET}\n" \
-        $pad "" "$title" $((width - pad - title_len - 2)) ""
-    printf "${C_CYAN}╰${line}╯${C_RESET}\n"
+    printf "\n${T_CYN}${TL}${line}${TR}${T_RESET}\n"
+    printf "${T_CYN}${V}${T_RESET}%*s${T_BLD}${T_YLW} %s ${T_RESET}%*s${T_CYN}${V}${T_RESET}\n" \
+        $pad "" "$title" $((W - pad - title_len - 2)) ""
+    printf "${T_CYN}${BL}${line}${BR}${T_RESET}\n"
 }
 
 # ────────────────────────────────────────────────────────────
@@ -94,13 +118,13 @@ run_menu() {
         # ─── Info ───
         echo ""
         if [[ -n "$ssh_host" ]]; then
-            printf "  ${C_CYAN}Host:${C_RESET} ${C_BOLD}${ssh_host}${C_RESET}\n"
+            printf "  ${T_CYN}Host:${T_RESET} ${T_BLD}${ssh_host}${T_RESET}\n"
         fi
         if [[ -n "$modpack" ]]; then
-            printf "  ${C_CYAN}Mods:${C_RESET} ${C_BOLD}${modpack}${C_RESET}\n"
+            printf "  ${T_CYN}Mods:${T_RESET} ${T_BLD}${modpack}${T_RESET}\n"
         fi
         if [[ "$needs_restart" == "1" ]]; then
-            printf "  ${C_BOLD}[!] Restart required${C_RESET}\n"
+            printf "  ${T_YLW}[!] Restart required${T_RESET}\n"
         fi
         if [[ -z "$ssh_host" && -z "$modpack" && "$needs_restart" != "1" ]]; then
             printf "  <not configured>\n"
@@ -114,11 +138,14 @@ run_menu() {
             local lbl="${v_labels[$i]}"
 
             if [[ "$typ" == "sep" ]]; then
-                printf "  ${C_CYAN}${C_BOLD}─── ${lbl} ───────────────────────────────────────${C_RESET}\n"
+                local sep_line
+                printf -v sep_line "%*s" $((W - 6)) ""
+                sep_line="${sep_line// /$H}"
+                printf "  ${T_CYN}${T_BLD}${H}${H}${H} ${lbl} ${sep_line}${T_RESET}\n"
             elif [[ "$typ" == "fn" ]]; then
                 fn_counter=$((fn_counter + 1))
                 if [[ $i -eq $cursor ]]; then
-                    printf "  ${C_YELLOW}%2d) %s${C_RESET}\n" "$fn_counter" "$lbl"
+                    printf "  ${T_YLW}%2d) %s${T_RESET}\n" "$fn_counter" "$lbl"
                 else
                     printf "  %2d) %s\n" "$fn_counter" "$lbl"
                 fi
@@ -131,14 +158,12 @@ run_menu() {
         local key
         IFS= read -s -n1 key 2>/dev/null || true
 
-        # Check for ESC
         if [[ "$key" == $KEY_ESC ]]; then
             local seq
             IFS= read -s -n2 -t 0.1 seq 2>/dev/null || true
             key="$key$seq"
         fi
 
-        # Empty = Enter
         if [[ -z "$key" ]]; then
             key=$'\n'
         fi
