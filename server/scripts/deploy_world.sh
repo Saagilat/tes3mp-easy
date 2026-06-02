@@ -191,31 +191,25 @@ echo "Archive: $ARCHIVE_PATH"
 echo ""
 
 # Step 1: Check backup space
-echo "[1/6] Checking backup space..."
+echo "[1/4] Checking backup space..."
 check_backup_space "$ARCHIVE_PATH"
 
 # Step 2: Backup current world
 echo ""
-echo "[2/6] Backing up current world..."
+echo "[2/4] Backing up current world..."
 TIMESTAMP=$(date +%F_%H-%M-%S)
 BACKUP_FILE="$BACKUPS_DIR/backup-${TIMESTAMP}-world.tar.gz"
 package_world "$BACKUP_FILE"
 ok "World backup saved: $BACKUP_FILE"
 
-# Step 3: Stop TES3MP
+# Step 3: Check extract space
 echo ""
-echo "[3/6] Stopping TES3MP..."
-cd "$BASE_DIR" && docker compose down
-ok "TES3MP stopped"
-
-# Step 4: Check extract space
-echo ""
-echo "[4/6] Checking extract space..."
+echo "[3/4] Checking extract space..."
 check_extract_space "$ARCHIVE_PATH"
 
-# Step 5: Clean and extract
+# Step 4: Clean and extract
 echo ""
-echo "[5/6] Cleaning world directories and extracting..."
+echo "[4/4] Cleaning world directories and extracting..."
 clean_world_dirs
 
 # Extract only world subdirectories (cell/, world/, map/, recordstore/, custom/)
@@ -234,13 +228,7 @@ tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR/world" \
 
 ok "World extracted from archive"
 
-# Step 6: Start TES3MP
-echo ""
-echo "[6/6] Starting TES3MP..."
-cd "$BASE_DIR" && docker compose up -d
-ok "TES3MP started"
-
-# Write current.txt
+# Write current.txt (after extraction)
 ARCHIVE_FILENAME=$(basename "$ARCHIVE_PATH")
 ARCHIVE_SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d' ' -f1)
 echo "$ARCHIVE_SHA256 $ARCHIVE_FILENAME" > "$CURRENT_FILE"
@@ -248,4 +236,4 @@ ok "current.txt updated: $ARCHIVE_SHA256 $ARCHIVE_FILENAME"
 
 echo ""
 touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
-echo "=== Done! World deployed successfully. ==="
+echo "=== Done! World deployed. Use 'Restart' in admin menu to apply. ==="

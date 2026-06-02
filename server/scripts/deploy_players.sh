@@ -170,31 +170,25 @@ echo "Archive: $ARCHIVE_PATH"
 echo ""
 
 # Step 1: Check backup space
-echo "[1/6] Checking backup space..."
+echo "[1/4] Checking backup space..."
 check_backup_space
 
 # Step 2: Backup current players
 echo ""
-echo "[2/6] Backing up current players..."
+echo "[2/4] Backing up current players..."
 TIMESTAMP=$(date +%F_%H-%M-%S)
 BACKUP_FILE="$BACKUPS_DIR/backup-${TIMESTAMP}-players.tar.gz"
 package_players "$BACKUP_FILE"
 ok "Players backup saved: $BACKUP_FILE"
 
-# Step 3: Stop TES3MP
+# Step 3: Check extract space
 echo ""
-echo "[3/6] Stopping TES3MP..."
-cd "$BASE_DIR" && docker compose down
-ok "TES3MP stopped"
-
-# Step 4: Check extract space
-echo ""
-echo "[4/6] Checking extract space..."
+echo "[3/4] Checking extract space..."
 check_extract_space "$ARCHIVE_PATH"
 
-# Step 5: Clean and extract
+# Step 4: Clean and extract
 echo ""
-echo "[5/6] Cleaning players directory and extracting..."
+echo "[4/4] Cleaning players directory and extracting..."
 if [ -d "$PLAYER_DIR" ]; then
     rm -rf "$PLAYER_DIR"/*
 fi
@@ -211,13 +205,7 @@ tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR" \
 
 ok "Players extracted from archive"
 
-# Step 6: Start TES3MP
-echo ""
-echo "[6/6] Starting TES3MP..."
-cd "$BASE_DIR" && docker compose up -d
-ok "TES3MP started"
-
-# Write current.txt
+# Write current.txt (after extraction)
 ARCHIVE_FILENAME=$(basename "$ARCHIVE_PATH")
 ARCHIVE_SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d' ' -f1)
 echo "$ARCHIVE_SHA256 $ARCHIVE_FILENAME" > "$CURRENT_FILE"
@@ -225,4 +213,4 @@ ok "current.txt updated: $ARCHIVE_SHA256 $ARCHIVE_FILENAME"
 
 echo ""
 touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
-echo "=== Done! Players deployed successfully. ==="
+echo "=== Done! Players deployed. Use 'Restart' in admin menu to apply. ==="

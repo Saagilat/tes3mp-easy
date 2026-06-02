@@ -256,12 +256,12 @@ if [ "$IS_ROLLBACK" -eq 1 ]; then
     NEED_MODS_BACKUP="yes"
 fi
 
-echo "[1/9] Checking backup space..."
+echo "[1/7] Checking backup space..."
 check_backup_space "$NEED_MODS_BACKUP"
 
 # Step 2: Backup
 echo ""
-echo "[2/9] Backing up data..."
+echo "[2/7] Backing up data..."
 TIMESTAMP=$(date +%F_%H-%M-%S)
 
 # Mods backup (only if needed)
@@ -282,20 +282,14 @@ PLAYERS_BACKUP_FILE="$BASE_DIR/backups/players/backup-${TIMESTAMP}-players.tar.g
 package_players "$PLAYERS_BACKUP_FILE"
 ok "Players backup saved: $PLAYERS_BACKUP_FILE"
 
-# Step 3: Stop TES3MP
+# Step 3: Check extract space
 echo ""
-echo "[3/9] Stopping TES3MP..."
-cd "$BASE_DIR" && docker compose down
-ok "TES3MP stopped"
-
-# Step 4: Check extract space
-echo ""
-echo "[4/9] Checking extract space..."
+echo "[3/7] Checking extract space..."
 check_extract_space "$ARCHIVE_PATH"
 
-# Step 5: Extract plugins/ → mods/plugins/, scripts/ → mods/scripts/
+# Step 4: Extract plugins/ → mods/plugins/, scripts/ → mods/scripts/
 echo ""
-echo "[5/9] Extracting mods archive..."
+echo "[4/7] Extracting mods archive..."
 
 # Clean mods directories
 if [ -d "$MODS_PLUGINS_DIR" ]; then
@@ -320,35 +314,30 @@ rm -rf "$TMP_EXTRACT"
 
 ok "Mods extracted from archive"
 
-# Step 6: Generate customScripts.lua
+# Step 5: Generate customScripts.lua
 echo ""
-echo "[6/9] Generating customScripts.lua..."
+echo "[5/7] Generating customScripts.lua..."
 generate_custom_scripts_lua
 ok "customScripts.lua generated"
 
-# Step 7: Write current.txt
+# Step 6: Write current.txt
 echo ""
-echo "[7/9] Writing current.txt..."
+echo "[6/7] Writing current.txt..."
 ARCHIVE_FILENAME=$(basename "$ARCHIVE_PATH")
 ARCHIVE_SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d' ' -f1)
 mkdir -p "$BACKUPS_DIR"
 echo "$ARCHIVE_SHA256 $ARCHIVE_FILENAME" > "$CURRENT_FILE"
 ok "current.txt updated: $ARCHIVE_SHA256 $ARCHIVE_FILENAME"
 
-# Step 8: Create nginx symlink
+# Step 7: Create nginx symlink
 echo ""
-echo "[8/9] Creating nginx symlink..."
+echo "[7/7] Creating nginx symlink..."
 NGINX_SYMLINK="$BASE_DIR/backups/mods/current.tar.gz"
 # Relative symlink for nginx container (both share the same mounted dir)
 ln -sf "$(basename "$ARCHIVE_PATH")" "$NGINX_SYMLINK"
 ok "Nginx symlink: $NGINX_SYMLINK → $(basename "$ARCHIVE_PATH")"
 
-# Step 9: Start TES3MP
-echo ""
-echo "[9/9] Starting TES3MP..."
-cd "$BASE_DIR" && docker compose up -d
-ok "TES3MP started"
-
-echo ""
+# Mark restart as needed
 touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
-echo "=== Done! Mods deployed successfully. ==="
+echo ""
+echo "=== Done! Mods deployed. Use 'Restart' in admin menu to apply. ==="

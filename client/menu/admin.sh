@@ -127,6 +127,24 @@ check_restart_flag() {
 }
 
 # ────────────────────────────────────────────────────────────
+# check_server_status — check if TES3MP container is running
+# Returns "Running" or "Stopped" or "" if no SSH host
+# ────────────────────────────────────────────────────────────
+check_server_status() {
+    if [[ -n "${SSH_HOST:-}" ]]; then
+        local state
+        state=$(ssh "$SSH_HOST" "cd /tes3mp-easy && docker compose ps --format '{{.State}}' 2>/dev/null | head -1" 2>/dev/null || echo "")
+        if [[ "$state" == "running" ]]; then
+            echo "Running"
+        else
+            echo "Stopped"
+        fi
+    else
+        echo ""
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
 # Deploy menu wrappers
 # ────────────────────────────────────────────────────────────
 deploy_mods_menu() {
@@ -359,6 +377,8 @@ show_admin_menu() {
 
     local restart_flag
     restart_flag=$(check_restart_flag)
+    local server_status
+    server_status=$(check_server_status)
 
     run_menu \
         "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" \
@@ -366,6 +386,7 @@ show_admin_menu() {
         "${MODPACK_DIR:-}" \
         "$ADMIN_CONFIG" \
         "$restart_flag" \
+        "$server_status" \
         "${admin_menu[@]}"
 }
 

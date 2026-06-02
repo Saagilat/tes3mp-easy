@@ -5,7 +5,7 @@
 # Migrated from tools/linux/tes3mp-easy-export-players
 #
 # Provides:
-#   - export_players()    — full pipeline (package + scp + import + deploy)
+#   - export_players()    — full pipeline (package + scp + import)
 #
 
 if [[ -z "${LIB_DIR:-}" ]]; then
@@ -52,7 +52,7 @@ export_players() {
     echo ""
 
     # ─── Step 1: Package players ───
-    echo "[1/5] Packaging player data..."
+    echo "[1/4] Packaging player data..."
 
     local tmp_dir
     tmp_dir=$(mktemp -d)
@@ -80,7 +80,7 @@ export_players() {
 
     # ─── Step 2: Transfer to server ───
     echo ""
-    echo "[2/5] Transferring to server..."
+    echo "[2/4] Transferring to server..."
 
     ssh "$SSH_HOST" "mkdir -p /tes3mp-easy/import-players" || {
         err "Failed to create remote directory"
@@ -95,7 +95,7 @@ export_players() {
 
     # ─── Step 3: Import on server ───
     echo ""
-    echo "[3/5] Running import_players.sh on server..."
+    echo "[3/4] Running import_players.sh on server..."
     echo "  (import saves archive without stopping server)"
 
     ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/import_players.sh" || {
@@ -104,20 +104,9 @@ export_players() {
     }
     ok "Server import completed"
 
-    # ─── Step 4: Deploy on server ───
+    # ─── Step 4: Clean up ───
     echo ""
-    echo "[4/5] Running deploy_players.sh --latest on server..."
-    echo "  (This will stop TES3MP, deploy players, and restart)"
-
-    ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_players.sh --latest" || {
-        err "deploy_players.sh failed on server — check server logs"
-        return 1
-    }
-    ok "Server deploy completed"
-
-    # ─── Step 5: Clean up ───
-    echo ""
-    echo "[5/5] Cleaning up..."
+    echo "[4/4] Cleaning up..."
     rm -f "$output_archive"
     ok "Local archive cleaned up"
 
