@@ -126,6 +126,9 @@ run_menu() {
     done
     local fn_total=${#fn_map[@]}
 
+    # Start cursor on first selectable item
+    [[ $fn_total -gt 0 ]] && cursor=${fn_map[0]}
+
     while true; do
         printf "\033[H\033[J"
 
@@ -178,10 +181,7 @@ run_menu() {
             local action="${v_actions[$cursor]}"
 
             if [[ "$typ" == "fn" ]]; then
-                echo ""
                 "$action"
-                echo ""
-                press_enter
 
                 if [[ -n "$config_file" && -f "$config_file" ]]; then
                     source "$config_file" 2>/dev/null || true
@@ -232,10 +232,7 @@ run_menu() {
         local action="${v_actions[$cursor]}"
 
         if [[ "$typ" == "fn" ]]; then
-            echo ""
             "$action"
-            echo ""
-            press_enter
 
             if [[ -n "$config_file" && -f "$config_file" ]]; then
                 source "$config_file" 2>/dev/null || true
