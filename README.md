@@ -9,13 +9,13 @@ Choose your role:
 ### 🖥️ Admin — manage a server
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-admin.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash
 ```
 
 ### 👤 Player — join a server
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install-player.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-player.sh | bash
 ```
 
 > **Windows users**: run the commands above in **Git Bash** (comes with

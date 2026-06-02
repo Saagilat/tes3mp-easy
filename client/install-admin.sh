@@ -38,33 +38,33 @@ download() {
     fi
 }
 
-download "lib/common"           "$UPDATE_DIR/lib/common"
-download "lib/lang"             "$UPDATE_DIR/lib/lang"
-download "lib/config"           "$UPDATE_DIR/lib/config"
-download "lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
-download "lib/server-install"   "$UPDATE_DIR/lib/server-install"
-download "lib/server-control"   "$UPDATE_DIR/lib/server-control"
-download "lib/server-configs"   "$UPDATE_DIR/lib/server-configs"
-download "lib/export-mods"      "$UPDATE_DIR/lib/export-mods"
-download "lib/export-players"   "$UPDATE_DIR/lib/export-players"
-download "lib/export-world"     "$UPDATE_DIR/lib/export-world"
-download "lib/import-server"    "$UPDATE_DIR/lib/import-server"
-download "lib/import-client"    "$UPDATE_DIR/lib/import-client"
-download "lib/required-data"    "$UPDATE_DIR/lib/required-data"
-download "lib/client-install"   "$UPDATE_DIR/lib/client-install"
-download "lib/client-configs"   "$UPDATE_DIR/lib/client-configs"
-download "lib/localization"     "$UPDATE_DIR/lib/localization"
-download "lib/player-roles"     "$UPDATE_DIR/lib/player-roles"
-download "lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
-download "server/scripts/package.sh" "$UPDATE_DIR/server/scripts/package.sh"
-download "menu/admin"           "$UPDATE_DIR/menu/admin"
-download "menu/player"          "$UPDATE_DIR/menu/player"
+download "client/lib/common"           "$UPDATE_DIR/lib/common"
+download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
+download "client/lib/config"           "$UPDATE_DIR/lib/config"
+download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
+download "client/lib/server-install"   "$UPDATE_DIR/lib/server-install"
+download "client/lib/server-control"   "$UPDATE_DIR/lib/server-control"
+download "client/lib/server-configs"   "$UPDATE_DIR/lib/server-configs"
+download "client/lib/export-mods"      "$UPDATE_DIR/lib/export-mods"
+download "client/lib/export-players"   "$UPDATE_DIR/lib/export-players"
+download "client/lib/export-world"     "$UPDATE_DIR/lib/export-world"
+download "client/lib/import-server"    "$UPDATE_DIR/lib/import-server"
+download "client/lib/import-client"    "$UPDATE_DIR/lib/import-client"
+download "client/lib/required-data"    "$UPDATE_DIR/lib/required-data"
+download "client/lib/client-install"   "$UPDATE_DIR/lib/client-install"
+download "client/lib/client-configs"   "$UPDATE_DIR/lib/client-configs"
+download "client/lib/localization"     "$UPDATE_DIR/lib/localization"
+download "client/lib/player-roles"     "$UPDATE_DIR/lib/player-roles"
+download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
+download "server/scripts/package.sh"   "$UPDATE_DIR/server/scripts/package.sh"
+download "client/menu/admin"           "$UPDATE_DIR/menu/admin"
+download "client/menu/player"          "$UPDATE_DIR/menu/player"
 
 count=$((count + 1))
 printf "  [%2d/%d] localization (en, ru) " "$count" "$total"
 err=false
-curl -fsSL "$GITHUB_RAW/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || err=true
-curl -fsSL "$GITHUB_RAW/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || err=true
+curl -fsSL "$GITHUB_RAW/client/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null || err=true
+curl -fsSL "$GITHUB_RAW/client/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null || err=true
 $err && echo "✗" || echo "✓"
 
 echo ""
