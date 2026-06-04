@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# edit-config — Edit shared configuration
+#
+# Opens ~/.tes3mp-easy.ini (shared settings: language, editor, backup dir).
+# Settings here apply to both admin and player tools.
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+edit_config "$SHARED_CONFIG"

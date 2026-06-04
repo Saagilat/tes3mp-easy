@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# admin-export-world — Package and upload world data to TES3MP server
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-admin.ini" 2>/dev/null || { err "Config not found"; exit 1; }
+[[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
+[[ -z "${EXPORT_DIR:-}" || ! -d "${EXPORT_DIR:-}" ]] && { err "EXPORT_DIR is not set or does not exist"; exit 1; }
+
+world_dir="$EXPORT_DIR/world"
+[[ ! -d "$world_dir" ]] && { err "world/ not found in $EXPORT_DIR"; exit 1; }
+
+check_deps tar ssh scp
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  TES3MP Export World"
+echo "═══════════════════════════════════════════════"
+
+echo "[1/4] Packaging..."
+tmp_dir=$(mktemp -d)
+trap 'rm -rf "$tmp_dir"' EXIT
+output_archive="$tmp_dir/world.tar.gz"
+export WORLD_DIR="$world_dir"
+
+for p in "$SCRIPT_DIR/server/scripts/package.sh" "$SCRIPT_DIR/../server/scripts/package.sh" "$PWD/../server/scripts/package.sh" "$(dirname "$(realpath "$0")")/../../server/scripts/package.sh"; do
+    [[ -f "$p" ]] && { package_script="$p"; break; }
+done
+[[ -z "$package_script" ]] && { err "Could not find server/scripts/package.sh"; exit 1; }
+source "$package_script"
+package_world "$output_archive"
+[[ ! -f "$output_archive" ]] && { err "Failed to create archive"; exit 1; }
+ok "Archive created"
+
+echo "[2/4] Transferring..."
+ssh "$SSH_HOST" "mkdir -p /tes3mp-easy/import-world" || { err "Failed to create remote dir"; exit 1; }
+scp "$output_archive" "$SSH_HOST":/tes3mp-easy/import-world/world.tar.gz || { err "Failed to transfer"; exit 1; }
+ok "Archive transferred"
+
+echo "[3/4] Running import_world.sh..."
+ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/import_world.sh" || { err "import_world.sh failed"; exit 1; }
+ok "Server import completed"
+
+echo "[4/4] Cleaning up..."
+rm -f "$output_archive"
+echo "Export complete!"

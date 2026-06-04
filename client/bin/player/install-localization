@@ -1,0 +1,130 @@
+#!/bin/bash
+#
+# player-install-localization — Установка русской локализации Morrowind
+#
+# Качает архивы с GitHub Releases в $TES3MP_DIR/localizations/ 
+# и запускает установку в папку Morrowind.
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
+    err "Config not found at ~/.tes3mp-easy-player.ini"; exit 1
+}
+
+[[ -z "${TES3MP_DIR:-}" ]] && { err "TES3MP_DIR is not set in config."; exit 1; }
+[[ -z "${DATA_FILES:-}" ]] && { err "DATA_FILES is not set in config."; exit 1; }
+
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+DATA_FILES="${DATA_FILES/#\~/$HOME}"
+
+# Путь к Morrowind (на уровень выше Data Files)
+MORROWIND_DIR="${DATA_FILES%/Data Files}"
+
+if [[ ! -d "$MORROWIND_DIR" ]]; then
+    err "Morrowind directory not found: $MORROWIND_DIR"
+    err "Check DATA_FILES in config."
+    exit 1
+fi
+
+LOCALE_DIR="$TES3MP_DIR/localizations"
+mkdir -p "$LOCALE_DIR"
+
+RELEASE_URL="https://github.com/Saagilat/tes3mp-easy/releases/download/russifier-v1.0"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Install Russian Localization"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  Morrowind:    $MORROWIND_DIR"
+echo "  Cache dir:    $LOCALE_DIR"
+echo ""
+
+# ────────────────────────────────────────────────────
+# 1. Установка install.sh — используется локальная копия
+# ────────────────────────────────────────────────────
+INSTALL_SCRIPT="$SCRIPT_DIR/lib/localization/russian/install.sh"
+if [[ ! -f "$INSTALL_SCRIPT" ]]; then
+    err "Local install.sh not found at $INSTALL_SCRIPT"
+    exit 1
+fi
+chmod +x "$INSTALL_SCRIPT"
+info "Using local install.sh from client/lib/localization/russian/"
+
+# ────────────────────────────────────────────────────
+# 2. Скачивание russifier.tar
+# ────────────────────────────────────────────────────
+RUSSIFIER_TAR="$LOCALE_DIR/russifier.tar"
+if [[ -f "$RUSSIFIER_TAR" ]]; then
+    info "russifier.tar already cached, skipping."
+else
+    info "Downloading russifier.tar..."
+    curl -fsSL -o "$RUSSIFIER_TAR" "$RELEASE_URL/russifier.tar" || {
+        err "Failed to download russifier.tar"
+        exit 1
+    }
+    ok "russifier.tar downloaded."
+fi
+
+# ────────────────────────────────────────────────────
+# 3. Опционально: скачивание voices_russian.tar
+# ────────────────────────────────────────────────────
+VOICES_TAR="$LOCALE_DIR/voices_russian.tar"
+if [[ -f "$VOICES_TAR" ]]; then
+    info "voices_russian.tar already cached."
+else
+    echo ""
+    info "Optional: Download Russian voiceover?"
+    read -r -p "  Download voices_russian.tar (~300 MB)? [y/N]: " DOWNLOAD_VOICES
+    if [[ "${DOWNLOAD_VOICES:-n}" =~ ^[yY] ]]; then
+        info "Downloading voices_russian.tar..."
+        curl -fsSL -o "$VOICES_TAR" "$RELEASE_URL/voices_russian.tar" || {
+            warn "Failed to download voices_russian.tar (may be missing from release)."
+            rm -f "$VOICES_TAR"
+        }
+        if [[ -f "$VOICES_TAR" ]]; then
+            ok "voices_russian.tar downloaded."
+        fi
+    fi
+fi
+
+# ────────────────────────────────────────────────────
+# 4. Запуск install.sh
+# ────────────────────────────────────────────────────
+echo ""
+info "Running localization installer..."
+echo ""
+
+bash "$INSTALL_SCRIPT" "$MORROWIND_DIR"
+
+# ────────────────────────────────────────────────────
+# 5. Установка encoding=win1251 в openmw.cfg
+# ────────────────────────────────────────────────────
+OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
+
+if [[ -f "$OPENMW_CFG" ]]; then
+    echo ""
+    info "Setting encoding=win1251 in openmw.cfg for Cyrillic support..."
+    if grep -q "^encoding[[:space:]]*=" "$OPENMW_CFG" 2>/dev/null; then
+        sed -i "s|^encoding[[:space:]]*=.*|encoding=win1251|" "$OPENMW_CFG"
+    else
+        echo "" >> "$OPENMW_CFG"
+        echo "encoding=win1251" >> "$OPENMW_CFG"
+    fi
+    ok "encoding=win1251 set in openmw.cfg"
+else
+    warn "openmw.cfg not found at: $OPENMW_CFG"
+    warn "encoding=win1251 could not be set automatically."
+    warn "Run the client once to generate config files, then re-run this script."
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Localization installation complete!"
+echo "═══════════════════════════════════════════════"
+echo ""

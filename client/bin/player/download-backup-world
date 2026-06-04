@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# download-backup-world — Download a world backup archive from TES3MP server
+# Usage: download-backup-world <filename> [destination]
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
+    err "Config not found at ~/.tes3mp-easy-player.ini"
+    err "Run 'edit-config' to set it up."
+    exit 1
+}
+
+SERVER_URL=$(_get_server_url) || {
+    err "Could not determine server URL."
+    err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
+    exit 1
+}
+
+filename="${1:-}"
+[[ -z "$filename" ]] && { err "Usage: download-backup-world <filename> [destination]"; exit 1; }
+dest="${2:-${BACKUP_DIR:-$HOME/Downloads}/$filename}"
+
+mkdir -p "$(dirname "$dest")"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Downloading world backup: $filename"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+curl -sfL "$SERVER_URL/download/world/$filename" -o "$dest" || {
+    err "Download failed."
+    exit 1
+}
+ok "Saved to: $dest"

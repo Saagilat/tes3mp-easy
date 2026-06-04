@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# show-backups-players — List player backup archives on remote VPS
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-admin.ini" 2>/dev/null || { err "Config not found"; exit 1; }
+[[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Player backup archives on $SSH_HOST"
+echo "═══════════════════════════════════════════════"
+
+ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/players/*.tar.gz 2>/dev/null" || { err "No player backups found"; exit 1; }

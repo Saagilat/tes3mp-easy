@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# admin-generate-data — Generate requiredDataFiles.json for mods
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-admin.ini" 2>/dev/null || { err "Config not found"; exit 1; }
+[[ -z "${EXPORT_DIR:-}" ]] && { err "EXPORT_DIR is not set"; exit 1; }
+
+plugin_dir="${EXPORT_DIR}/mods/plugins"
+[[ ! -d "$plugin_dir" ]] && { err "Directory not found: $plugin_dir"; exit 1; }
+
+check_deps rhash
+ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Generating requiredDataFiles.json"
+echo "═══════════════════════════════════════════════"
+
+output_file="$plugin_dir/requiredDataFiles.json"
+cat > "$output_file" << 'EOF'
+{
+    "requiredDataFiles":
+    {
+EOF
+
+first=true
+for orig in "${ORIGINAL_FILES[@]}"; do
+    if [[ "$first" == true ]]; then first=false; else echo "," >> "$output_file"; fi
+    echo -n "        \"$orig\": []" >> "$output_file"
+    echo "  [OK] $orig (no CRC)"
+done
+
+while IFS= read -r -d '' file; do
+    filename=$(basename "$file")
+    crc32=$(rhash --crc32 --simple "$file" 2>/dev/null | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
+    if [[ "$first" == true ]]; then first=false; else echo "," >> "$output_file"; fi
+    if [[ -n "$crc32" ]]; then
+        echo -n "        \"$filename\": [\"0x$crc32\"]" >> "$output_file"
+        echo "  [OK] $filename → CRC32: 0x$crc32"
+    else
+        echo -n "        \"$filename\": []" >> "$output_file"
+        echo "  [OK] $filename (no CRC)"
+    fi
+done < <(find "$plugin_dir" -maxdepth 1 -type f \( -iname "*.esp" -o -iname "*.esm" -o -iname "*.omwaddon" \) -print0 | sort -z)
+
+cat >> "$output_file" << 'EOF'
+
+    }
+}
+EOF
+
+echo ""
+ok "requiredDataFiles.json generated at: $output_file"

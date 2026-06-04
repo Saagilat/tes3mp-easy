@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# common.sh — shared utilities for tes3mp-easy
+# Source this file from any script in the project.
+#
+# Usage:
+#   source "$(dirname "$0")/lib/common.sh"
+#
+# Provides:
+#   - Colors and logging (info, ok, warn, err)
+#   - Dependency checking (check_deps)
+#   - OS detection (is_os)
+#
+
+# ────────────────────────────────────────────────────────────
+# Paths
+# ────────────────────────────────────────────────────────────
+COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$COMMON_DIR/.." && pwd)"
+LIB_DIR="$COMMON_DIR"
+
+# ────────────────────────────────────────────────────────────
+# Colors (loaded from theme.ini if available)
+# Only two theme colors + reserved red for errors
+# ────────────────────────────────────────────────────────────
+if [[ -f "$COMMON_DIR/theme.ini" ]]; then
+    while IFS='=' read -r key val; do
+        key="${key// /}"
+        val="${val# }"
+        [[ -z "$key" || "$key" == \;* || "$key" == \#* ]] && continue
+        case "$key" in
+            THEME_LABEL|THEME_ACCENT) eval "$key=\"\$val\"" ;;
+        esac
+    done < "$COMMON_DIR/theme.ini"
+fi
+
+T_LABEL=$'\033['"${THEME_LABEL:-36}"'m'
+T_ACCENT=$'\033['"${THEME_ACCENT:-33}"'m'
+T_ERROR=$'\033[0;31m'
+NC=$'\033[0m'
+
+# ────────────────────────────────────────────────────────────
+# Logging
+# ────────────────────────────────────────────────────────────
+info()  { echo -e "${T_LABEL}[INFO]${NC}  $*"; }
+ok()    { echo -e "${T_LABEL}[OK]${NC}    $*"; }
+warn()  { echo -e "${T_ACCENT}[WARN]${NC}  $*"; }
+err()   { echo -e "${T_ERROR}[ERROR]${NC} $*" >&2; }
+
+# ────────────────────────────────────────────────────────────
+# Utility: check_deps — verify required commands exist
+# Usage:  check_deps curl wget tar
+# Exits with error if any command is missing
+# ────────────────────────────────────────────────────────────
+check_deps() {
+    local missing=()
+    for cmd in "$@"; do
+        if ! command -v "$cmd" &>/dev/null; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        err "Required commands not found: ${missing[*]}"
+        err "Install them and try again."
+        exit 1
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
+# _get_server_url — build mod server URL from TES3MP config
+# Parses destinationAddress from tes3mp-client-default.cfg
+# or tes3mp-server-default.cfg and builds http://addr:8085
+# Usage: _get_server_url
+# Returns: URL string or empty string on failure
+# ────────────────────────────────────────────────────────────
+_get_server_url() {
+    local cfg addr port tes3mp_dir
+
+    # Читаем TES3MP_DIR из конфига игрока (не полагаясь на export)
+    tes3mp_dir=$(grep "^TES3MP_DIR" "$HOME/.tes3mp-easy-player.ini" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
+    tes3mp_dir="${tes3mp_dir/#\~/$HOME}"
+
+    if [[ -n "$tes3mp_dir" ]] && [[ -f "$tes3mp_dir/tes3mp-client-default.cfg" ]]; then
+        cfg="$tes3mp_dir/tes3mp-client-default.cfg"
+    fi
+
+    if [[ -z "$cfg" ]] && [[ -f "/tes3mp-easy/configs/tes3mp-server-default.cfg" ]]; then
+        cfg="/tes3mp-easy/configs/tes3mp-server-default.cfg"
+    fi
+    if [[ -z "$cfg" ]]; then
+        return 1
+    fi
+
+    addr=$(grep -i "^destinationAddress[[:space:]]*=" "$cfg" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
+    if [[ -z "$addr" ]]; then
+        return 1
+    fi
+
+    echo "http://${addr}:8085"
+    return 0
+}
+
+# ────────────────────────────────────────────────────────────
+# Utility: is_os — check operating system
+# Usage:  is_os "linux"  && echo "Linux detected"
+#         is_os "windows" && echo "Git Bash / MSYS2 / Cygwin"
+# ────────────────────────────────────────────────────────────
+is_os() {
+    local os="${1,,}"
+    case "$os" in
+        linux)
+            [[ "$(uname -s)" == "Linux" ]]
+            ;;
+        macos|darwin)
+            [[ "$(uname -s)" == "Darwin" ]]
+            ;;
+        windows)
+            [[ "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}

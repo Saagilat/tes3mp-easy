@@ -1,0 +1,236 @@
+#!/bin/bash
+#
+# install-mods — Download and install mods from TES3MP server
+#
+# What it does:
+#   1. Fetches list of mod backups from server
+#   2. Downloads selected/latest archive
+#   3. Removes all old data= and content= from openmw.cfg
+#   4. Extracts plugins into DATA_FILES/Data Files
+#   5. Adds data= and content= for all plugins
+#   6. Removes downloaded archive
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
+    err "Config not found at ~/.tes3mp-easy-player.ini"
+    err "Run 'edit-config' to set it up."
+    exit 1
+}
+
+if [[ -z "${TES3MP_DIR:-}" ]]; then
+    err "TES3MP_DIR is not set in config."
+    exit 1
+fi
+
+if [[ -z "${DATA_FILES:-}" ]]; then
+    err "DATA_FILES is not set in config."
+    exit 1
+fi
+
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+DATA_FILES="${DATA_FILES/#\~/$HOME}"
+
+# Путь к конфигу OpenMW внутри префикса Proton
+PREFIX_DIR="$TES3MP_DIR/prefix"
+OPENMW_CFG="$PREFIX_DIR/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
+
+if [[ ! -f "$OPENMW_CFG" ]]; then
+    err "openmw.cfg not found at: $OPENMW_CFG"
+    err "Run 'install-client' first (or launch the client once)."
+    exit 1
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Downloading and Installing Mods"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+# ────────────────────────────────────────────────────
+# 1. Получаем URL сервера
+# ────────────────────────────────────────────────────
+SERVER_URL=$(_get_server_url) || {
+    err "Could not determine server URL."
+    err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
+    exit 1
+}
+
+info "Server: $SERVER_URL"
+
+# ────────────────────────────────────────────────────
+# 2. Получаем список бэкапов модов
+# ────────────────────────────────────────────────────
+info "Fetching list of mod backups..."
+
+JSON=$(curl -sf "$SERVER_URL/list-backups/mods" 2>/dev/null || echo "")
+if [[ -z "$JSON" || "$JSON" == "[]" ]]; then
+    err "No mod backups available on server."
+    exit 1
+fi
+
+# Парсим имена файлов
+NAMES=()
+while IFS= read -r line; do
+    if [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+) ]]; then
+        NAMES+=("${BASH_REMATCH[1]}")
+    fi
+done < <(echo "$JSON")
+
+if [[ ${#NAMES[@]} -eq 0 ]]; then
+    err "No mod backups found."
+    exit 1
+fi
+
+# Выбираем: если один — автоматом, если несколько — показываем список
+SELECTED=""
+if [[ ${#NAMES[@]} -eq 1 ]]; then
+    SELECTED="${NAMES[0]}"
+    info "Found: $SELECTED"
+else
+    echo ""
+    echo "  Select mod backup to install:"
+    echo ""
+    i=1
+    for name in "${NAMES[@]}"; do
+        echo "  $i) $name"
+        ((i++)) || true
+    done
+    echo ""
+    read -r -p "  Select number (empty = cancel): " choice
+    [[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
+    SELECTED="${NAMES[$((choice - 1))]}"
+    [[ -z "$SELECTED" ]] && { err "Invalid selection."; exit 1; }
+fi
+
+# ────────────────────────────────────────────────────
+# 3. Скачиваем архив
+# ────────────────────────────────────────────────────
+DOWNLOAD_DIR=$(mktemp -d)
+ARCHIVE_PATH="$DOWNLOAD_DIR/$SELECTED"
+
+info "Downloading $SELECTED..."
+curl -sfL "$SERVER_URL/download/mods/$SELECTED" -o "$ARCHIVE_PATH" || {
+    err "Download failed."
+    rm -rf "$DOWNLOAD_DIR"
+    exit 1
+}
+ok "Downloaded: $SELECTED"
+
+# ────────────────────────────────────────────────────
+# 4. Распаковываем
+# ────────────────────────────────────────────────────
+EXTRACT_DIR=$(mktemp -d)
+info "Extracting..."
+tar xzf "$ARCHIVE_PATH" -C "$EXTRACT_DIR" || {
+    err "Failed to extract archive."
+    rm -rf "$DOWNLOAD_DIR" "$EXTRACT_DIR"
+    exit 1
+}
+ok "Extracted."
+
+PLUGINS_SRC="$EXTRACT_DIR/plugins"
+if [[ ! -d "$PLUGINS_SRC" ]]; then
+    err "No 'plugins/' directory found in archive."
+    rm -rf "$DOWNLOAD_DIR" "$EXTRACT_DIR"
+    exit 1
+fi
+
+# ────────────────────────────────────────────────────
+# 5. Очистка openmw.cfg (удаляем все content=, потом JSON добавит заново в правильном порядке)
+# ────────────────────────────────────────────────────
+echo ""
+info "Cleaning old content entries from openmw.cfg..."
+
+BACKUP_CFG="$OPENMW_CFG.bak.$(date +%Y%m%d_%H%M%S)"
+cp "$OPENMW_CFG" "$BACKUP_CFG"
+ok "Backup saved: $BACKUP_CFG"
+
+grep -vE '^content=' "$OPENMW_CFG" > "${OPENMW_CFG}.tmp"
+mv "${OPENMW_CFG}.tmp" "$OPENMW_CFG"
+ok "All content entries removed (will be re-added from server order)."
+
+# ────────────────────────────────────────────────────
+# 6. Копирование плагинов в Data Files
+# ────────────────────────────────────────────────────
+echo ""
+info "Copying plugin files..."
+
+DATA_FILES_DIR="$DATA_FILES/Data Files"
+mkdir -p "$DATA_FILES_DIR"
+
+PLUGIN_COUNT=0
+for plugin in "$PLUGINS_SRC"/*.esp "$PLUGINS_SRC"/*.ESP \
+              "$PLUGINS_SRC"/*.esm "$PLUGINS_SRC"/*.ESM \
+              "$PLUGINS_SRC"/*.omwaddon "$PLUGINS_SRC"/*.OMWADDON; do
+    [[ -f "$plugin" ]] || continue
+    cp "$plugin" "$DATA_FILES_DIR/"
+    ((PLUGIN_COUNT++)) || true
+done
+
+ok "$PLUGIN_COUNT plugin(s) copied to $DATA_FILES_DIR"
+
+# ────────────────────────────────────────────────────
+# 7. Добавление content= в openmw.cfg
+# ────────────────────────────────────────────────────
+echo ""
+info "Updating openmw.cfg..."
+
+# data= не трогаем — он уже есть в Windows-формате (Z:\...) от openmw-wizard
+
+# content= в порядке из requiredDataFiles.json — сначала оригиналы, потом моды
+ADDED_COUNT=0
+
+REQ_JSON="$PLUGINS_SRC/requiredDataFiles.json"
+if [[ -f "$REQ_JSON" ]]; then
+    # Парсим requiredDataFiles.json, извлекаем имена плагинов в порядке файла
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^[[:space:]]*\"([^\"]+)\"[[:space:]]*: ]]; then
+            filename="${BASH_REMATCH[1]}"
+            echo "content=$filename" >> "$OPENMW_CFG"
+            ((ADDED_COUNT++)) || true
+        fi
+    done < "$REQ_JSON"
+else
+    # Fallback: если нет requiredDataFiles.json — добавляем в алфавитном порядке
+    for plugin in "$PLUGINS_SRC"/*.esp "$PLUGINS_SRC"/*.ESP \
+                  "$PLUGINS_SRC"/*.esm "$PLUGINS_SRC"/*.ESM \
+                  "$PLUGINS_SRC"/*.omwaddon "$PLUGINS_SRC"/*.OMWADDON; do
+        [[ -f "$plugin" ]] || continue
+        BASENAME=$(basename "$plugin")
+        SKIP=0
+        for orig in "${ORIGINAL_FILES[@]}"; do
+            if [[ "${BASENAME,,}" == "${orig,,}" ]]; then
+                SKIP=1
+                break
+            fi
+        done
+        [[ "$SKIP" -eq 1 ]] && continue
+        echo "content=$BASENAME" >> "$OPENMW_CFG"
+        ((ADDED_COUNT++)) || true
+    done
+fi
+
+ok "$ADDED_COUNT content entries added to openmw.cfg (server order)"
+
+# ────────────────────────────────────────────────────
+# 8. Удаление архива
+# ────────────────────────────────────────────────────
+rm -rf "$DOWNLOAD_DIR" "$EXTRACT_DIR"
+ok "Downloaded archive removed."
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Mods installation complete!"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  Plugins copied: $PLUGIN_COUNT"
+echo "  Content entries: $ADDED_COUNT"
+echo ""
+echo "  Now launch the client: run-client"
+echo ""

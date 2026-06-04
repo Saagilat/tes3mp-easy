@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# show-backups-world — List world backup archives from TES3MP server
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
+    err "Config not found at ~/.tes3mp-easy-player.ini"
+    err "Run 'edit-config' to set it up."
+    exit 1
+}
+
+SERVER_URL=$(_get_server_url) || {
+    err "Could not determine server URL."
+    err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
+    exit 1
+}
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  World backup archives on server"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+json=$(curl -sf "$SERVER_URL/list-backups/world" 2>/dev/null || echo "")
+if [[ -z "$json" || "$json" == "[]" ]]; then
+    warn "No world backups available on server."
+    exit 0
+fi
+
+echo "$json" | python3 -m json.tool 2>/dev/null || echo "$json"

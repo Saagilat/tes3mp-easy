@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# admin-deploy-world — Deploy world archive on remote VPS
+# Usage: admin-deploy-world [--latest | <filename>]
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-admin.ini" 2>/dev/null || { err "Config not found"; exit 1; }
+[[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
+
+arg="${1:-}"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Deploy world"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_world.sh '$arg'" || {
+    err "Deploy failed."
+    exit 1
+}
+ssh "$SSH_HOST" "touch /tes3mp-easy/needs_restart.flag" 2>/dev/null || true
+ok "Deploy queued. Use admin-restart to apply."

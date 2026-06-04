@@ -1,0 +1,75 @@
+#!/bin/bash
+#
+# configure-ui — Configure GUI settings (ttf resolution, font size, scaling)
+#
+# Edits [GUI] section in OpenMW settings.cfg:
+#   - ttf resolution
+#   - font size
+#   - scaling factor
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
+    err "Config not found at ~/.tes3mp-easy-player.ini"; exit 1
+}
+
+[[ -z "${TES3MP_DIR:-}" ]] && { err "TES3MP_DIR is not set in config."; exit 1; }
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+
+SETTINGS_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/settings.cfg"
+
+if [[ ! -f "$SETTINGS_CFG" ]]; then
+    err "settings.cfg not found at: $SETTINGS_CFG"
+    err "Run 'install-client' first (or launch the client once)."
+    exit 1
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Configure UI"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+CURRENT_TTF=$(grep "^ttf resolution" "$SETTINGS_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r') || CURRENT_TTF=""
+CURRENT_FONT=$(grep "^font size" "$SETTINGS_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r') || CURRENT_FONT=""
+CURRENT_SCALE=$(grep "^scaling factor" "$SETTINGS_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r') || CURRENT_SCALE=""
+
+echo "  Current settings:"
+echo "    ttf resolution = ${CURRENT_TTF:-not set}"
+echo "    font size      = ${CURRENT_FONT:-not set}"
+echo "    scaling factor = ${CURRENT_SCALE:-not set}"
+echo ""
+read -r -p "  ttf resolution [${CURRENT_TTF:-96}]: " TTF_RES
+TTF_RES="${TTF_RES:-${CURRENT_TTF:-96}}"
+read -r -p "  font size [${CURRENT_FONT:-16}]: " FONT_SIZE
+FONT_SIZE="${FONT_SIZE:-${CURRENT_FONT:-16}}"
+read -r -p "  scaling factor [${CURRENT_SCALE:-1.0}]: " SCALING
+SCALING="${SCALING:-${CURRENT_SCALE:-1.0}}"
+
+if ! grep -q "^\[GUI\]" "$SETTINGS_CFG" 2>/dev/null; then
+    echo "" >> "$SETTINGS_CFG"
+    echo "[GUI]" >> "$SETTINGS_CFG"
+fi
+
+for key_val in "ttf resolution=$TTF_RES" "font size=$FONT_SIZE" "scaling factor=$SCALING"; do
+    key="${key_val%=*}"
+    val="${key_val#*=}"
+    if grep -q "^${key}[[:space:]]*=" <(awk '/^\[GUI\]/,0' "$SETTINGS_CFG" 2>/dev/null); then
+        line_num=$(awk '/^\[GUI\]/,0' "$SETTINGS_CFG" | grep -n "^${key}[[:space:]]*=" | head -1 | cut -d: -f1)
+        abs_line=$(( $(grep -n "^\[GUI\]" "$SETTINGS_CFG" | head -1 | cut -d: -f1) + line_num - 1 ))
+        sed -i "${abs_line}s|^${key}[[:space:]]*=.*|${key} = ${val}|" "$SETTINGS_CFG"
+    else
+        sed -i "/^\[GUI\]/a ${key} = ${val}" "$SETTINGS_CFG"
+    fi
+done
+ok "UI settings saved."
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Done! Restart the client to apply changes."
+echo ""

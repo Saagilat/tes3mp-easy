@@ -1,0 +1,3 @@
+# URL to download TES3MP server binary
+# Used by install.sh
+TES3MP_URL=https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp-server-GNU+Linux-x86_64-release-0.8.1-68954091c5-6da3fdea59.tar.gz

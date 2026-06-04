@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# admin-backup-world — Download a world backup archive from remote VPS
+# Usage: admin-backup-world <filename> [destination]
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-admin.ini" 2>/dev/null || { err "Config not found"; exit 1; }
+[[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
+
+filename="${1:-}"
+[[ -z "$filename" ]] && { err "Usage: admin-backup-world <filename> [destination]"; exit 1; }
+dest="${2:-${BACKUP_DIR:-.}/$filename}"
+
+mkdir -p "$(dirname "$dest")"
+scp "$SSH_HOST:/tes3mp-easy/backups/world/$filename" "$dest" || { err "Failed to download $filename"; exit 1; }
+ok "Saved to: $dest"

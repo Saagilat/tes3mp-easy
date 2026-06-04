@@ -1,0 +1,165 @@
+#!/bin/bash
+#
+# install-client — Install TES3MP client via Proton (no Steam needed)
+#
+# What it does:
+#   1. Checks PROTON_PATH in config
+#   2. Downloads and extracts TES3MP to $TES3MP_DIR/
+#   3. Creates prefix and runs openmw-wizard.exe (GUI)
+#   4. Creates symlink $TES3MP_DIR/openmw-profile → config folder in prefix
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
+    err "Config not found at ~/.tes3mp-easy-player.ini"
+    err "Run 'edit-config' to set it up."
+    exit 1
+}
+
+if [[ -z "${TES3MP_DIR:-}" ]]; then
+    err "TES3MP_DIR is not set in config."
+    exit 1
+fi
+
+if [[ -z "${DATA_FILES:-}" ]]; then
+    err "DATA_FILES is not set in config."
+    err "Set path to Morrowind/Data Files (where Morrowind.esm is located)."
+    exit 1
+fi
+
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+DATA_FILES="${DATA_FILES/#\~/$HOME}"
+DATA_FILES="${DATA_FILES%/Data Files}"
+
+check_deps curl unzip
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Installing TES3MP Client via Proton"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  TES3MP directory: $TES3MP_DIR"
+echo "  Morrowind Data:   $DATA_FILES/Data Files"
+echo ""
+
+mkdir -p "$TES3MP_DIR"
+
+# ────────────────────────────────────────────────────
+# 1. Проверка Proton
+# ────────────────────────────────────────────────────
+PROTON_DIR=""
+if [[ -n "${PROTON_PATH:-}" ]] && [[ -f "$PROTON_PATH/proton" ]]; then
+    PROTON_DIR="$PROTON_PATH"
+    info "Proton: $PROTON_DIR"
+else
+    err ""
+    err "Proton is not configured."
+    err ""
+    err "  1. Find where Proton is installed on your system."
+    err "     Common locations:"
+    err "      ~/.steam/steam/steamapps/common/Proton 9.0"
+    err "      ~/.steam/steam/steamapps/common/Proton Experimental"
+    err "      ~/.local/share/Steam/compatibilitytools.d/GE-Proton*"
+    err ""
+    err "  2. Open config and set PROTON_PATH:"
+    err "     → edit-config  →  edit PROTON_PATH = /path/to/proton"
+    err ""
+    exit 1
+fi
+
+# ────────────────────────────────────────────────────
+# 2. Скачивание TES3MP
+# ────────────────────────────────────────────────────
+TES3MP_ZIP="/tmp/tes3mp.zip"
+TES3MP_URL="https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp.Win64.release.0.8.1.zip"
+
+info "Downloading TES3MP..."
+if [[ -f "$TES3MP_DIR/tes3mp.exe" ]]; then
+    info "TES3MP already installed, skipping."
+else
+    curl -fsSL -o "$TES3MP_ZIP" "$TES3MP_URL" || {
+        err "Failed to download TES3MP."
+        exit 1
+    }
+    ok "TES3MP downloaded."
+
+    info "Extracting..."
+    unzip -qo "$TES3MP_ZIP" -d "$TES3MP_DIR" || {
+        err "Failed to extract TES3MP."
+        exit 1
+    }
+    rm -f "$TES3MP_ZIP"
+    ok "TES3MP extracted."
+fi
+
+# ────────────────────────────────────────────────────
+# 3. Создание префикса и запуск openmw-wizard
+# ────────────────────────────────────────────────────
+PREFIX_DIR="$TES3MP_DIR/prefix"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Starting OpenMW Wizard"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  Proton:         $PROTON_DIR"
+echo "  Proton prefix:  $PREFIX_DIR"
+echo ""
+info "OpenMW Wizard will open. Select Morrowind Data Files:"
+echo "    $DATA_FILES/Data Files"
+echo ""
+info "Запуск мастера настройки OpenMW..."
+echo ""
+
+mkdir -p "$PREFIX_DIR"
+
+STEAM_COMPAT_DATA_PATH="$PREFIX_DIR" \
+STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/steam" \
+"$PROTON_DIR/proton" run "$TES3MP_DIR/openmw-wizard.exe" || {
+    err "OpenMW Wizard exited with error."
+    exit 1
+}
+
+ok "OpenMW Wizard completed."
+
+# ────────────────────────────────────────────────────
+# 4. Создание симлинка на папку конфига
+# ────────────────────────────────────────────────────
+CONFIG_DIR="$PREFIX_DIR/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW"
+SYMLINK_PATH="$TES3MP_DIR/openmw-profile"
+
+if [[ -d "$CONFIG_DIR" ]]; then
+    ln -sfn "$CONFIG_DIR" "$SYMLINK_PATH"
+    ok "Symlink created: $SYMLINK_PATH → $CONFIG_DIR"
+
+    # Создать settings.cfg по умолчанию, если его нет
+    SETTINGS_CFG="$CONFIG_DIR/settings.cfg"
+    if [[ ! -f "$SETTINGS_CFG" ]]; then
+        EXAMPLE="$SCRIPT_DIR/lib/settings.cfg.example"
+        if [[ -f "$EXAMPLE" ]]; then
+            cp "$EXAMPLE" "$SETTINGS_CFG"
+            ok "Default settings.cfg created."
+        else
+            warn "Example not found: $EXAMPLE"
+        fi
+    fi
+else
+    warn "Config directory not found (wizard may not have created it yet):"
+    warn "  $CONFIG_DIR"
+    warn "Run the client once to generate config files."
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Installation complete!"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  Next steps:"
+echo "    1. Install mods:    install-mods"
+echo "    2. Launch client:   run-client"
+echo ""

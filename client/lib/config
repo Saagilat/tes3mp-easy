@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# config.sh — tes3mp-easy configuration (INI format)
+#
+# Three config files (loaded in order):
+#   ~/.tes3mp-easy.ini           — shared: LANG_CODE, EDITOR, BACKUP_DIR
+#   ~/.tes3mp-easy-admin.ini     — admin: SSH_HOST, EXPORT_DIR
+#   ~/.tes3mp-easy-player.ini    — player: SERVER_URL, DATA_FILES, ...
+#
+# Later files override earlier ones.
+# Format:
+#   ; comment
+#   KEY = value
+#
+# Loaded via parse_ini (safe, no bash execution).
+#
+# NOTE: This file must be sourced AFTER common.sh.
+
+SHARED_CONFIG="${HOME}/.tes3mp-easy.ini"
+ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
+PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
+
+# ────────────────────────────────────────────────────────────
+# parse_ini — parse key=value from a file (safe, no source)
+# Usage: parse_ini <file> [prefix]
+# ────────────────────────────────────────────────────────────
+parse_ini() {
+    local file="$1"
+    local prefix="${2:-}"
+    local key value
+
+    [[ -f "$file" ]] || return 1
+
+    while IFS= read -r line; do
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        [[ -z "$line" ]] && continue
+        [[ "$line" == \#* || "$line" == \;* ]] && continue
+        [[ "$line" == \[* ]] && continue
+
+        if [[ "$line" =~ ^([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            case "$value" in
+                \"*\") value="${value#\"}"; value="${value%\"}" ;;
+                \'*\') value="${value#\'}"; value="${value%\'}" ;;
+            esac
+            printf -v "${prefix}${key}" "%s" "$value"
+        fi
+    done < "$file"
+}
+
+# ────────────────────────────────────────────────────────────
+# load_config — load config file (with shared fallback)
+# Usage: load_config [path]
+# Loads SHARED_CONFIG first, then the target file (overrides).
+# ────────────────────────────────────────────────────────────
+load_config() {
+    local file="${1:-}"
+    [[ -n "$file" ]] || { [[ -f "$ADMIN_CONFIG" ]] && file="$ADMIN_CONFIG"; } || file="$PLAYER_CONFIG"
+
+    # Always load shared config first (if exists)
+    [[ -f "$SHARED_CONFIG" ]] && parse_ini "$SHARED_CONFIG"
+
+    # Then load target config (overrides shared)
+    [[ -f "$file" ]] && parse_ini "$file" && return 0
+    return 1
+}
+
+# ────────────────────────────────────────────────────────────
+# find_editor — detect available text editor
+# Order: EDITOR env → VISUAL → EDITOR var → nano → vim → vi
+# ────────────────────────────────────────────────────────────
+find_editor() {
+    local cfg_editor="${EDITOR:-}"
+    if [[ -n "$cfg_editor" ]] && command -v "$cfg_editor" &>/dev/null; then
+        echo "$cfg_editor"
+        return 0
+    fi
+    for e in "$VISUAL" "$EDITOR" nano vim vi; do
+        if [[ -n "$e" ]] && command -v "$e" &>/dev/null; then
+            echo "$e"
+            return 0
+        fi
+    done
+    echo "vi"
+}
+
+# ────────────────────────────────────────────────────────────
+# edit_config — open config in detected editor
+# Usage: edit_config [file]
+# ────────────────────────────────────────────────────────────
+edit_config() {
+    local file="${1:-}"
+    if [[ -z "$file" ]]; then
+        [[ -f "$ADMIN_CONFIG" ]] && file="$ADMIN_CONFIG" || file="$PLAYER_CONFIG"
+    fi
+
+    if [[ ! -f "$file" ]]; then
+        err "Config file not found. Re-run the install script."
+        return 1
+    fi
+
+    # Load config so EDITOR from INI is available to find_editor
+    load_config "$file" 2>/dev/null || true
+
+    local editor
+    editor=$(find_editor)
+    info "Opening with: $editor"
+    "$editor" "$file"
+    ok "Config file saved."
+}
+
+# ────────────────────────────────────────────────────────────
+# Entry point for direct execution (admin-settings / player-settings)
+# ────────────────────────────────────────────────────────────
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    source "$SCRIPT_DIR/common"
+
+    case "${1:-}" in
+        admin) edit_config "$ADMIN_CONFIG" ;;
+        player) edit_config "$PLAYER_CONFIG" ;;
+        shared|config) edit_config "$SHARED_CONFIG" ;;
+        *) echo "Usage: $(basename "$0") admin|player|shared"; exit 1 ;;
+    esac
+fi
