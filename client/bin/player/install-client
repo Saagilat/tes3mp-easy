@@ -16,8 +16,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"
+load_config 2>/dev/null || {
+    err "Config not found."
     err "Run 'edit-config' to set it up."
     exit 1
 }
@@ -27,17 +27,14 @@ if [[ -z "${TES3MP_DIR:-}" ]]; then
     exit 1
 fi
 
-if [[ -z "${DATA_FILES:-}" ]]; then
-    err "DATA_FILES is not set in config."
-    err "Set path to Morrowind/Data Files (where Morrowind.esm is located)."
+if [[ -z "${MORROWIND_PATH:-}" ]]; then
+    err "MORROWIND_PATH is not set in config."
+    err "Set path to Morrowind installation directory (parent of Data Files)."
     exit 1
 fi
 
 TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
-DATA_FILES="${DATA_FILES/#\~/$HOME}"
-# Убираем trailing slash и "/Data Files" — оставляем только корень Morrowind
-DATA_FILES="${DATA_FILES%/}"
-DATA_FILES="${DATA_FILES%/Data Files}"
+MORROWIND_PATH="${MORROWIND_PATH/#\~/$HOME}"
 
 check_deps curl unzip
 
@@ -46,8 +43,8 @@ echo "════════════════════════�
 echo "  Installing TES3MP Client via Proton"
 echo "═══════════════════════════════════════════════"
 echo ""
-echo "  TES3MP directory: $TES3MP_DIR"
-echo "  Morrowind Data:   $DATA_FILES/Data Files"
+echo "  TES3MP directory:  $TES3MP_DIR"
+echo "  Morrowind Data:    $MORROWIND_PATH/Data Files"
 echo ""
 
 mkdir -p "$TES3MP_DIR"
@@ -109,12 +106,12 @@ mkdir -p "$PREFIX_DIR"
 # ────────────────────────────────────────────────────
 # 4. Создание симлинка Data Files для Proton/Wine
 # ────────────────────────────────────────────────────
-if [[ -d "$DATA_FILES/Data Files" ]]; then
+if [[ -d "$MORROWIND_PATH/Data Files" ]]; then
     # Симлинк в drive_c префикса (чтобы OpenMW видел C:\Morrowind\Data Files)
     MORROWIND_LINK="$PREFIX_DIR/pfx/drive_c/Morrowind"
     mkdir -p "$(dirname "$MORROWIND_LINK")"
-    ln -sfn "$DATA_FILES" "$MORROWIND_LINK"
-    info "Symlink created: $MORROWIND_LINK → $DATA_FILES"
+    ln -sfn "$MORROWIND_PATH" "$MORROWIND_LINK"
+    info "Symlink created: $MORROWIND_LINK → $MORROWIND_PATH"
 fi
 
 # ────────────────────────────────────────────────────
@@ -124,7 +121,7 @@ CONFIG_DIR="$PREFIX_DIR/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW"
 mkdir -p "$CONFIG_DIR"
 
 OPENMW_CFG="$CONFIG_DIR/openmw.cfg"
-DATA_BASENAME="$(basename "$DATA_FILES")"  # "Morrowind"
+DATA_BASENAME="$(basename "$MORROWIND_PATH")"  # "Morrowind"
 
 info "Generating openmw.cfg..."
 

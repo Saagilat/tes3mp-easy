@@ -3,9 +3,9 @@
 # setup-wizard — Player quick setup wizard (fully interactive, no editors)
 #
 # Guides the player through:
-#   1. DATA_FILES  — configure (always shown, path verified)
-#   2. TES3MP_DIR  — configure (always shown)
-#   3. PROTON_PATH — configure (manual entry)
+#   1. MORROWIND_PATH — configure (always shown, path verified)
+#   2. TES3MP_DIR     — configure (always shown)
+#   3. PROTON_PATH    — configure (manual entry)
 #   4. Install client
 #   5. Install fonts
 #   6. Configure UI (ttf resolution, font size, scaling)
@@ -16,7 +16,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
 CONFIG_FILE="$PLAYER_CONFIG"
 
 # ────────────────────────────────────────────────────────────
@@ -39,40 +40,40 @@ set_ini() {
     ok "${key} set to: ${value}"
 }
 
-# Prompt for DATA_FILES (always shows current, verifies Morrowind.esm)
-configure_data_files() {
-    local current="${DATA_FILES:-}"
+# Prompt for MORROWIND_PATH (always shows current, verifies Morrowind.esm)
+configure_morrowind_path() {
+    local current="${MORROWIND_PATH:-}"
 
     while true; do
         if [[ -n "$current" ]]; then
-            input "Enter path to Morrowind/Data Files" "$current" DATA_FILES
+            input "Enter path to Morrowind directory" "$current" MORROWIND_PATH
         else
             echo ""
-            echo "  Enter the path to your Morrowind Data Files directory."
-            echo "  This is where Morrowind.esm is located."
-            echo "  Example: /home/user/.steam/steam/steamapps/common/Morrowind/Data Files"
+            echo "  Enter the path to your Morrowind installation directory."
+            echo "  The 'Data Files' folder must be inside this directory."
+            echo "  Example: /home/user/.steam/steam/steamapps/common/Morrowind"
             echo ""
-            input "Enter path to Morrowind/Data Files" "" DATA_FILES
+            input "Enter path to Morrowind directory" "" MORROWIND_PATH
         fi
 
-        if [[ -z "$DATA_FILES" ]]; then
-            warn "DATA_FILES not set — skipping."
+        if [[ -z "$MORROWIND_PATH" ]]; then
+            warn "MORROWIND_PATH not set — skipping."
             return 1
         fi
 
-        set_ini "DATA_FILES" "$DATA_FILES" "$PLAYER_CONFIG"
-        local resolved="${DATA_FILES/#\~/$HOME}"
+        set_ini "MORROWIND_PATH" "$MORROWIND_PATH" "$PLAYER_CONFIG"
+        local resolved="${MORROWIND_PATH/#\~/$HOME}"
 
-        if [[ -f "$resolved/Morrowind.esm" ]]; then
-            ok "Morrowind.esm found at: ${resolved}"
+        if [[ -f "$resolved/Data Files/Morrowind.esm" ]]; then
+            ok "Morrowind.esm found at: ${resolved}/Data Files"
             return 0
         else
-            warn "Morrowind.esm not found at: ${resolved}"
+            warn "Morrowind.esm not found at: ${resolved}/Data Files"
             if confirm "Try again?" "y"; then
-                current="$DATA_FILES"
+                current="$MORROWIND_PATH"
                 continue
             else
-                warn "Skipping DATA_FILES for now."
+                warn "Skipping MORROWIND_PATH for now."
                 return 1
             fi
         fi
@@ -169,8 +170,8 @@ main() {
     # ────────────────────────────────────────────────────────
     # Step 1: DATA_FILES
     # ────────────────────────────────────────────────────────
-    step_header 1 $TOTAL "Morrowind Data Files"
-    configure_data_files
+    step_header 1 $TOTAL "Morrowind Directory"
+    configure_morrowind_path
     load_config "$PLAYER_CONFIG" 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
@@ -192,8 +193,8 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 4 $TOTAL "Client Installation"
 
-    if [[ -z "${DATA_FILES:-}" ]]; then
-        err "DATA_FILES is not set. Please configure it first."
+    if [[ -z "${MORROWIND_PATH:-}" ]]; then
+        err "MORROWIND_PATH is not set. Please configure it first."
     elif [[ -z "${TES3MP_DIR:-}" ]]; then
         err "TES3MP_DIR is not set. Please configure it first."
     else
@@ -258,7 +259,7 @@ main() {
     echo "  ${T_LABEL}╚══════════════════════════════════════════════════╝${NC}"
     echo ""
     echo "  ${T_LABEL}Configuration:${NC}"
-    echo "    DATA_FILES  = ${DATA_FILES:-${T_ERROR}(not set)${NC}}"
+    echo "    MORROWIND_PATH  = ${MORROWIND_PATH:-${T_ERROR}(not set)${NC}}"
     echo "    TES3MP_DIR  = ${TES3MP_DIR:-${T_ERROR}(not set)${NC}}"
     echo "    PROTON_PATH = ${PROTON_PATH:-${T_ERROR}(not set)${NC}}"
     echo ""
