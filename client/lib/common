@@ -117,7 +117,7 @@ check_deps() {
 _get_server_url() {
     local cfg addr port tes3mp_dir
 
-    # Читаем TES3MP_DIR из конфига игрока (не полагаясь на export)
+    # Read TES3MP_DIR from player config (without relying on export)
     local config="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy/tes3mp-easy.ini"
     tes3mp_dir=$(grep "^TES3MP_DIR" "$config" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
     tes3mp_dir="${tes3mp_dir/#\~/$HOME}"

@@ -50,7 +50,7 @@ echo ""
 mkdir -p "$TES3MP_DIR"
 
 # ────────────────────────────────────────────────────
-# 1. Проверка Proton
+# 1. Check Proton
 # ────────────────────────────────────────────────────
 PROTON_DIR=""
 if [[ -n "${PROTON_PATH:-}" ]] && [[ -f "$PROTON_PATH/proton" ]]; then
@@ -73,7 +73,7 @@ else
 fi
 
 # ────────────────────────────────────────────────────
-# 2. Скачивание TES3MP
+# 2. Download TES3MP
 # ────────────────────────────────────────────────────
 TES3MP_ZIP="/tmp/tes3mp.zip"
 TES3MP_URL="https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp.Win64.release.0.8.1.zip"
@@ -98,16 +98,16 @@ else
 fi
 
 # ────────────────────────────────────────────────────
-# 3. Создание префикса
+# 3. Create prefix
 # ────────────────────────────────────────────────────
 PREFIX_DIR="$TES3MP_DIR/prefix"
 mkdir -p "$PREFIX_DIR"
 
 # ────────────────────────────────────────────────────
-# 4. Создание симлинка Data Files для Proton/Wine
+# 4. Create Data Files symlink for Proton/Wine
 # ────────────────────────────────────────────────────
 if [[ -d "$MORROWIND_PATH/Data Files" ]]; then
-    # Симлинк в drive_c префикса (чтобы OpenMW видел C:\Morrowind\Data Files)
+    # Symlink in prefix drive_c (so OpenMW sees C:\Morrowind\Data Files)
     MORROWIND_LINK="$PREFIX_DIR/pfx/drive_c/Morrowind"
     mkdir -p "$(dirname "$MORROWIND_LINK")"
     ln -sfn "$MORROWIND_PATH" "$MORROWIND_LINK"
@@ -115,7 +115,7 @@ if [[ -d "$MORROWIND_PATH/Data Files" ]]; then
 fi
 
 # ────────────────────────────────────────────────────
-# 5. Генерация openmw.cfg (вместо openmw-wizard)
+# 5. Generate openmw.cfg (instead of openmw-wizard)
 # ────────────────────────────────────────────────────
 CONFIG_DIR="$PREFIX_DIR/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW"
 mkdir -p "$CONFIG_DIR"
@@ -138,7 +138,7 @@ CFGEOF
 ok "openmw.cfg generated."
 
 # ────────────────────────────────────────────────────
-# 6. Создание симлинка на папку конфига
+# 6. Create symlink to config folder
 # ────────────────────────────────────────────────────
 SYMLINK_PATH="$TES3MP_DIR/openmw-profile"
 
@@ -146,7 +146,7 @@ if [[ -d "$CONFIG_DIR" ]]; then
     ln -sfn "$CONFIG_DIR" "$SYMLINK_PATH"
     ok "Symlink created: $SYMLINK_PATH → $CONFIG_DIR"
 
-    # Создать settings.cfg по умолчанию, если его нет
+    # Create default settings.cfg if it doesn't exist
     SETTINGS_CFG="$CONFIG_DIR/settings.cfg"
     if [[ ! -f "$SETTINGS_CFG" ]]; then
         EXAMPLE="$SCRIPT_DIR/lib/settings.cfg.example"
