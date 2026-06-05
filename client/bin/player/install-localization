@@ -66,7 +66,7 @@ echo "  Available localizations:"
 for i in "${!LOCALES[@]}"; do
     printf "  %d) %s\n" $((i+1)) "${LOCALE_NAMES[$i]}"
 done
-echo "  $((${#LOCALES[@]}+1))) Не устанавливать локализацию"
+echo "  $((${#LOCALES[@]}+1))) Skip localization"
 echo ""
 input "Select option [1-$((${#LOCALES[@]}+1))]" "" LOCALE_CHOICE
 
