@@ -18,6 +18,11 @@ source "$SCRIPT_DIR/lib/config"
 ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
 CONFIG_FILE="$ADMIN_CONFIG"
 
+# Global associative arrays for config editing
+declare -g -A _LUA_CONF=()
+declare -g -A _LUA_CHANGED=()
+declare -g -A _LUA_TYPE=()
+
 # ────────────────────────────────────────────────────────────
 # Helpers
 # ────────────────────────────────────────────────────────────
@@ -84,7 +89,7 @@ require_ssh() {
 # Read entire config.lua into memory (array), one SSH call
 lua_load() {
     local line key val
-    declare -g -A _LUA_CONF
+    _LUA_CONF=()
     while IFS='=' read -r key val; do
         key="${key%% }"
         key="${key## }"
@@ -101,8 +106,8 @@ lua_load() {
 # Apply all changes to config.lua in one SSH call
 lua_save() {
     if [[ ${#_LUA_CHANGED[@]} -eq 0 ]]; then
-        unset _LUA_CHANGED _LUA_TYPE
-        declare -g -A _LUA_CHANGED _LUA_TYPE
+        _LUA_CHANGED=()
+        _LUA_TYPE=()
         return
     fi
 
@@ -139,8 +144,8 @@ lua_save() {
     # Apply and remove
     ssh "$SSH_HOST" "sed -i -f $script_path /tes3mp-easy/configs/config.lua && rm -f $script_path" 2>/dev/null
 
-    unset _LUA_CHANGED _LUA_TYPE
-    declare -g -A _LUA_CHANGED _LUA_TYPE
+    _LUA_CHANGED=()
+    _LUA_TYPE=()
 }
 
 # Mark a setting as changed (stores in _LUA_CHANGED)
