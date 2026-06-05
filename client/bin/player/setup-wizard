@@ -192,36 +192,15 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 4 $TOTAL "Client Installation"
 
-    local tes3mp_exe=""
-    if [[ -n "${TES3MP_DIR:-}" ]]; then
-        tes3mp_exe="${TES3MP_DIR/#\~/$HOME}/tes3mp.exe"
-    fi
-
-    if [[ -n "$tes3mp_exe" && -f "$tes3mp_exe" ]]; then
-        ok "Client is already installed."
-        if confirm "Open OpenMW wizard again?" "n"; then
-            if [[ -z "${DATA_FILES:-}" ]]; then
-                err "DATA_FILES is not set. Configure it first."
-            elif [[ -z "${TES3MP_DIR:-}" ]]; then
-                err "TES3MP_DIR is not set. Configure it first."
-            else
-                bash "$SCRIPT_DIR/bin/player/install-client" || {
-                    err "Client installation wizard failed."
-                }
-            fi
-        fi
+    if [[ -z "${DATA_FILES:-}" ]]; then
+        err "DATA_FILES is not set. Please configure it first."
+    elif [[ -z "${TES3MP_DIR:-}" ]]; then
+        err "TES3MP_DIR is not set. Please configure it first."
     else
-        info "Client is not installed."
-        if confirm "Install client now?" "y"; then
-            if [[ -z "${DATA_FILES:-}" ]]; then
-                err "DATA_FILES is not set. Please configure it first."
-            elif [[ -z "${TES3MP_DIR:-}" ]]; then
-                err "TES3MP_DIR is not set. Please configure it first."
-            else
-                bash "$SCRIPT_DIR/bin/player/install-client" || {
-                    err "Client installation failed."
-                }
-            fi
+        if confirm "Install / update client now?" "y"; then
+            bash "$SCRIPT_DIR/bin/player/install-client" || {
+                err "Client installation failed."
+            }
         fi
     fi
 

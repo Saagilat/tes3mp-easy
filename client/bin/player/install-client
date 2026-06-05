@@ -5,8 +5,9 @@
 # What it does:
 #   1. Checks PROTON_PATH in config
 #   2. Downloads and extracts TES3MP to $TES3MP_DIR/
-#   3. Creates prefix and runs openmw-wizard.exe (GUI)
+#   3. Creates prefix and generates openmw.cfg (replaces openmw-wizard)
 #   4. Creates symlink $TES3MP_DIR/openmw-profile → config folder in prefix
+#   5. Copies default settings.cfg if missing
 #
 
 set -euo pipefail
@@ -104,43 +105,46 @@ PREFIX_DIR="$TES3MP_DIR/prefix"
 mkdir -p "$PREFIX_DIR"
 
 # ────────────────────────────────────────────────────
-# 4. Создание симлинка, чтобы wizard увидел Data Files
+# 4. Создание симлинка Data Files для Proton/Wine
 # ────────────────────────────────────────────────────
 if [[ -d "$DATA_FILES/Data Files" ]]; then
+    # Симлинк в корне TES3MP (для обратной совместимости)
     ln -sfn "$DATA_FILES/Data Files" "$TES3MP_DIR/Data Files"
     info "Symlink created: $TES3MP_DIR/Data Files → $DATA_FILES/Data Files"
+
+    # Симлинк в drive_c префикса (чтобы OpenMW видел C:\Morrowind\Data Files)
+    MORROWIND_LINK="$PREFIX_DIR/pfx/drive_c/Morrowind"
+    mkdir -p "$(dirname "$MORROWIND_LINK")"
+    ln -sfn "$DATA_FILES" "$MORROWIND_LINK"
+    info "Symlink created: $MORROWIND_LINK → $DATA_FILES"
 fi
 
 # ────────────────────────────────────────────────────
-# 5. Запуск openmw-wizard
-# ────────────────────────────────────────────────────
-echo ""
-echo "═══════════════════════════════════════════════"
-echo "  Starting OpenMW Wizard"
-echo "═══════════════════════════════════════════════"
-echo ""
-echo "  Proton:         $PROTON_DIR"
-echo "  Proton prefix:  $PREFIX_DIR"
-echo ""
-info "OpenMW Wizard will open. Select Morrowind Data Files:"
-echo "    $DATA_FILES/Data Files"
-echo ""
-info "Запуск мастера настройки OpenMW..."
-echo ""
-
-STEAM_COMPAT_DATA_PATH="$PREFIX_DIR" \
-STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/steam" \
-"$PROTON_DIR/proton" run "$TES3MP_DIR/openmw-wizard.exe" || {
-    err "OpenMW Wizard exited with error."
-    exit 1
-}
-
-ok "OpenMW Wizard completed."
-
-# ────────────────────────────────────────────────────
-# 4. Создание симлинка на папку конфига
+# 5. Генерация openmw.cfg (вместо openmw-wizard)
 # ────────────────────────────────────────────────────
 CONFIG_DIR="$PREFIX_DIR/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW"
+mkdir -p "$CONFIG_DIR"
+
+OPENMW_CFG="$CONFIG_DIR/openmw.cfg"
+DATA_BASENAME="$(basename "$DATA_FILES")"  # "Morrowind"
+
+info "Generating openmw.cfg..."
+
+cat > "$OPENMW_CFG" << CFGEOF
+fallback-archive=Morrowind.bsa
+fallback-archive=Tribunal.bsa
+fallback-archive=Bloodmoon.bsa
+data="C:\\${DATA_BASENAME}\\Data Files"
+content=Morrowind.esm
+content=Tribunal.esm
+content=Bloodmoon.esm
+CFGEOF
+
+ok "openmw.cfg generated."
+
+# ────────────────────────────────────────────────────
+# 6. Создание симлинка на папку конфига
+# ────────────────────────────────────────────────────
 SYMLINK_PATH="$TES3MP_DIR/openmw-profile"
 
 if [[ -d "$CONFIG_DIR" ]]; then
