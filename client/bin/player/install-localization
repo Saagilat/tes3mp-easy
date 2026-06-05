@@ -13,21 +13,18 @@ source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
 load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"; exit 1
+    err "Config not found. Run setup-wizard first."; exit 1
 }
 
 [[ -z "${TES3MP_DIR:-}" ]] && { err "TES3MP_DIR is not set in config."; exit 1; }
-[[ -z "${DATA_FILES:-}" ]] && { err "DATA_FILES is not set in config."; exit 1; }
+[[ -z "${MORROWIND_PATH:-}" ]] && { err "MORROWIND_PATH is not set in config."; exit 1; }
 
 TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
-DATA_FILES="${DATA_FILES/#\~/$HOME}"
+MORROWIND_PATH="${MORROWIND_PATH/#\~/$HOME}"
 
-# Morrowind root (one level above Data Files)
-MORROWIND_DIR="${DATA_FILES%/Data Files}"
-
-if [[ ! -d "$MORROWIND_DIR" ]]; then
-    err "Morrowind directory not found: $MORROWIND_DIR"
-    err "Check DATA_FILES in config."
+if [[ ! -d "$MORROWIND_PATH/Data Files" ]]; then
+    err "Morrowind Data Files not found at: $MORROWIND_PATH/Data Files"
+    err "Check MORROWIND_PATH in config."
     exit 1
 fi
 
@@ -90,7 +87,7 @@ echo "════════════════════════�
 echo "  Installing ${LOCALE_NAME} Localization"
 echo "═══════════════════════════════════════════════"
 echo ""
-echo "  Morrowind:    $MORROWIND_DIR"
+echo "  Morrowind:    $MORROWIND_PATH"
 echo "  Cache dir:    $LOCALE_DIR"
 echo ""
 
@@ -142,7 +139,7 @@ echo ""
 info "Running localization installer..."
 echo ""
 
-bash "$INSTALL_SCRIPT" "$MORROWIND_DIR"
+bash "$INSTALL_SCRIPT" "$MORROWIND_PATH"
 
 # ────────────────────────────────────────────────────
 # 6. Set encoding=win1251 in openmw.cfg (Cyrillic only)

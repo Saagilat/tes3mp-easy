@@ -196,8 +196,6 @@ main() {
     # Reload config after wizard steps so variables are up to date
     load_config 2>/dev/null || true
     if [[ -z "${MORROWIND_PATH:-}" ]]; then
-        warn "Config file: $CONFIG"
-        [[ -f "$CONFIG" ]] && warn "Config exists, contents:" && cat "$CONFIG" >&2
         err "MORROWIND_PATH is not set. Please configure it first."
     elif [[ -z "${TES3MP_DIR:-}" ]]; then
         err "TES3MP_DIR is not set. Please configure it first."
