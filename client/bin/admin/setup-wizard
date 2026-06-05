@@ -39,6 +39,7 @@ group_header() {
     echo "  ${T_ACCENT}--- ${title} ---${NC}"
 }
 
+<<<<<<< HEAD
 confirm() {
     local prompt="${1:-Continue?}"
     local default="${2:-y}"
@@ -68,6 +69,8 @@ input() {
     printf -v "$result_var" "%s" "$ans"
 }
 
+=======
+>>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
 set_ini() {
     local key="$1" value="$2" file="$3"
     if grep -q "^${key}[[:space:]]*=" "$file" 2>/dev/null; then

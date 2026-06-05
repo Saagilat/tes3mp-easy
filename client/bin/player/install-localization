@@ -80,9 +80,13 @@ if [[ -f "$VOICES_TAR" ]]; then
 else
     echo ""
     info "Optional: Download Russian voiceover?"
+<<<<<<< HEAD
     read -r -p "  Download voices_russian.tar (~300 MB)? [y/N]: " DOWNLOAD_VOICES
     # Remove non-printable characters (e.g. backspace, escape sequences)
     DOWNLOAD_VOICES=$(tr -dc '[:print:]' <<< "${DOWNLOAD_VOICES:-}")
+=======
+    input "Download voices_russian.tar (~300 MB)?" "n" DOWNLOAD_VOICES
+>>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
     if [[ "${DOWNLOAD_VOICES:-n}" =~ ^[yY] ]]; then
         info "Downloading voices_russian.tar..."
         curl -fsSL -o "$VOICES_TAR" "$RELEASE_URL/voices_russian.tar" || {

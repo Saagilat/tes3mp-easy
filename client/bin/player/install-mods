@@ -102,9 +102,13 @@ else
         ((i++)) || true
     done
     echo ""
+<<<<<<< HEAD
     read -r -p "  Select number (empty = cancel): " choice
     # Remove non-printable characters (e.g. backspace, escape sequences)
     choice=$(tr -dc '[:print:]' <<< "${choice:-}")
+=======
+    input "Select number (empty = cancel)" "" choice
+>>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
     [[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
     SELECTED="${NAMES[$((choice - 1))]}"
     [[ -z "$SELECTED" ]] && { err "Invalid selection."; exit 1; }

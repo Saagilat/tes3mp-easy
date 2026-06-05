@@ -8,6 +8,7 @@
 #
 # Provides:
 #   - Colors and logging (info, ok, warn, err)
+#   - Interactive input helpers (confirm, input)
 #   - Dependency checking (check_deps)
 #   - OS detection (is_os)
 #
@@ -46,6 +47,45 @@ info()  { echo -e "${T_LABEL}[INFO]${NC}  $*"; }
 ok()    { echo -e "${T_LABEL}[OK]${NC}    $*"; }
 warn()  { echo -e "${T_ACCENT}[WARN]${NC}  $*"; }
 err()   { echo -e "${T_ERROR}[ERROR]${NC} $*" >&2; }
+
+# ────────────────────────────────────────────────────────────
+# Interactive input helpers
+# Removes non-printable characters (backspace, escape, etc.)
+# that bash 'read' captures literally instead of interpreting.
+# ────────────────────────────────────────────────────────────
+
+# confirm — ask yes/no, returns 0 for yes, 1 for no
+# Usage:  if confirm "Continue?" "y"; then ...
+confirm() {
+    local prompt="${1:-Continue?}"
+    local default="${2:-y}"
+    local ans
+    if [[ "$default" == "y" ]]; then
+        read -r -p "  ${prompt} [Y/n]: " ans
+    else
+        read -r -p "  ${prompt} [y/N]: " ans
+    fi
+    ans="${ans:-$default}"
+    # Remove non-printable characters (e.g. backspace, escape sequences)
+    ans=$(tr -dc '[:print:]' <<< "$ans")
+    [[ "${ans,,}" == "y" ]]
+}
+
+# input — prompt for a string value with optional default
+# Usage:  input "Enter name" "default" RESULT_VAR
+input() {
+    local prompt="$1" default="$2" result_var="$3"
+    local ans
+    if [[ -n "$default" ]]; then
+        read -r -p "  ${prompt} [${default}]: " ans
+        ans="${ans:-$default}"
+    else
+        read -r -p "  ${prompt}: " ans
+    fi
+    # Remove non-printable characters (e.g. backspace, escape sequences)
+    ans=$(tr -dc '[:print:]' <<< "$ans")
+    printf -v "$result_var" "%s" "$ans"
+}
 
 # ────────────────────────────────────────────────────────────
 # Utility: check_deps — verify required commands exist
