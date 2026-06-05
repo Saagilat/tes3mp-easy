@@ -45,10 +45,13 @@ echo "    font size      = ${CURRENT_FONT:-not set}"
 echo "    scaling factor = ${CURRENT_SCALE:-not set}"
 echo ""
 read -r -p "  ttf resolution [${CURRENT_TTF:-96}]: " TTF_RES
+TTF_RES=$(tr -dc '[:print:]' <<< "${TTF_RES:-}")
 TTF_RES="${TTF_RES:-${CURRENT_TTF:-96}}"
 read -r -p "  font size [${CURRENT_FONT:-16}]: " FONT_SIZE
+FONT_SIZE=$(tr -dc '[:print:]' <<< "${FONT_SIZE:-}")
 FONT_SIZE="${FONT_SIZE:-${CURRENT_FONT:-16}}"
 read -r -p "  scaling factor [${CURRENT_SCALE:-1.0}]: " SCALING
+SCALING=$(tr -dc '[:print:]' <<< "${SCALING:-}")
 SCALING="${SCALING:-${CURRENT_SCALE:-1.0}}"
 
 if ! grep -q "^\[GUI\]" "$SETTINGS_CFG" 2>/dev/null; then

@@ -39,6 +39,8 @@ confirm() {
         read -r -p "  ${prompt} [y/N]: " ans
     fi
     ans="${ans:-$default}"
+    # Remove non-printable characters (e.g. backspace, escape sequences)
+    ans=$(tr -dc '[:print:]' <<< "$ans")
     [[ "${ans,,}" == "y" ]]
 }
 
@@ -51,6 +53,8 @@ input() {
     else
         read -r -p "  ${prompt}: " ans
     fi
+    # Remove non-printable characters (e.g. backspace, escape sequences)
+    ans=$(tr -dc '[:print:]' <<< "$ans")
     printf -v "$result_var" "%s" "$ans"
 }
 
