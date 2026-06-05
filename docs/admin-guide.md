@@ -69,17 +69,19 @@ Players can then download the mods from the player menu with **Install Mods**.
 
 ---
 
-## 4. Backups
+<details>
+<summary>Backups & further reading</summary>
+
+### Backups
 
 See [Backup Guide](./backup-guide.md) for details on creating, deploying, and downloading backups.
 
----
+### Further Reading
 
-## Further Reading
-
-- [Backup Guide](./backup-guide.md)
 - [Modding Documentation](./admin/modding.md) — TES3MP modding capabilities
 - [Server Settings Reference](./admin/tes3mp_settings.md) — all `config.lua` settings
 - [Player Guide](./player-guide.md)
 
 If you want to extend tes3mp-easy, see the [Development Guide](./development.md) for internals, full command reference, and how to add new features.
+
+</details>
