@@ -139,7 +139,7 @@ echo ""
 info "Running localization installer..."
 echo ""
 
-bash "$INSTALL_SCRIPT" "$MORROWIND_PATH"
+bash "$INSTALL_SCRIPT" "$MORROWIND_PATH" "$LOCALE_TAR" "$VOICES_TAR"
 
 # ────────────────────────────────────────────────────
 # 6. Set encoding=win1251 in openmw.cfg (Cyrillic only)

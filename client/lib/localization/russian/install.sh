@@ -80,7 +80,7 @@ remove_case_sensitive_duplicates() {
 
 # 1. Extract localization archive
 echo "[1/4] Looking for localization archive..."
-RUSSIFIER_TAR="$SCRIPT_DIR/russifier.tar"
+RUSSIFIER_TAR="${2:-$SCRIPT_DIR/russifier.tar}"
 if [ ! -f "$RUSSIFIER_TAR" ]; then
     echo "Error: file '$RUSSIFIER_TAR' not found."
     echo "Download russifier.tar from GitHub Releases and place it next to the script:"
@@ -117,7 +117,7 @@ done
 
 # 4. Extract Russian voiceover (optional)
 echo "[4/4] Looking for Russian voiceover archive..."
-VOICES_TAR="$SCRIPT_DIR/voices_russian.tar"
+VOICES_TAR="${3:-$SCRIPT_DIR/voices_russian.tar}"
 if [ -f "$VOICES_TAR" ]; then
     echo "Removing case-sensitive duplicates from existing files..."
     remove_case_sensitive_duplicates "$VOICES_TAR" "$MORROWIND_DIR"
