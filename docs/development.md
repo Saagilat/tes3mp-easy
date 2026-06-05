@@ -55,15 +55,13 @@ Three Docker services on the VPS:
 
 ## Configuration System
 
-Three INI-format config files at `~/`:
+Single INI-format config file at `~/.config/tes3mp-easy/`:
 
-| File | Created By | Purpose |
-|------|-----------|---------|
-| `~/.config/tes3mp-easy/tes3mp-easy.ini` | Both installers | Shared: `LANG_CODE`, `EDITOR`, `BACKUP_DIR` |
-| `~/.config/tes3mp-easy/tes3mp-easy-admin.ini` | `install-admin.sh` | Admin: `SSH_HOST`, `EXPORT_DIR` |
-| `~/.config/tes3mp-easy/tes3mp-easy-player.ini` | `install-player.sh` | Player: `MORROWIND_PATH`, `TES3MP_DIR`, `PROTON_PATH` |
+| File | Purpose |
+|------|---------|
+| `tes3mp-easy.ini` | All settings: `LANG_CODE`, `EDITOR`, `BACKUP_DIR`, `SSH_HOST`, `EXPORT_DIR`, `MORROWIND_PATH`, `TES3MP_DIR`, `PROTON_PATH` |
 
-Loading order: shared config first → role config overrides shared values. The parser `parse_ini()` uses regex, not `source`, for safety.
+The parser `parse_ini()` uses regex, not `source`, for safety.
 
 ## Admin Commands (Full Reference)
 

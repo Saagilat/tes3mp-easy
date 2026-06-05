@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config "$HOME/.tes3mp-easy-admin.ini" 2>/dev/null || { err "Config not found"; exit 1; }
+load_config 2>/dev/null || { err "Config not found"; exit 1; }
 [[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
 
 echo ""

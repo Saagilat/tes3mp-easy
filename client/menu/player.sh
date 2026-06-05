@@ -17,8 +17,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
 fi
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
-CONFIG_FILE="$PLAYER_CONFIG"
+CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.ini"
 
 # ────────────────────────────────────────────────────────────
 # dispatch — handle direct command line arguments
@@ -43,9 +42,9 @@ dispatch_player() {
         edit-client-cfg) bash "$BIN_DIR/edit-client-cfg" ;;
         uninstall)
             echo ""
-            echo "This will remove: $PLAYER_CONFIG and $UPDATE_DIR"
+            echo "This will remove: $CONFIG_FILE and $UPDATE_DIR"
             if confirm "Remove tes3mp-easy completely?"; then
-                rm -rf "$UPDATE_DIR" "$PLAYER_CONFIG"
+                rm -rf "$UPDATE_DIR" "$CONFIG_FILE"
                 ok "tes3mp-easy removed."
                 echo "Also remove the alias from ~/.bashrc if you added it."
             else
@@ -79,10 +78,6 @@ menu_edit_client_cfg() { bash "$BIN_DIR/edit-client-cfg"; }
 menu_show_backups_mods() { bash "$BIN_DIR/show-backups-mods"; }
 menu_show_backups_players() { bash "$BIN_DIR/show-backups-players"; }
 menu_show_backups_world() { bash "$BIN_DIR/show-backups-world"; }
-menu_common_settings() {
-    bash "$BIN_DIR/../common/edit-config"
-    exec bash "$0" menu
-}
 menu_edit_config() {
     bash "$BIN_DIR/edit-config"
     # Restart menu so lang/editor changes take effect on fresh state
@@ -167,7 +162,7 @@ menu_download_world()   { menu_download_backup "world"; }
 # show_player_menu — entry point for interactive menu
 # ────────────────────────────────────────────────────────────
 show_player_menu() {
-    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
 
     # Define menu items after load_lang so localization applies
@@ -194,7 +189,6 @@ show_player_menu() {
         "${MENU_PLAYER_EDIT_CLIENT_CFG}|fn|menu_edit_client_cfg"
 
         "${MENU_PLAYER_SEP_SYSTEM}|sep|"
-        "${MENU_COMMON_EDIT_CONFIG}|fn|menu_common_settings"
         "${MENU_PLAYER_EDIT_CONFIG}|fn|menu_edit_config"
     )
 
@@ -202,7 +196,7 @@ show_player_menu() {
         "${MENU_TITLE_PLAYER}" \
         "" \
         "" \
-        "$PLAYER_CONFIG" \
+        "$CONFIG_FILE" \
         "" \
         "" \
         "${player_menu[@]}"
@@ -212,7 +206,7 @@ show_player_menu() {
 # Entry
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
     dispatch_player "$@"
 fi

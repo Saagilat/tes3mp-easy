@@ -2,12 +2,10 @@
 #
 # config.sh — tes3mp-easy configuration (INI format)
 #
-# Three config files (loaded in order):
-#   ~/.config/tes3mp-easy/tes3mp-easy.ini           — shared: LANG_CODE, EDITOR, BACKUP_DIR
-#   ~/.config/tes3mp-easy/tes3mp-easy-admin.ini     — admin: SSH_HOST, EXPORT_DIR
-#   ~/.config/tes3mp-easy/tes3mp-easy-player.ini    — player: SERVER_URL, DATA_FILES, ...
+# Single config file:
+#   ~/.config/tes3mp-easy/tes3mp-easy.ini
 #
-# Later files override earlier ones.
+# All settings (shared, admin, player) are stored in one file.
 # Format:
 #   ; comment
 #   KEY = value
@@ -18,8 +16,7 @@
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 SHARED_CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
-ADMIN_CONFIG="$CONFIG_DIR/tes3mp-easy-admin.ini"
-PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
+CONFIG="$SHARED_CONFIG"
 
 # ────────────────────────────────────────────────────────────
 # parse_ini — parse key=value from a file (safe, no source)
@@ -52,19 +49,12 @@ parse_ini() {
 }
 
 # ────────────────────────────────────────────────────────────
-# load_config — load config file (with shared fallback)
-# Usage: load_config [path]
-# Loads SHARED_CONFIG first, then the target file (overrides).
+# load_config — load config file
+# Usage: load_config
+# Loads the single tes3mp-easy.ini (if exists).
 # ────────────────────────────────────────────────────────────
 load_config() {
-    local file="${1:-}"
-    [[ -n "$file" ]] || { [[ -f "$ADMIN_CONFIG" ]] && file="$ADMIN_CONFIG"; } || file="$PLAYER_CONFIG"
-
-    # Always load shared config first (if exists)
-    [[ -f "$SHARED_CONFIG" ]] && parse_ini "$SHARED_CONFIG"
-
-    # Then load target config (overrides shared)
-    [[ -f "$file" ]] && parse_ini "$file" && return 0
+    [[ -f "$SHARED_CONFIG" ]] && parse_ini "$SHARED_CONFIG" && return 0
     return 1
 }
 
@@ -89,26 +79,21 @@ find_editor() {
 
 # ────────────────────────────────────────────────────────────
 # edit_config — open config in detected editor
-# Usage: edit_config [file]
+# Usage: edit_config
 # ────────────────────────────────────────────────────────────
 edit_config() {
-    local file="${1:-}"
-    if [[ -z "$file" ]]; then
-        [[ -f "$ADMIN_CONFIG" ]] && file="$ADMIN_CONFIG" || file="$PLAYER_CONFIG"
-    fi
-
-    if [[ ! -f "$file" ]]; then
+    if [[ ! -f "$SHARED_CONFIG" ]]; then
         err "Config file not found. Re-run the install script."
         return 1
     fi
 
     # Load config so EDITOR from INI is available to find_editor
-    load_config "$file" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     local editor
     editor=$(find_editor)
     info "Opening with: $editor"
-    "$editor" "$file"
+    "$editor" "$SHARED_CONFIG"
     ok "Config file saved."
 }
 
@@ -119,10 +104,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$SCRIPT_DIR/common"
 
-    case "${1:-}" in
-        admin) edit_config "$ADMIN_CONFIG" ;;
-        player) edit_config "$PLAYER_CONFIG" ;;
-        shared|config) edit_config "$SHARED_CONFIG" ;;
-        *) echo "Usage: $(basename "$0") admin|player|shared"; exit 1 ;;
-    esac
+    edit_config
 fi

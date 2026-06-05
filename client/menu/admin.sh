@@ -17,8 +17,7 @@ if [[ -z "${LIB_DIR:-}" ]]; then
 fi
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-ADMIN_CONFIG="$CONFIG_DIR/tes3mp-easy-admin.ini"
-CONFIG_FILE="$ADMIN_CONFIG"
+CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.ini"
 
 # ────────────────────────────────────────────────────────────
 # dispatch — handle direct command line arguments
@@ -78,10 +77,6 @@ menu_show_backups_world() { bash "$BIN_DIR/show-backups-world"; }
 menu_edit_server_cfg() { bash "$BIN_DIR/edit-server-cfg"; }
 menu_edit_lua()       { bash "$BIN_DIR/edit-lua"; }
 menu_edit_banlist()   { bash "$BIN_DIR/edit-banlist"; }
-menu_common_settings() {
-    bash "$SCRIPT_DIR/bin/common/edit-config"
-    exec bash "$0" menu
-}
 menu_edit_config() {
     bash "$BIN_DIR/edit-config"
     # Restart menu so lang/editor changes take effect on fresh state
@@ -101,7 +96,7 @@ _list_backups() {
 # Helper: require SSH_HOST
 # ────────────────────────────────────────────────────────────
 require_ssh_host() {
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     if [[ -z "${SSH_HOST:-}" ]]; then
         err "SSH_HOST is not set."
         err "Run 'Admin Menu Settings' first."
@@ -264,7 +259,7 @@ menu_download_world()   { _download_backup_menu "world" "World"; }
 # check_restart_flag — query server via SSH
 # ────────────────────────────────────────────────────────────
 check_restart_flag() {
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     if [[ -n "${SSH_HOST:-}" ]]; then
         local running
         running=$(ssh "$SSH_HOST" "cd /tes3mp-easy && docker compose ps --format '{{.State}}' 2>/dev/null | head -1" 2>/dev/null)
@@ -281,7 +276,7 @@ check_restart_flag() {
 # check_server_status — check via SSH
 # ────────────────────────────────────────────────────────────
 check_server_status() {
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     if [[ -n "${SSH_HOST:-}" ]]; then
         local state
         state=$(ssh "$SSH_HOST" "cd /tes3mp-easy && docker compose ps --format '{{.State}}' 2>/dev/null | head -1" 2>/dev/null || echo "")
@@ -299,7 +294,7 @@ check_server_status() {
 # show_admin_menu — entry point for interactive menu
 # ────────────────────────────────────────────────────────────
 show_admin_menu() {
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
 
     # Define menu items after load_lang so localization applies
@@ -335,7 +330,6 @@ show_admin_menu() {
         "${MENU_ADMIN_EDIT_BANLIST}|fn|menu_edit_banlist"
 
         "${MENU_ADMIN_SEP_SYSTEM}|sep|"
-        "${MENU_COMMON_EDIT_CONFIG}|fn|menu_common_settings"
         "${MENU_ADMIN_EDIT_CONFIG}|fn|menu_edit_config"
     )
 
@@ -348,7 +342,7 @@ show_admin_menu() {
         "${MENU_TITLE_ADMIN}" \
         "${SSH_HOST:-}" \
         "${EXPORT_DIR:-}" \
-        "$ADMIN_CONFIG" \
+        "$CONFIG_FILE" \
         "$restart_flag" \
         "$server_status" \
         "${admin_menu[@]}"
@@ -358,7 +352,7 @@ show_admin_menu() {
 # Entry
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
     load_lang "${LANG_CODE:-en}"
     dispatch_admin "$@"
 fi

@@ -12,8 +12,7 @@ set -euo pipefail
 
 UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-SHARED_CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
-PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
+CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
 GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
 
 if ! command -v curl &>/dev/null; then
@@ -90,10 +89,10 @@ curl -fsSL "$GITHUB_RAW/client/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null \
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 
-# Create shared config if it doesn't exist
-if [[ ! -f "$SHARED_CONFIG" ]]; then
-    cat > "$SHARED_CONFIG" << 'INI'
-; TES3MP Easy shared configuration (applies to admin and player)
+# Create config if it doesn't exist
+if [[ ! -f "$CONFIG" ]]; then
+    cat > "$CONFIG" << 'INI'
+; TES3MP Easy configuration (all settings)
 
 ; Language (available: en, ru)
 LANG_CODE = en
@@ -103,14 +102,6 @@ EDITOR =
 
 ; Directory for downloaded backup archives
 BACKUP_DIR = 
-INI
-    echo "✓ Shared config created: $SHARED_CONFIG"
-fi
-
-# Create player config if it doesn't exist
-if [[ ! -f "$PLAYER_CONFIG" ]]; then
-    cat > "$PLAYER_CONFIG" << 'INI'
-; TES3MP Easy player configuration
 
 ; Path to Morrowind installation directory (where Data Files folder is located)
 ; Example: /home/user/.steam/steam/steamapps/common/Morrowind
@@ -124,18 +115,18 @@ TES3MP_DIR =
 ; Example: /home/user/.steam/steam/steamapps/common/Proton 9.0
 PROTON_PATH = 
 INI
-    echo "✓ Player config created: $PLAYER_CONFIG"
+    echo "✓ Config created: $CONFIG"
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  To reset configs to defaults, delete and re-run:"
-echo "    rm -f $SHARED_CONFIG $PLAYER_CONFIG"
+echo "    rm -f $CONFIG"
 echo "    curl -fsSL $GITHUB_RAW/client/install-player.sh | bash"
 echo ""
 echo "  Config file:"
-echo "    $PLAYER_CONFIG"
+echo "    $CONFIG"
 echo ""
 echo "  To start the player menu:"
 echo "    bash $UPDATE_DIR/menu/player.sh"
