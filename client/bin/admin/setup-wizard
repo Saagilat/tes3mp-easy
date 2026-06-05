@@ -15,8 +15,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
-CONFIG_FILE="$ADMIN_CONFIG"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+CONFIG_FILE="$CONFIG"
 
 # Global associative arrays for config editing
 declare -g -A _LUA_CONF=()
@@ -187,7 +188,7 @@ configure_ssh() {
             continue
         fi
 
-        set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
+        set_ini "SSH_HOST" "$SSH_HOST" "$CONFIG"
 
         echo ""
         info "Testing SSH connection to ${SSH_HOST}..."
@@ -225,7 +226,7 @@ configure_export_dir() {
             return 1
         fi
 
-        set_ini "EXPORT_DIR" "$EXPORT_DIR" "$ADMIN_CONFIG"
+        set_ini "EXPORT_DIR" "$EXPORT_DIR" "$CONFIG"
         local resolved="${EXPORT_DIR/#\~/$HOME}"
 
         if [[ -d "$resolved" ]]; then
@@ -341,21 +342,21 @@ main() {
     echo ""
 
     # Load current config
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 1: SSH_HOST
     # ────────────────────────────────────────────────────────
     step_header 1 $TOTAL "SSH Connection"
     configure_ssh
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 2: EXPORT_DIR
     # ────────────────────────────────────────────────────────
     step_header 2 $TOTAL "Export Directory"
     configure_export_dir
-    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 3: Install server

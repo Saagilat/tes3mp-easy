@@ -9,8 +9,7 @@ source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
 load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-admin.ini"
-    err "Run 'edit-config' to set it up."
+    err "Config not found. Run setup-wizard first."
     exit 1
 }
 
