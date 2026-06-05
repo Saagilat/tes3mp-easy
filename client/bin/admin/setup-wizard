@@ -81,63 +81,105 @@ require_ssh() {
     return 0
 }
 
-# Set a config.lua value via SSH
-# Usage: lua_config "config.key" "value" [type]
-# type: bool, number, string (default: string)
-lua_config() {
+# Read entire config.lua into memory (array), one SSH call
+lua_load() {
+    local line key val
+    declare -g -A _LUA_CONF
+    while IFS='=' read -r key val; do
+        key="${key%% }"
+        key="${key## }"
+        [[ -z "$key" || "$key" == '--'* ]] && continue
+        # Strip quotes from value
+        val="${val# \"}"
+        val="${val%\"}"
+        val="${val# }"
+        val="${val% }"
+        _LUA_CONF["$key"]="$val"
+    done < <(ssh "$SSH_HOST" "grep '^config\.' /tes3mp-easy/configs/config.lua" 2>/dev/null || true)
+}
+
+# Apply all changes to config.lua in one SSH call
+lua_save() {
+    if [[ ${#_LUA_CHANGED[@]} -eq 0 ]]; then
+        unset _LUA_CHANGED _LUA_TYPE
+        declare -g -A _LUA_CHANGED _LUA_TYPE
+        return
+    fi
+
+    local script_path="/tmp/tes3mp-wizard-$$.sed"
+    local line key val
+
+    # Generate sed commands — each line: s|old|new|
+    > /tmp/tes3mp-wizard-local.sed
+    for key in "${!_LUA_CHANGED[@]}"; do
+        val="${_LUA_CONF[$key]}"
+        local escaped_key
+        escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
+        case "${_LUA_TYPE[$key]}" in
+            bool|number)
+                echo "s/^${escaped_key}[[:space:]]*=.*/${key} = ${val}/" >> /tmp/tes3mp-wizard-local.sed
+                ;;
+            password)
+                local escaped_val
+                escaped_val=$(printf '%s\n' "$val" | sed 's/[\/&"]/\\&/g')
+                echo "s/^${escaped_key}[[:space:]]*=.*/${key} = \"${escaped_val}\"/" >> /tmp/tes3mp-wizard-local.sed
+                ;;
+            string|*)
+                local escaped_val
+                escaped_val=$(printf '%s\n' "$val" | sed 's/[\/&"]/\\&/g')
+                echo "s|^${escaped_key}[[:space:]]*=.*|${key} = \"${escaped_val}\"|" >> /tmp/tes3mp-wizard-local.sed
+                ;;
+        esac
+    done
+
+    # Upload sed script to server via scp
+    scp /tmp/tes3mp-wizard-local.sed "$SSH_HOST:$script_path" >/dev/null 2>&1
+    rm -f /tmp/tes3mp-wizard-local.sed
+
+    # Apply and remove
+    ssh "$SSH_HOST" "sed -i -f $script_path /tes3mp-easy/configs/config.lua && rm -f $script_path" 2>/dev/null
+
+    unset _LUA_CHANGED _LUA_TYPE
+    declare -g -A _LUA_CHANGED _LUA_TYPE
+}
+
+# Mark a setting as changed (stores in _LUA_CHANGED)
+lua_set() {
     local key="$1" value="$2" type="${3:-string}"
-    local escaped_key
-    escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
-
-    case "$type" in
-        bool)
-            ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${key} = ${value}|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
-            ;;
-        number)
-            ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${key} = ${value}|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
-            ;;
-        string|*)
-            local escaped_value
-            escaped_value=$(printf '%s\n' "$value" | sed 's/[\/&"]/\\&/g')
-            ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${key} = \\\"${escaped_value}\\\"|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
-            ;;
-    esac
+    _LUA_CONF["$key"]="$value"
+    _LUA_CHANGED["$key"]="1"
+    _LUA_TYPE["$key"]="$type"
 }
 
-# Read a config.lua value via SSH
-lua_read() {
-    local key="$1"
-    local val
-    val=$(ssh "$SSH_HOST" "grep '^${key}[[:space:]]*=' /tes3mp-easy/configs/config.lua 2>/dev/null | sed 's/.*= //; s/^\"//; s/\"$//'" 2>/dev/null || echo "")
-    echo "$val"
+# Get current value for a setting
+lua_get() {
+    local key="$1" default="$2"
+    local val="${_LUA_CONF[$key]:-}"
+    echo "${val:-$default}"
 }
 
-# Ask a boolean config setting
+# Ask a boolean config setting (local, no SSH)
 ask_bool() {
     local key="$1" prompt="$2" default="$3"
     local current
-    current=$(lua_read "$key")
+    current=$(lua_get "$key" "")
     local def="${current:-$default}"
     if confirm "$prompt" "$def"; then
-        lua_config "$key" "true" "bool"
+        lua_set "$key" "true" "bool"
     else
-        lua_config "$key" "false" "bool"
+        lua_set "$key" "false" "bool"
     fi
 }
 
-# Ask a string/number config setting
+# Ask a string/number config setting (local, no SSH)
 ask_value() {
     local key="$1" prompt="$2" default="$3" type="${4:-string}"
     local current
-    current=$(lua_read "$key")
+    current=$(lua_get "$key" "")
     local def="${current:-$default}"
     local val
     input "$prompt" "$def" val
-    if [[ "$type" == "number" ]]; then
-        lua_config "$key" "$val" "number"
-    else
-        lua_config "$key" "$val" "string"
-    fi
+    lua_set "$key" "$val" "$type"
 }
 
 # ────────────────────────────────────────────────────────────
@@ -229,12 +271,15 @@ configure_server() {
     fi
 
     echo ""
+    info "Loading current config from server..."
+    lua_load
     info "Press Enter to keep the default value shown in brackets."
     echo ""
 
     # ─── Game settings ───
     group_header "Game"
     ask_value "config.serverName" "  Server name" "TES3MP Server" "string"
+    ask_value "config.serverPassword" "  Server password (empty = no password)" "" "password"
     ask_value "config.gameMode" "  Game mode" "Default" "string"
     ask_value "config.difficulty" "  Difficulty (-100..100)" "0" "number"
     ask_value "config.loginTime" "  Login time (seconds)" "60" "number"
@@ -295,6 +340,8 @@ configure_server() {
     ask_bool "config.enforceDataFiles" "  Enforce data files?" "y"
     ask_bool "config.ignoreScriptErrors" "  Ignore script errors?" "n"
 
+    ok "Saving server configuration..."
+    lua_save
     ok "Server configuration updated."
 }
 
