@@ -30,7 +30,7 @@ TES3MP_DIR = games/tes3mp
 ```bash
 bash ~/.local/share/tes3mp-easy/bin/player/install-client
 ```
-This auto-detects Proton, downloads TES3MP (if needed), sets up the Proton prefix, and generates the client config.
+This downloads TES3MP (if needed), sets up the Proton prefix, and generates the client config.
 
 **Step 4 — Install fonts and localization (optional):**
 - From the player menu, select **Install Fonts** (for Cyrillic support)
