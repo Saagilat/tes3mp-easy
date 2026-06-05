@@ -6,7 +6,7 @@
 #   1. SSH_HOST   — configure (always shown, connection tested)
 #   2. EXPORT_DIR — configure (always shown, dir checked)
 #   3. Install server
-#   4. Server name (via SSH + config.lua)
+#   4. Server configuration (38 settings from config.lua)
 #   5. Mods setup (create dirs + export)
 #   6. Start server
 #
@@ -26,6 +26,12 @@ step_header() {
     echo ""
     echo "  ${T_LABEL}━━━ [${num}/${total}] ${title} ━━━${NC}"
     echo ""
+}
+
+group_header() {
+    local title="$1"
+    echo ""
+    echo "  ${T_ACCENT}--- ${title} ---${NC}"
 }
 
 confirm() {
@@ -68,7 +74,6 @@ require_ssh() {
         err "SSH_HOST is not set."
         return 1
     fi
-    # Test SSH connection
     if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "$SSH_HOST" "echo ok" 2>/dev/null; then
         err "Cannot connect to ${SSH_HOST}. Check your SSH config."
         return 1
@@ -76,16 +81,68 @@ require_ssh() {
     return 0
 }
 
-ssh_sed_config() {
-    local key="$1" value="$2"
+# Set a config.lua value via SSH
+# Usage: lua_config "config.key" "value" [type]
+# type: bool, number, string (default: string)
+lua_config() {
+    local key="$1" value="$2" type="${3:-string}"
     local escaped_key
-    local escaped_value
     escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
-    escaped_value=$(printf '%s\n' "$value" | sed 's/[\/&"]/\\&/g')
-    ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${escaped_key} = \\\"${escaped_value}\\\"|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
+
+    case "$type" in
+        bool)
+            ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${key} = ${value}|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
+            ;;
+        number)
+            ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${key} = ${value}|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
+            ;;
+        string|*)
+            local escaped_value
+            escaped_value=$(printf '%s\n' "$value" | sed 's/[\/&"]/\\&/g')
+            ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${key} = \\\"${escaped_value}\\\"|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
+            ;;
+    esac
 }
 
-# Prompt for SSH_HOST and test connection (loops until valid or skipped)
+# Read a config.lua value via SSH
+lua_read() {
+    local key="$1"
+    local val
+    val=$(ssh "$SSH_HOST" "grep '^${key}[[:space:]]*=' /tes3mp-easy/configs/config.lua 2>/dev/null | sed 's/.*= //; s/^\"//; s/\"$//'" 2>/dev/null || echo "")
+    echo "$val"
+}
+
+# Ask a boolean config setting
+ask_bool() {
+    local key="$1" prompt="$2" default="$3"
+    local current
+    current=$(lua_read "$key")
+    local def="${current:-$default}"
+    if confirm "$prompt" "$def"; then
+        lua_config "$key" "true" "bool"
+    else
+        lua_config "$key" "false" "bool"
+    fi
+}
+
+# Ask a string/number config setting
+ask_value() {
+    local key="$1" prompt="$2" default="$3" type="${4:-string}"
+    local current
+    current=$(lua_read "$key")
+    local def="${current:-$default}"
+    local val
+    input "$prompt" "$def" val
+    if [[ "$type" == "number" ]]; then
+        lua_config "$key" "$val" "number"
+    else
+        lua_config "$key" "$val" "string"
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
+# SSH_HOST prompt
+# ────────────────────────────────────────────────────────────
 configure_ssh() {
     local current="${SSH_HOST:-}"
 
@@ -108,10 +165,8 @@ configure_ssh() {
             continue
         fi
 
-        # Write to config
         set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
 
-        # Test connection
         echo ""
         info "Testing SSH connection to ${SSH_HOST}..."
         if ssh -o ConnectTimeout=5 -o BatchMode=yes "$SSH_HOST" "echo ok" 2>/dev/null; then
@@ -130,7 +185,9 @@ configure_ssh() {
     done
 }
 
-# Prompt for EXPORT_DIR
+# ────────────────────────────────────────────────────────────
+# EXPORT_DIR prompt
+# ────────────────────────────────────────────────────────────
 configure_export_dir() {
     local current="${EXPORT_DIR:-}"
 
@@ -163,6 +220,85 @@ configure_export_dir() {
 }
 
 # ────────────────────────────────────────────────────────────
+# Server configuration (all ✅ settings from config.lua)
+# ────────────────────────────────────────────────────────────
+configure_server() {
+    if ! require_ssh; then
+        warn "SSH not available — skipping server configuration."
+        return
+    fi
+
+    echo ""
+    info "Press Enter to keep the default value shown in brackets."
+    echo ""
+
+    # ─── Game settings ───
+    group_header "Game"
+    ask_value "config.serverName" "  Server name" "TES3MP Server" "string"
+    ask_value "config.gameMode" "  Game mode" "Default" "string"
+    ask_value "config.difficulty" "  Difficulty (-100..100)" "0" "number"
+    ask_value "config.loginTime" "  Login time (seconds)" "60" "number"
+    ask_value "config.maxClientsPerIP" "  Max clients per IP" "3" "number"
+
+    # ─── Time ───
+    group_header "Time"
+    ask_bool "config.passTimeWhenEmpty" "  Pass time when empty?" "n"
+    ask_value "config.nightStartHour" "  Night start hour" "20" "number"
+    ask_value "config.nightEndHour" "  Night end hour" "6" "number"
+
+    # ─── Permissions ───
+    group_header "Permissions"
+    ask_bool "config.allowConsole" "  Allow console?" "n"
+    ask_bool "config.allowBedRest" "  Allow bed rest?" "y"
+    ask_bool "config.allowWildernessRest" "  Allow wilderness rest?" "y"
+    ask_bool "config.allowWait" "  Allow wait?" "y"
+    ask_bool "config.allowSuicideCommand" "  Allow /suicide?" "y"
+    ask_bool "config.allowFixmeCommand" "  Allow /fixme?" "y"
+
+    # ─── Sharing ───
+    group_header "Sharing"
+    ask_bool "config.shareJournal" "  Share journal?" "y"
+    ask_bool "config.shareFactionRanks" "  Share faction ranks?" "y"
+    ask_bool "config.shareFactionExpulsion" "  Share faction expulsion?" "n"
+    ask_bool "config.shareFactionReputation" "  Share faction reputation?" "y"
+    ask_bool "config.shareTopics" "  Share dialogue topics?" "y"
+    ask_bool "config.shareBounty" "  Share bounty?" "n"
+    ask_bool "config.shareReputation" "  Share reputation?" "y"
+    ask_bool "config.shareMapExploration" "  Share map exploration?" "n"
+    ask_bool "config.shareVideos" "  Share videos?" "y"
+
+    # ─── Respawn & Death ───
+    group_header "Respawn & Death"
+    ask_bool "config.playersRespawn" "  Players respawn?" "y"
+    ask_value "config.deathTime" "  Death time (seconds)" "5" "number"
+    ask_value "config.deathPenaltyJailDays" "  Jail days penalty" "5" "number"
+    ask_bool "config.bountyResetOnDeath" "  Reset bounty on death?" "n"
+    ask_bool "config.bountyDeathPenalty" "  Bounty death penalty?" "n"
+    ask_bool "config.respawnAtImperialShrine" "  Respawn at Imperial shrine?" "y"
+    ask_bool "config.respawnAtTribunalTemple" "  Respawn at Tribunal temple?" "y"
+
+    # ─── Collisions ───
+    group_header "Collisions"
+    ask_bool "config.enablePlayerCollision" "  Player-player collision?" "y"
+    ask_bool "config.enableActorCollision" "  Actor-actor collision?" "y"
+    ask_bool "config.enablePlacedObjectCollision" "  Placed object collision?" "n"
+
+    # ─── Stats limits ───
+    group_header "Stats Limits"
+    ask_value "config.maxAttributeValue" "  Max attribute value" "200" "number"
+    ask_value "config.maxSpeedValue" "  Max Speed value" "365" "number"
+    ask_value "config.maxSkillValue" "  Max skill value" "200" "number"
+    ask_value "config.maxAcrobaticsValue" "  Max Acrobatics value" "1200" "number"
+
+    # ─── Safety ───
+    group_header "Safety"
+    ask_bool "config.enforceDataFiles" "  Enforce data files?" "y"
+    ask_bool "config.ignoreScriptErrors" "  Ignore script errors?" "n"
+
+    ok "Server configuration updated."
+}
+
+# ────────────────────────────────────────────────────────────
 # Main wizard
 # ────────────────────────────────────────────────────────────
 main() {
@@ -185,7 +321,6 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 1 $TOTAL "SSH Connection"
     configure_ssh
-    # Reload config so EXPORT_DIR etc. are fresh
     load_config "$ADMIN_CONFIG" 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
@@ -193,7 +328,6 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 2 $TOTAL "Export Directory"
     configure_export_dir
-    # Reload config again
     load_config "$ADMIN_CONFIG" 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
@@ -229,24 +363,10 @@ main() {
     fi
 
     # ────────────────────────────────────────────────────────
-    # Step 4: Server name
+    # Step 4: Server configuration
     # ────────────────────────────────────────────────────────
-    step_header 4 $TOTAL "Server Name"
-
-    if require_ssh; then
-        local current_name="TES3MP Server"
-        local existing
-        existing=$(ssh "$SSH_HOST" "grep '^config.serverName' /tes3mp-easy/configs/config.lua 2>/dev/null | sed 's/.*= \"//; s/\"//'" 2>/dev/null || echo "")
-        [[ -n "$existing" ]] && current_name="$existing"
-
-        input "Enter server name" "$current_name" SERVER_NAME
-        if [[ -n "$SERVER_NAME" ]]; then
-            ssh_sed_config "config.serverName" "$SERVER_NAME"
-            ok "Server name set to: ${SERVER_NAME}"
-        fi
-    else
-        warn "SSH not available — skipping server name."
-    fi
+    step_header 4 $TOTAL "Server Configuration"
+    configure_server
 
     # ────────────────────────────────────────────────────────
     # Step 5: Mods setup
