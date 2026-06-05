@@ -28,7 +28,7 @@ bash ~/.local/share/tes3mp-easy/menu/player.sh
 - Answer the prompts to configure paths, install client, fonts, and more
 - Or follow the manual steps below
 
-**Step 4** — Configure `~/.tes3mp-easy-player.ini` (manual):
+**Step 4** — Configure `~/.config/tes3mp-easy/tes3mp-easy-player.ini` (manual):
 
 ```ini
 DATA_FILES = /home/user/.../Morrowind/Data Files

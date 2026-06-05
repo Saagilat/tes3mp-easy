@@ -16,7 +16,8 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/menu-nav"
 fi
 
-ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+ADMIN_CONFIG="$CONFIG_DIR/tes3mp-easy-admin.ini"
 CONFIG_FILE="$ADMIN_CONFIG"
 
 # ────────────────────────────────────────────────────────────

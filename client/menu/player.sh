@@ -16,7 +16,8 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/menu-nav"
 fi
 
-PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
 CONFIG_FILE="$PLAYER_CONFIG"
 
 # ────────────────────────────────────────────────────────────

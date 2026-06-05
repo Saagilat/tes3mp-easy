@@ -3,9 +3,9 @@
 # config.sh — tes3mp-easy configuration (INI format)
 #
 # Three config files (loaded in order):
-#   ~/.tes3mp-easy.ini           — shared: LANG_CODE, EDITOR, BACKUP_DIR
-#   ~/.tes3mp-easy-admin.ini     — admin: SSH_HOST, EXPORT_DIR
-#   ~/.tes3mp-easy-player.ini    — player: SERVER_URL, DATA_FILES, ...
+#   ~/.config/tes3mp-easy/tes3mp-easy.ini           — shared: LANG_CODE, EDITOR, BACKUP_DIR
+#   ~/.config/tes3mp-easy/tes3mp-easy-admin.ini     — admin: SSH_HOST, EXPORT_DIR
+#   ~/.config/tes3mp-easy/tes3mp-easy-player.ini    — player: SERVER_URL, DATA_FILES, ...
 #
 # Later files override earlier ones.
 # Format:
@@ -16,9 +16,10 @@
 #
 # NOTE: This file must be sourced AFTER common.sh.
 
-SHARED_CONFIG="${HOME}/.tes3mp-easy.ini"
-ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
-PLAYER_CONFIG="${HOME}/.tes3mp-easy-player.ini"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+SHARED_CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+ADMIN_CONFIG="$CONFIG_DIR/tes3mp-easy-admin.ini"
+PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
 
 # ────────────────────────────────────────────────────────────
 # parse_ini — parse key=value from a file (safe, no source)

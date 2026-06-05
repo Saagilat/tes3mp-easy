@@ -11,8 +11,9 @@
 set -euo pipefail
 
 UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
-SHARED_CONFIG="${HOME}/.tes3mp-easy.ini"
-ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+SHARED_CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+ADMIN_CONFIG="$CONFIG_DIR/tes3mp-easy-admin.ini"
 GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
 
 if ! command -v curl &>/dev/null; then
@@ -23,7 +24,7 @@ fi
 echo ""
 echo "Downloading TES3MP Easy admin scripts..."
 
-mkdir -p "$UPDATE_DIR"/{lib,bin/admin,bin/common,menu,lang,server/scripts}
+mkdir -p "$UPDATE_DIR"/{lib,bin/admin,bin/common,menu,lang,server/scripts} "$CONFIG_DIR"
 
 download() {
     local src="$1" dst="$2"
@@ -139,7 +140,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  To reset configs to defaults, delete and re-run:"
-echo "    rm -f ~/.tes3mp-easy.ini ~/.tes3mp-easy-admin.ini"
+echo "    rm -f $SHARED_CONFIG $ADMIN_CONFIG"
 echo "    curl -fsSL $GITHUB_RAW/client/install-admin.sh | bash"
 echo ""
 echo "  Config file:"
