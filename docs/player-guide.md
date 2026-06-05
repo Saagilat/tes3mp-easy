@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **Morrowind** installed (Steam, GOG, or any other version)
-- **Proton** 9.0+ installed via Steam
+- **Proton** 9.0+
 
 ---
 
@@ -25,43 +25,24 @@ bash ~/.local/share/tes3mp-easy/menu/player.sh
 
 **Step 3** — Run Setup Wizard (recommended):
 - From the menu, select **Quick Setup Wizard**
-- Answer the prompts to configure paths, install client, fonts, and more
-- Or follow the manual steps below
+- The wizard will configure Morrowind path, TES3MP directory, Proton path, install the client, fonts, localization, and set up the UI
 
-**Step 4** — Configure `~/.config/tes3mp-easy/tes3mp-easy-player.ini` (manual):
-
-```ini
-MORROWIND_PATH = /home/user/.steam/steam/steamapps/common/Morrowind
-TES3MP_DIR = games/tes3mp
-```
-
-| Setting | Description | Example |
-|---------|-------------|---------|
-| `MORROWIND_PATH` | Path to Morrowind installation (parent of `Data Files`) | `/home/user/.../Morrowind` |
-| `TES3MP_DIR` | TES3MP install path | `games/tes3mp` |
-| `PROTON_PATH` | Proton path (auto-detected) | `/home/user/.../Proton 9.0` |
-
-**Step 5** — Install the client:
-
-```bash
-bash ~/.local/share/tes3mp-easy/bin/player/install-client
-```
-
-**Step 6** — (Optional) fonts and localization:
-- From the player menu, select **Install Fonts** — fixes font rendering issues
-- Select **Install Localization** — for translated UI
+That's it — the client is ready. See [Run the Game with Mods](#2-run-the-game-with-mods) to connect to a server.
 
 ---
 
 ## 2. Run the Game with Mods
 
-1. From the player menu, select **Install Mods**
-2. Select **Run Client**
+1. From the player menu, select **Client config** — set server address and password in `tes3mp-client-default.cfg`
+2. Select **Install Mods** — downloads and unpacks the latest mods archive
+3. Select **Launch Client** — run the game via Proton
+
+You can also launch **OpenMW-CS** (Construction Set) from the player menu for modding.
 
 ---
 
 <details>
-<summary>Backups & further reading</summary>
+<summary>Further reading</summary>
 
 - [Backup Guide](./backup-guide.md) — downloading backups from the server
 - [Admin Guide](./admin-guide.md)
@@ -74,6 +55,6 @@ bash ~/.local/share/tes3mp-easy/bin/player/install-client
 
 | Problem | Solution |
 |---------|----------|
-| "Proton not found" | Install Proton 9.0+ via Steam, or set `PROTON_PATH` |
+| "Proton not found" | Install Proton 9.0+, or set `PROTON_PATH` in config |
 | "Morrowind.esm not found" | Check `MORROWIND_PATH` path |
 | Connection fails | Check server is running, matching TES3MP versions |

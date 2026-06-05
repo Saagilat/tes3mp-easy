@@ -15,7 +15,7 @@
 
 ## 1. Server Setup
 
-**Tip:** After installation, run **Quick Setup Wizard** from the admin menu — it will guide you through the entire setup process step by step.
+**Tip:** Use the **Quick Setup Wizard** — it will set everything up.
 
 **Step 1 — Install admin tools on your local machine:**
 ```bash
@@ -27,22 +27,18 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/
 bash ~/.local/share/tes3mp-easy/menu/admin.sh
 ```
 
-**Step 3 — Run Setup Wizard (recommended):**
+**Step 3 — Run Quick Setup Wizard:**
 - From the menu, select **Quick Setup Wizard**
-- Answer the prompts to configure SSH, server name, and more
-- Or follow the manual steps below
+- The wizard will:
+  - Configure SSH host (with connection test)
+  - Set up export directory
+  - Install the server on your VPS (Docker + TES3MP)
+  - Configure server settings (38 options from `config.lua`)
+  - Create mod directories and optionally export mods
+  - Start the server
 
-**Step 4 — Configure settings (manual):**
-- From the menu, select **Common Settings** or **Admin Menu Settings**
-- Set `SSH_HOST` (must match a host in `~/.ssh/config`) and `EXPORT_DIR`
-
-**Step 5 — Install the server on VPS:**
-- From the menu, select **Install Server**
-- This runs the installer on your VPS via SSH automatically (Docker + TES3MP image)
-
-**Step 6 — Start the server:**
-- Select **Start Server** from the menu
-- See [Player Guide](./player-guide.md) for connecting to the server
+That's it — the server is installed, configured, and running.
+See the [Player Guide](./player-guide.md) for connecting to the server.
 
 ---
 
@@ -54,11 +50,13 @@ bash ~/.local/share/tes3mp-easy/menu/admin.sh
    $EXPORT_DIR/mods/scripts/    ← Lua scripts
    ```
 
-2. From the admin menu, select **Export Mods** (creates archive and uploads to VPS)
+2. From the admin menu, select **Generate requiredDataFiles** — creates `requiredDataFiles.json` that the server uses to verify all players have the same mods installed
 
-3. From the admin menu, select **Deploy Mods** (picks an archive to apply)
+3. From the admin menu, select **Export Mods** (creates archive and uploads to VPS)
 
-4. **Restart the server** for changes to take effect
+4. From the admin menu, select **Deploy Mods** (picks an archive to apply)
+
+5. **Restart the server** for changes to take effect
 
 Players can then download the mods from the player menu with **Install Mods**.
 
@@ -68,11 +66,44 @@ Players can then download the mods from the player menu with **Install Mods**.
 
 | Action | Menu Entry | Description |
 |--------|-----------|-------------|
-| Start | Start Server | Starts Docker services on VPS |
-| Stop | Stop Server | Stops Docker services |
-| Restart | Restart Server | Restarts all services |
-| Status | Server Status | Shows if services are running |
-| Logs | Server Logs | Tails the TES3MP log |
+| Start | Start | Starts Docker services on VPS |
+| Stop | Stop | Stops Docker services |
+| Restart | Restart | Restarts all services |
+| Status | Status | Shows if services are running |
+| Logs | Logs | Tails the TES3MP log |
+| Quick Setup Wizard | Quick Setup Wizard | Guided server setup |
+
+### Modding
+
+| Action | Menu Entry | Description |
+|--------|-----------|-------------|
+| Generate data files | Generate requiredDataFiles | Creates `requiredDataFiles.json` for mod verification |
+| Export mods | Export mods | Package local mods into archive and upload to VPS |
+| Deploy mods | Deploy mods | Apply a selected archive to the server |
+| Show mod backups | Show mod backups | List mod archives stored on VPS |
+| Download mod backup | Download mod backup | Download a mod archive via HTTP |
+
+### Snapshots (Players & World)
+
+| Action | Menu Entry | Description |
+|--------|-----------|-------------|
+| Export players | Export players | Package player data and upload to VPS |
+| Export world | Export world | Package world data and upload to VPS |
+| Deploy players | Deploy players | Apply a player archive to the server |
+| Deploy world | Deploy world | Apply a world archive to the server |
+| Show player backups | Show player backups | List player archives on VPS |
+| Show world backups | Show world backups | List world archives on VPS |
+| Download player backup | Download player backup | Download a player archive via HTTP |
+| Download world backup | Download world backup | Download a world archive via HTTP |
+
+### Config Editing
+
+| Action | Menu Entry | Description |
+|--------|-----------|-------------|
+| Server config | Server config | Edit `tes3mp-server-default.cfg` on VPS |
+| Lua settings | Lua settings | Edit `customScripts.lua` on VPS |
+| Ban list | Ban list | Edit `banlist.json` on VPS |
+| Settings | Settings | Edit local admin config (`tes3mp-easy.ini`) |
 
 ---
 

@@ -2,9 +2,16 @@
 
 Full documentation of all settings in `/tes3mp-easy/container-data/server/scripts/config.lua` (TES3MP 0.8.1).
 
-The **Installer** column shows whether the setting is covered by the interactive install.sh questionnaire.
+The **Installer** column shows whether the setting is covered by the interactive setup wizard questionnaire.
 
 Legend: ✅ = asked during installation, ❌ = not asked (edit manually).
+
+## Server info
+
+| Setting | Default | Installer | Description |
+|---------|---------|-----------|-------------|
+| `config.serverName` | `"TES3MP Server"` | ✅ | Server name displayed in the server browser |
+| `config.serverPassword` | `""` | ✅ | Server password (empty = no password) |
 
 ## Game settings
 
@@ -43,7 +50,7 @@ Legend: ✅ = asked during installation, ❌ = not asked (edit manually).
 | `config.allowWait` | `true` | ✅ | Allow players to wait |
 | `config.allowSuicideCommand` | `true` | ✅ | Allow /suicide command |
 | `config.allowFixmeCommand` | `true` | ✅ | Allow /fixme command |
-| `config.fixmeInterval` | `30` | ❌ | Seconds between /fixme uses |
+| `config.fixmeInterval` | `30` | ❌ | Cooldown between /fixme uses |
 
 ## Sharing
 
@@ -169,9 +176,6 @@ These control the order of keys in saved JSON files. Rarely changed.
 
 | Setting | Default | Installer | Description |
 |---------|---------|-----------|-------------|
-| `config.fixmeInterval` | `30` | ❌ | Cooldown between /fixme uses |
 | `config.rankColors` | *(table)* | ❌ | Colors for server ranks |
 | `config.customMenuIds` | *(table)* | ❌ | Custom menu ID numbers |
 | `config.menuHelperFiles` | *(list)* | ❌ | Menu files for menuHelper |
-| `config.vrSettings` | *(table)* | ❌ | VR settings enforced on clients |
-| `config.gameSettings` | *(13 items)* | ❌ | OpenMW game settings enforced on clients |

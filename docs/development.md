@@ -77,6 +77,7 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/a
 | `restart-server` | Restart all Docker services |
 | `server-status` | Show running state |
 | `server-logs` | Tail TES3MP logs |
+| `setup-wizard` | Interactive guided setup (SSH, export dir, server install, config, mods, start) |
 
 ### Export
 
@@ -85,7 +86,7 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/a
 | `export-mods` | Create `mods.tar.gz` from local `EXPORT_DIR/mods/` and upload via SSH |
 | `export-players` | Create `players.tar.gz` from local `EXPORT_DIR/players/` and upload |
 | `export-world` | Create `world.tar.gz` from local `EXPORT_DIR/world/` and upload |
-| `generate-required-data` | Generate `requiredDataFiles.json` |
+| `generate-data` | Generate `requiredDataFiles.json` for mod verification |
 
 ### Deploy
 
@@ -102,6 +103,14 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/a
 | `show-backups-mods` | List mod backup archives |
 | `show-backups-players` | List player backup archives |
 | `show-backups-world` | List world backup archives |
+
+### Backup Download (via HTTP)
+
+| Command | Description |
+|---------|-------------|
+| `backup-mods` | Download a mod backup archive (interactive: lists and selects from HTTP endpoint) |
+| `backup-players` | Download a player backup archive (interactive) |
+| `backup-world` | Download a world backup archive (interactive) |
 
 ### Config Editing
 
@@ -125,13 +134,13 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/p
 | `install-mods` | Download and unpack latest mods archive |
 | `install-localization` | Install translated UI (e.g., Russian) |
 | `install-fonts` | Install custom fonts |
-| `configure-ui` | Set up OpenMW UI for multiplayer |
-| `download-backup-mods` | Download mod backup archive |
-| `download-backup-players` | Download player backup archive |
-| `download-backup-world` | Download world backup archive |
-| `show-backups-mods` | List mod backups |
-| `show-backups-players` | List player backups |
-| `show-backups-world` | List world backups |
+| `configure-ui` | Set up OpenMW UI for multiplayer (resolution, font size, scaling) |
+| `download-backup-mods` | Download a specific mod backup archive to `~/Downloads/` |
+| `download-backup-players` | Download a specific player backup archive to `~/Downloads/` |
+| `download-backup-world` | Download a specific world backup archive to `~/Downloads/` |
+| `show-backups-mods` | List mod backups available on server |
+| `show-backups-players` | List player backups available on server |
+| `show-backups-world` | List world backups available on server |
 | `edit-config` | Edit player config |
 
 ## Library Modules
@@ -140,22 +149,32 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/p
 
 - **Colors** — loaded from `theme.ini` (`T_LABEL`, `T_ACCENT`)
 - **Logging** — `info()`, `ok()`, `warn()`, `err()`
-- **Deps** — `check_deps cmd1 cmd2 ...`
-- **OS detection** — `is_os("linux")`, `is_os("windows")`
-- **Server URL** — `_get_server_url()` from TES3MP config
+- **Interactive input** — `confirm(prompt, default)` (yes/no prompt), `input(prompt, default, result_var)` (string input)
+- **Deps** — `check_deps cmd1 cmd2 ...` (exits if any command is missing)
+- **OS detection** — `is_os("linux")`, `is_os("windows")`, `is_os("macos")`
+- **Server URL** — `_get_server_url()` builds `http://<server-addr>:8085` from TES3MP config
 
 ### `client/lib/config`
 
-- `parse_ini <file> [prefix]` — safe INI parser
-- `load_config [path]` — loads shared + role config
-- `find_editor` — detects available editor
-- `edit_config [file]` — opens config in editor
+- `parse_ini <file> [prefix]` — safe INI parser (uses regex, not `source`)
+- `load_config [path]` — loads shared config from `tes3mp-easy.ini`
+- `find_editor` — detects available editor (checks `EDITOR` env var → config → nano → vim → vi)
+- `edit_config [file]` — opens config in detected editor
 
 ### `client/lib/menu-nav`
 
 Interactive TUI engine. `run_menu(title, ssh_host, modpack, config_file, needs_restart, server_status, items...)`
 
 Menu items format: `"Label|fn|function_name"` or `"Label|sep|"` for separators.
+
+Parameters:
+- `title` — menu header text
+- `ssh_host` — displayed host info (empty if not admin)
+- `modpack` — displayed export dir / modpack info
+- `config_file` — path to config (re-sourced after each action)
+- `needs_restart` — "1" to show restart warning
+- `server_status` — "Running" / "Stopped"
+- `items...` — menu item definitions
 
 ### `client/lib/lang`
 
@@ -168,11 +187,15 @@ Menu items format: `"Label|fn|function_name"` or `"Label|sep|"` for separators.
 
 Downloads individual files from GitHub via `curl`, places them in `~/.local/share/tes3mp-easy/`, creates default configs.
 
+Each command script must be added to the download list in the corresponding installer.
+
 ### `server/scripts/install.sh`
 
 Runs on VPS via `install-server` command. Installs Docker, downloads Docker files, builds image, extracts configs, creates init backups.
 
 ## Server-Side Scripts
+
+All located at `/tes3mp-easy/scripts/` on the VPS:
 
 | Script | Purpose |
 |--------|---------|
@@ -180,13 +203,19 @@ Runs on VPS via `install-server` command. Installs Docker, downloads Docker file
 | `deploy_mods.sh` | Extracts mods archive into `mods/plugins/` and `mods/scripts/` |
 | `deploy_players.sh` | Extracts players archive into `players/player/` |
 | `deploy_world.sh` | Extracts world archive into `world/{cell,world,...}/` |
-| `import_*.sh` | Import data from external sources |
-| `export_*.sh` | Export data to backup archives |
+| `import_mods.sh` | Import mod data from external sources |
+| `import_players.sh` | Import player data from external sources |
+| `import_world.sh` | Import world data from external sources |
+| `export_players.sh` | Export player data to backup archives (for export Docker service) |
+| `export_world.sh` | Export world data to backup archives (for export Docker service) |
 
 ## How to Add a New Command
 
 1. Create script in `client/bin/admin/<command>` or `client/bin/player/<command>`
-2. Register in the menu: add wrapper function, dispatch entry, and menu item
+2. Register in the menu:
+   - Add wrapper function in `client/menu/admin.sh` or `client/menu/player.sh`
+   - Add dispatch entry in the `case` block
+   - Add menu item to the items array
 3. Add translations in `client/lang/en` and `client/lang/ru`
 4. Add download line in `install-admin.sh` or `install-player.sh`
 

@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/
 bash ~/.local/share/tes3mp-easy/menu/admin.sh
 ```
 
-From the menu: configure settings → install server → install mods → start server.
+From the menu you can: run the setup wizard → install the server → configure settings (38 options from `config.lua`) → create and export mods → deploy backups → start/stop/restart the server.
 
 See the [Admin Guide](./docs/admin-guide.md) for detailed instructions.
 
@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/
 bash ~/.local/share/tes3mp-easy/menu/player.sh
 ```
 
-From the menu: install client → configure server connection → install mods → run the game.
+From the menu you can: run the setup wizard → install the client → configure server connection → install mods → run the game.
 
 See the [Player Guide](./docs/player-guide.md) for detailed instructions.
 

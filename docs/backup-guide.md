@@ -12,13 +12,14 @@ Admin menu: Export Mods/Players/World
 
 nginx service on the VPS makes backups available via HTTP
     ──► players can download with Install Mods or Download Backup
+    ──► admins can download backups from the admin menu via HTTP
 ```
 
 ## Admin Operations
 
-### Creating a Backup
+### Exporting Data
 
-1. Place your data in `EXPORT_DIR`:
+1. Place your mods, players, or world data in `EXPORT_DIR`:
    ```
    $EXPORT_DIR/mods/plugins/       ← .esp/.esm/.omwaddon
    $EXPORT_DIR/mods/scripts/       ← Lua scripts
@@ -38,26 +39,17 @@ nginx service on the VPS makes backups available via HTTP
 
 Select **Show Mod / Player / World Backups** to list archives on the VPS.
 
-### Downloading a Backup
+### Downloading a Backup (via HTTP)
 
-Select **Download Mod / Player / World Backup** — lists archives via HTTP and saves the selected one to your current directory.
+Select **Download Mod / Player / World Backup** — lists archives via HTTP (port 8085) and saves the selected one to the current directory.
 
 ## Player Operations
 
 - **Install Mods** — downloads and unpacks the latest mods archive automatically
-- **Download Mod / Player / World Backup** — downloads a specific archive to your PC
+- **Download Mod / Player / World Backup** — downloads a specific archive to `~/Downloads/`
 
 ## Restore Procedure
 
 1. **Stop** the server from the admin menu
 2. **Deploy** the desired backups (mods, players, world)
 3. **Start** the server
-
-For emergencies, you can restore directly on the VPS:
-
-```bash
-ssh my-server
-cd /tes3mp-easy
-tar -xzf backups/mods/backup-name.tar.gz -C /tmp/restore
-cp -r /tmp/restore/* mods/
-docker compose restart
