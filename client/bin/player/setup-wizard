@@ -5,10 +5,11 @@
 # Guides the player through:
 #   1. DATA_FILES  — configure (always shown, path verified)
 #   2. TES3MP_DIR  — configure (always shown)
-#   3. Install client
-#   4. Install fonts
-#   5. Configure UI (ttf resolution, font size, scaling)
-#   6. Localization + launch
+#   3. PROTON_PATH — configure (manual entry)
+#   4. Install client
+#   5. Install fonts
+#   6. Configure UI (ttf resolution, font size, scaling)
+#   7. Localization + launch
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -124,11 +125,59 @@ configure_tes3mp_dir() {
     done
 }
 
+# Prompt for PROTON_PATH (manual entry only)
+configure_proton_path() {
+    local current="${PROTON_PATH:-}"
+    local found=""
+
+    if [[ -n "$current" ]] && [[ -f "$current/proton" ]]; then
+        found="yes"
+    fi
+
+    while true; do
+        if [[ -n "$current" ]]; then
+            if [[ "$found" == "yes" ]]; then
+                input "Enter path to Proton directory" "$current" PROTON_PATH
+            else
+                input "Enter path to Proton directory" "$current" PROTON_PATH
+            fi
+        else
+            echo ""
+            echo "  Enter the path to your Proton installation."
+            echo "  This is where the 'proton' executable is located."
+            echo "  Example: /home/user/.steam/steam/steamapps/common/Proton 9.0"
+            echo ""
+            input "Enter path to Proton directory" "" PROTON_PATH
+        fi
+
+        if [[ -z "$PROTON_PATH" ]]; then
+            warn "PROTON_PATH not set — skipping."
+            return 1
+        fi
+
+        local resolved="${PROTON_PATH/#\~/$HOME}"
+        if [[ -f "$resolved/proton" ]]; then
+            set_ini "PROTON_PATH" "$PROTON_PATH" "$PLAYER_CONFIG"
+            ok "Proton found: ${resolved}"
+            return 0
+        else
+            warn "proton executable not found at: ${resolved}"
+            if confirm "Try again?" "y"; then
+                current="$PROTON_PATH"
+                continue
+            else
+                warn "Skipping PROTON_PATH for now."
+                return 1
+            fi
+        fi
+    done
+}
+
 # ────────────────────────────────────────────────────────────
 # Main wizard
 # ────────────────────────────────────────────────────────────
 main() {
-    local TOTAL=6
+    local TOTAL=7
 
     echo ""
     echo "  ${T_LABEL}╔══════════════════════════════════════════════════╗${NC}"
@@ -147,7 +196,6 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 1 $TOTAL "Morrowind Data Files"
     configure_data_files
-    # Reload config
     load_config "$PLAYER_CONFIG" 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
@@ -155,13 +203,19 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 2 $TOTAL "TES3MP Directory"
     configure_tes3mp_dir
-    # Reload config
     load_config "$PLAYER_CONFIG" 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
-    # Step 3: Install client
+    # Step 3: PROTON_PATH
     # ────────────────────────────────────────────────────────
-    step_header 3 $TOTAL "Client Installation"
+    step_header 3 $TOTAL "Proton Path"
+    configure_proton_path
+    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+
+    # ────────────────────────────────────────────────────────
+    # Step 4: Install client
+    # ────────────────────────────────────────────────────────
+    step_header 4 $TOTAL "Client Installation"
 
     local tes3mp_exe=""
     if [[ -n "${TES3MP_DIR:-}" ]]; then
@@ -197,9 +251,9 @@ main() {
     fi
 
     # ────────────────────────────────────────────────────────
-    # Step 4: Install fonts
+    # Step 5: Install fonts
     # ────────────────────────────────────────────────────────
-    step_header 4 $TOTAL "Fonts"
+    step_header 5 $TOTAL "Fonts"
 
     if confirm "Install fonts?" "y"; then
         bash "$SCRIPT_DIR/bin/player/install-fonts" || {
@@ -208,9 +262,9 @@ main() {
     fi
 
     # ────────────────────────────────────────────────────────
-    # Step 5: Configure UI
+    # Step 6: Configure UI
     # ────────────────────────────────────────────────────────
-    step_header 5 $TOTAL "UI Configuration"
+    step_header 6 $TOTAL "UI Configuration"
 
     if confirm "Configure UI (ttf resolution, font size, scaling)?" "y"; then
         local settings_cfg=""
@@ -229,9 +283,9 @@ main() {
     fi
 
     # ────────────────────────────────────────────────────────
-    # Step 6: Localization + Launch
+    # Step 7: Localization + Launch
     # ────────────────────────────────────────────────────────
-    step_header 6 $TOTAL "Finish"
+    step_header 7 $TOTAL "Finish"
 
     if confirm "Install localization?" "y"; then
         bash "$SCRIPT_DIR/bin/player/install-localization" || {
@@ -254,8 +308,9 @@ main() {
     echo "  ${T_LABEL}╚══════════════════════════════════════════════════╝${NC}"
     echo ""
     echo "  ${T_LABEL}Configuration:${NC}"
-    echo "    DATA_FILES = ${DATA_FILES:-${T_ERROR}(not set)${NC}}"
-    echo "    TES3MP_DIR = ${TES3MP_DIR:-${T_ERROR}(not set)${NC}}"
+    echo "    DATA_FILES  = ${DATA_FILES:-${T_ERROR}(not set)${NC}}"
+    echo "    TES3MP_DIR  = ${TES3MP_DIR:-${T_ERROR}(not set)${NC}}"
+    echo "    PROTON_PATH = ${PROTON_PATH:-${T_ERROR}(not set)${NC}}"
     echo ""
     info "You can always re-run this wizard or use individual menu items."
 }
