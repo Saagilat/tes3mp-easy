@@ -238,19 +238,13 @@ main() {
     fi
 
     # ────────────────────────────────────────────────────────
-    # Step 7: Localization + Launch
+    # Step 7: Localization
     # ────────────────────────────────────────────────────────
     step_header 7 $TOTAL "Finish"
 
     bash "$SCRIPT_DIR/bin/player/install-localization" || {
         warn "Localization installation cancelled or failed."
     }
-
-    if confirm "Launch client now?" "n"; then
-        bash "$SCRIPT_DIR/bin/player/run-client" || {
-            err "Failed to launch client."
-        }
-    fi
 
     # ────────────────────────────────────────────────────────
     # Summary
@@ -260,12 +254,11 @@ main() {
     echo "  ${T_LABEL}║            Setup Wizard Complete!                ║${NC}"
     echo "  ${T_LABEL}╚══════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo "  ${T_LABEL}Configuration:${NC}"
-    echo "    MORROWIND_PATH  = ${MORROWIND_PATH:-${T_ERROR}(not set)${NC}}"
-    echo "    TES3MP_DIR  = ${TES3MP_DIR:-${T_ERROR}(not set)${NC}}"
-    echo "    PROTON_PATH = ${PROTON_PATH:-${T_ERROR}(not set)${NC}}"
+    echo "  ${T_LABEL}Next steps from the menu:${NC}"
+    echo "    1) Client config — set server IP address"
+    echo "    2) Install mods — download and install mods"
+    echo "    3) Launch client — run the game"
     echo ""
-    info "You can always re-run this wizard or use individual menu items."
 }
 
 main "$@"
