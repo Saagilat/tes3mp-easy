@@ -32,13 +32,7 @@ echo ""
 echo "  1) Download IBM Plex fonts (free, open-source, Cyrillic)"
 echo "  2) Show Nexus Mods link (Morrowind-style fonts)"
 echo ""
-<<<<<<< HEAD
-read -r -p "  Select option [1-2] (empty = skip): " FONT_OPT
-# Remove non-printable characters (e.g. backspace, escape sequences)
-FONT_OPT=$(tr -dc '[:print:]' <<< "${FONT_OPT:-}")
-=======
 input "Select option [1-2] (empty = skip)" "" FONT_OPT
->>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
 
 if [[ "${FONT_OPT:-}" == "1" ]]; then
     echo ""
