@@ -15,6 +15,8 @@
 
 ## 1. Server Setup
 
+**Tip:** After installation, run **Quick Setup Wizard** from the admin menu — it will guide you through the entire setup process step by step.
+
 **Step 1 — Install admin tools on your local machine:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash
@@ -25,15 +27,20 @@ curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/
 bash ~/.local/share/tes3mp-easy/menu/admin.sh
 ```
 
-**Step 3 — Configure settings:**
+**Step 3 — Run Setup Wizard (recommended):**
+- From the menu, select **Quick Setup Wizard**
+- Answer the prompts to configure SSH, server name, and more
+- Or follow the manual steps below
+
+**Step 4 — Configure settings (manual):**
 - From the menu, select **Common Settings** or **Admin Menu Settings**
 - Set `SSH_HOST` (must match a host in `~/.ssh/config`) and `EXPORT_DIR`
 
-**Step 4 — Install the server on VPS:**
+**Step 5 — Install the server on VPS:**
 - From the menu, select **Install Server**
 - This runs the installer on your VPS via SSH automatically (Docker + TES3MP image)
 
-**Step 5 — Start the server:**
+**Step 6 — Start the server:**
 - Select **Start Server** from the menu
 - See [Player Guide](./player-guide.md) for connecting to the server
 

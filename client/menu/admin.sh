@@ -33,6 +33,7 @@ dispatch_admin() {
         export-mods) bash "$BIN_DIR/export-mods" ;;
         export-players) bash "$BIN_DIR/export-players" ;;
         export-world) bash "$BIN_DIR/export-world" ;;
+        setup-wizard) bash "$BIN_DIR/setup-wizard" ;;
         generate-required-data) bash "$BIN_DIR/generate-data" ;;
         deploy-mods) bash "$BIN_DIR/deploy-mods" ;;
         deploy-players) bash "$BIN_DIR/deploy-players" ;;
@@ -49,7 +50,7 @@ dispatch_admin() {
             echo "  server-logs, server-status, export-mods, export-players, export-world,"
             echo "  generate-required-data, deploy-mods, deploy-players, deploy-world,"
             echo "  show-backups-mods, show-backups-players, show-backups-world,"
-            echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist, menu"
+            echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist, setup-wizard, menu"
             ;;
         menu|"") show_admin_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'menu/admin.sh help' for available commands."; exit 1 ;;
@@ -65,6 +66,7 @@ menu_server_restart() { bash "$BIN_DIR/restart-server"; }
 menu_server_status()  { bash "$BIN_DIR/server-status"; }
 menu_server_logs()    { bash "$BIN_DIR/server-logs"; }
 menu_install_server() { bash "$BIN_DIR/install-server"; }
+menu_setup_wizard()   { bash "$BIN_DIR/setup-wizard"; }
 menu_generate_data()  { bash "$BIN_DIR/generate-data"; }
 menu_export_mods()    { bash "$BIN_DIR/export-mods"; }
 menu_export_players() { bash "$BIN_DIR/export-players"; }
@@ -332,6 +334,7 @@ show_admin_menu() {
         "${MENU_ADMIN_EDIT_BANLIST}|fn|menu_edit_banlist"
 
         "${MENU_ADMIN_SEP_SYSTEM}|sep|"
+        "${MENU_ADMIN_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_COMMON_EDIT_CONFIG}|fn|menu_common_settings"
         "${MENU_ADMIN_EDIT_CONFIG}|fn|menu_edit_config"
     )
@@ -342,7 +345,7 @@ show_admin_menu() {
     server_status=$(check_server_status)
 
     run_menu \
-        "${MENU_TITLE_ADMIN:-TES3MP Easy — Admin}" \
+        "${MENU_TITLE_ADMIN}" \
         "${SSH_HOST:-}" \
         "${EXPORT_DIR:-}" \
         "$ADMIN_CONFIG" \

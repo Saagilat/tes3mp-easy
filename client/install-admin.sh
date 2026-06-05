@@ -42,6 +42,9 @@ download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
 download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
 download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
 
+echo "  ── setup wizard ──"
+download "client/bin/admin/setup-wizard"      "$UPDATE_DIR/bin/admin/setup-wizard"
+
 echo "  ── server control ──"
 download "client/bin/admin/install-server"    "$UPDATE_DIR/bin/admin/install-server"
 download "client/bin/admin/start-server"      "$UPDATE_DIR/bin/admin/start-server"

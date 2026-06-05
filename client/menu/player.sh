@@ -29,6 +29,7 @@ dispatch_player() {
         install-fonts) bash "$BIN_DIR/install-fonts" ;;
         configure-ui) bash "$BIN_DIR/configure-ui" ;;
         install-localization) bash "$BIN_DIR/install-localization" ;;
+        setup-wizard) bash "$BIN_DIR/setup-wizard" ;;
         download-backup-mods) menu_download_backup "mods" ;;
         download-backup-players) menu_download_backup "players" ;;
         download-backup-world) menu_download_backup "world" ;;
@@ -55,7 +56,7 @@ dispatch_player() {
             echo "  configure-ui, install-localization, download-backup-mods,"
             echo "  download-backup-players, download-backup-world,"
             echo "  show-backups-mods, show-backups-players, show-backups-world,"
-            echo "  edit-config, edit-client-cfg, uninstall, menu"
+            echo "  edit-config, edit-client-cfg, setup-wizard, uninstall, menu"
             ;;
         menu|"") show_player_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'menu/player.sh help' for available commands."; exit 1 ;;
@@ -72,6 +73,7 @@ menu_install_client() { bash "$BIN_DIR/install-client"; }
 menu_install_fonts() { bash "$BIN_DIR/install-fonts"; }
 menu_configure_ui() { bash "$BIN_DIR/configure-ui"; }
 menu_install_localization() { bash "$BIN_DIR/install-localization"; }
+menu_setup_wizard()  { bash "$BIN_DIR/setup-wizard"; }
 menu_edit_client_cfg() { bash "$BIN_DIR/edit-client-cfg"; }
 menu_show_backups_mods() { bash "$BIN_DIR/show-backups-mods"; }
 menu_show_backups_players() { bash "$BIN_DIR/show-backups-players"; }
@@ -171,13 +173,13 @@ show_player_menu() {
     local player_menu=(
         "${MENU_PLAYER_SEP_PLAY}|sep|"
         "${MENU_PLAYER_RUN_CLIENT}|fn|menu_run_client"
-        "${MENU_PLAYER_RUN_OPENMW_CS:-OpenMW-CS}|fn|menu_run_openmw_cs"
+        "${MENU_PLAYER_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
         "${MENU_PLAYER_INSTALL_CLIENT}|fn|menu_install_client"
         "${MENU_PLAYER_INSTALL_MODS}|fn|menu_install_mods"
-        "${MENU_PLAYER_SEP_LOCALIZATION:-Localization}|sep|"
-        "${MENU_PLAYER_INSTALL_LOCALIZATION:-Install localization}|fn|menu_install_localization"
-        "${MENU_PLAYER_INSTALL_FONTS:-Install fonts}|fn|menu_install_fonts"
-        "${MENU_PLAYER_CONFIGURE_UI:-Configure UI}|fn|menu_configure_ui"
+        "${MENU_PLAYER_SEP_LOCALIZATION}|sep|"
+        "${MENU_PLAYER_INSTALL_LOCALIZATION}|fn|menu_install_localization"
+        "${MENU_PLAYER_INSTALL_FONTS}|fn|menu_install_fonts"
+        "${MENU_PLAYER_CONFIGURE_UI}|fn|menu_configure_ui"
 
         "${MENU_PLAYER_SEP_BACKUPS}|sep|"
         "${MENU_PLAYER_SHOW_BACKUPS_MODS}|fn|menu_show_backups_mods"
@@ -187,16 +189,17 @@ show_player_menu() {
         "${MENU_PLAYER_DOWNLOAD_BACKUP_PLAYERS}|fn|menu_download_players"
         "${MENU_PLAYER_DOWNLOAD_BACKUP_WORLD}|fn|menu_download_world"
 
-        "${MENU_PLAYER_SEP_CONFIGS:-Configs}|sep|"
-        "${MENU_PLAYER_EDIT_CLIENT_CFG:-Client config}|fn|menu_edit_client_cfg"
+        "${MENU_PLAYER_SEP_CONFIGS}|sep|"
+        "${MENU_PLAYER_EDIT_CLIENT_CFG}|fn|menu_edit_client_cfg"
 
         "${MENU_PLAYER_SEP_SYSTEM}|sep|"
+        "${MENU_PLAYER_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_COMMON_EDIT_CONFIG}|fn|menu_common_settings"
         "${MENU_PLAYER_EDIT_CONFIG}|fn|menu_edit_config"
     )
 
     run_menu \
-        "${MENU_TITLE_PLAYER:-TES3MP Easy — Player}" \
+        "${MENU_TITLE_PLAYER}" \
         "" \
         "" \
         "$PLAYER_CONFIG" \

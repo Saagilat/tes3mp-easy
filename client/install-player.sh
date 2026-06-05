@@ -50,6 +50,9 @@ download "client/bin/player/download-backup-mods"     "$UPDATE_DIR/bin/player/do
 download "client/bin/player/download-backup-players"  "$UPDATE_DIR/bin/player/download-backup-players"
 download "client/bin/player/download-backup-world"    "$UPDATE_DIR/bin/player/download-backup-world"
 
+echo "  ── setup wizard ──"
+download "client/bin/player/setup-wizard"    "$UPDATE_DIR/bin/player/setup-wizard"
+
 echo "  ── install ──"
 download "client/bin/player/install-client"  "$UPDATE_DIR/bin/player/install-client"
 download "client/bin/player/run-client"      "$UPDATE_DIR/bin/player/run-client"

@@ -9,13 +9,26 @@
 
 ## 1. Client Setup
 
+**Tip:** After installation, run **Quick Setup Wizard** from the player menu — it will guide you through the entire setup process step by step.
+
 **Step 1** — Install player tools:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-player.sh | bash
 ```
 
-**Step 2** — Configure `~/.tes3mp-easy-player.ini`:
+**Step 2** — Start the player menu:
+
+```bash
+bash ~/.local/share/tes3mp-easy/menu/player.sh
+```
+
+**Step 3** — Run Setup Wizard (recommended):
+- From the menu, select **Quick Setup Wizard**
+- Answer the prompts to configure paths, install client, fonts, and more
+- Or follow the manual steps below
+
+**Step 4** — Configure `~/.tes3mp-easy-player.ini` (manual):
 
 ```ini
 DATA_FILES = /home/user/.../Morrowind/Data Files
@@ -28,21 +41,15 @@ TES3MP_DIR = games/tes3mp
 | `TES3MP_DIR` | TES3MP install path | `games/tes3mp` |
 | `PROTON_PATH` | Proton path (auto-detected) | `/home/user/.../Proton 9.0` |
 
-**Step 3** — Install the client:
+**Step 5** — Install the client:
 
 ```bash
 bash ~/.local/share/tes3mp-easy/bin/player/install-client
 ```
 
-**Step 4** — (Optional) fonts and localization:
+**Step 6** — (Optional) fonts and localization:
 - From the player menu, select **Install Fonts** — fixes font rendering issues
 - Select **Install Localization** — for translated UI
-
-**Step 5** — Start the player menu:
-
-```bash
-bash ~/.local/share/tes3mp-easy/menu/player.sh
-```
 
 ---
 

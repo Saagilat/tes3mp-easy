@@ -1,0 +1,272 @@
+#!/bin/bash
+#
+# setup-wizard — Admin quick setup wizard (fully interactive, no editors)
+#
+# Guides the admin through:
+#   1. SSH_HOST   — configure if missing
+#   2. EXPORT_DIR — configure if missing
+#   3. Install server
+#   4. Server name (via SSH + config.lua)
+#   5. Mods setup (create dirs + export)
+#   6. Start server
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+ADMIN_CONFIG="${HOME}/.tes3mp-easy-admin.ini"
+CONFIG_FILE="$ADMIN_CONFIG"
+
+# ────────────────────────────────────────────────────────────
+# Helpers
+# ────────────────────────────────────────────────────────────
+step_header() {
+    local num="$1" total="$2" title="$3"
+    echo ""
+    echo "  ${T_LABEL}━━━ [${num}/${total}] ${title} ━━━${NC}"
+    echo ""
+}
+
+confirm() {
+    local prompt="${1:-Continue?}"
+    local default="${2:-y}"
+    local ans
+    read -r -p "  ${prompt} [${default}/n]: " ans
+    ans="${ans:-$default}"
+    [[ "${ans,,}" == "y" ]]
+}
+
+input() {
+    local prompt="$1" default="$2" result_var="$3"
+    local ans
+    if [[ -n "$default" ]]; then
+        read -r -p "  ${prompt} [${default}]: " ans
+        ans="${ans:-$default}"
+    else
+        read -r -p "  ${prompt}: " ans
+    fi
+    printf -v "$result_var" "%s" "$ans"
+}
+
+set_ini() {
+    local key="$1" value="$2" file="$3"
+    if grep -q "^${key}[[:space:]]*=" "$file" 2>/dev/null; then
+        sed -i "s|^${key}[[:space:]]*=.*|${key} = ${value}|" "$file"
+    else
+        echo "${key} = ${value}" >> "$file"
+    fi
+    ok "${key} set to: ${value}"
+}
+
+require_ssh() {
+    if [[ -z "${SSH_HOST:-}" ]]; then
+        err "SSH_HOST is not set. Please set it first."
+        return 1
+    fi
+    # Test SSH connection
+    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "$SSH_HOST" "echo ok" 2>/dev/null; then
+        err "Cannot connect to ${SSH_HOST}. Check your SSH config."
+        return 1
+    fi
+    return 0
+}
+
+ssh_sed_config() {
+    local key="$1" value="$2"
+    local escaped_key
+    local escaped_value
+    escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
+    escaped_value=$(printf '%s\n' "$value" | sed 's/[\/&"]/\\&/g')
+    ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${escaped_key} = \\\"${escaped_value}\\\"|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
+}
+
+# ────────────────────────────────────────────────────────────
+# Main wizard
+# ────────────────────────────────────────────────────────────
+main() {
+    local TOTAL=6
+
+    echo ""
+    echo "  ${T_LABEL}╔══════════════════════════════════════════════════╗${NC}"
+    echo "  ${T_LABEL}║       TES3MP Easy — Admin Setup Wizard          ║${NC}"
+    echo "  ${T_LABEL}╚══════════════════════════════════════════════════╝${NC}"
+    echo ""
+    info "This wizard will guide you through setting up the server."
+    info "Press Ctrl+C at any time to exit."
+    echo ""
+
+    # Load current config
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+
+    # ────────────────────────────────────────────────────────
+    # Step 1: SSH_HOST
+    # ────────────────────────────────────────────────────────
+    step_header 1 $TOTAL "SSH Connection"
+
+    if [[ -n "${SSH_HOST:-}" ]]; then
+        info "Current SSH_HOST: ${SSH_HOST}"
+        if ! confirm "Change SSH_HOST?" "n"; then
+            info "Keeping SSH_HOST = ${SSH_HOST}"
+        else
+            input "Enter SSH host (from ~/.ssh/config)" "" SSH_HOST
+            set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
+        fi
+    else
+        warn "SSH_HOST is not set."
+        echo ""
+        echo "  You need an SSH host configured in ~/.ssh/config, e.g.:"
+        echo "    Host my-server"
+        echo "        HostName 203.0.113.10"
+        echo "        User root"
+        echo ""
+        input "Enter SSH host" "" SSH_HOST
+        set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
+    fi
+
+    # Reload config so EXPORT_DIR etc. are fresh
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+
+    # ────────────────────────────────────────────────────────
+    # Step 2: EXPORT_DIR
+    # ────────────────────────────────────────────────────────
+    step_header 2 $TOTAL "Export Directory"
+
+    if [[ -n "${EXPORT_DIR:-}" ]]; then
+        info "Current EXPORT_DIR: ${EXPORT_DIR}"
+        if ! confirm "Change EXPORT_DIR?" "n"; then
+            info "Keeping EXPORT_DIR = ${EXPORT_DIR}"
+        else
+            input "Enter path to mods directory" "./exports" EXPORT_DIR
+            set_ini "EXPORT_DIR" "$EXPORT_DIR" "$ADMIN_CONFIG"
+            EXPORT_DIR="${EXPORT_DIR/#\~/$HOME}"
+        fi
+    else
+        warn "EXPORT_DIR is not set."
+        input "Enter path to mods directory" "./exports" EXPORT_DIR
+        set_ini "EXPORT_DIR" "$EXPORT_DIR" "$ADMIN_CONFIG"
+        EXPORT_DIR="${EXPORT_DIR/#\~/$HOME}"
+    fi
+
+    # Reload config again
+    load_config "$ADMIN_CONFIG" 2>/dev/null || true
+
+    # ────────────────────────────────────────────────────────
+    # Step 3: Install server
+    # ────────────────────────────────────────────────────────
+    step_header 3 $TOTAL "Server Installation"
+
+    if ! require_ssh; then
+        warn "Cannot proceed with server installation without SSH access."
+        warn "Fix SSH_HOST and re-run the wizard."
+    else
+        local server_installed=false
+        if ssh "$SSH_HOST" "test -f /tes3mp-easy/docker-compose.yml" 2>/dev/null; then
+            server_installed=true
+        fi
+
+        if $server_installed; then
+            ok "Server is already installed on ${SSH_HOST}."
+            if confirm "Re-install / upgrade server?" "n"; then
+                info "Re-installing server..."
+                bash "$SCRIPT_DIR/bin/admin/install-server" || {
+                    err "Server installation failed."
+                }
+            fi
+        else
+            if confirm "Install server on ${SSH_HOST}?" "y"; then
+                info "Installing server..."
+                bash "$SCRIPT_DIR/bin/admin/install-server" || {
+                    err "Server installation failed."
+                }
+            fi
+        fi
+    fi
+
+    # ────────────────────────────────────────────────────────
+    # Step 4: Server name
+    # ────────────────────────────────────────────────────────
+    step_header 4 $TOTAL "Server Name"
+
+    if require_ssh; then
+        local current_name="TES3MP Server"
+        local existing
+        existing=$(ssh "$SSH_HOST" "grep '^config.serverName' /tes3mp-easy/configs/config.lua 2>/dev/null | sed 's/.*= \"//; s/\"//'" 2>/dev/null || echo "")
+        [[ -n "$existing" ]] && current_name="$existing"
+
+        input "Enter server name" "$current_name" SERVER_NAME
+        if [[ -n "$SERVER_NAME" ]]; then
+            ssh_sed_config "config.serverName" "$SERVER_NAME"
+            ok "Server name set to: ${SERVER_NAME}"
+        fi
+    else
+        warn "SSH not available — skipping server name."
+    fi
+
+    # ────────────────────────────────────────────────────────
+    # Step 5: Mods setup
+    # ────────────────────────────────────────────────────────
+    step_header 5 $TOTAL "Mods Setup"
+
+    if [[ -n "${EXPORT_DIR:-}" ]]; then
+        local mod_plugins="$EXPORT_DIR/mods/plugins"
+        local mod_scripts="$EXPORT_DIR/mods/scripts"
+
+        if [[ -d "$mod_plugins" ]] && [[ -d "$mod_scripts" ]]; then
+            ok "Mod directories already exist."
+        else
+            if confirm "Create mod directories (plugins + scripts)?" "y"; then
+                mkdir -p "$mod_plugins" "$mod_scripts"
+                ok "Created: $mod_plugins"
+                ok "Created: $mod_scripts"
+            fi
+        fi
+
+        if confirm "Export mods to server now?" "n"; then
+            bash "$SCRIPT_DIR/bin/admin/export-mods" || {
+                warn "Export failed — you can do it later from the menu."
+            }
+        fi
+    else
+        warn "EXPORT_DIR not set — skipping mods setup."
+    fi
+
+    # ────────────────────────────────────────────────────────
+    # Step 6: Start server
+    # ────────────────────────────────────────────────────────
+    step_header 6 $TOTAL "Start Server"
+
+    if require_ssh; then
+        if confirm "Start server now?" "n"; then
+            bash "$SCRIPT_DIR/bin/admin/start-server" || {
+                err "Failed to start server."
+            }
+        fi
+    fi
+
+    # ────────────────────────────────────────────────────────
+    # Summary
+    # ────────────────────────────────────────────────────────
+    echo ""
+    echo "  ${T_LABEL}╔══════════════════════════════════════════════════╗${NC}"
+    echo "  ${T_LABEL}║            Setup Wizard Complete!                ║${NC}"
+    echo "  ${T_LABEL}╚══════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "  ${T_LABEL}Configuration:${NC}"
+    echo "    SSH_HOST   = ${SSH_HOST:-${T_ERROR}(not set)${NC}}"
+    echo "    EXPORT_DIR = ${EXPORT_DIR:-${T_ERROR}(not set)${NC}}"
+    echo ""
+    if [[ -n "${SSH_HOST:-}" ]]; then
+        local running
+        running=$(ssh "$SSH_HOST" "cd /tes3mp-easy && docker compose ps --format '{{.State}}' 2>/dev/null | head -1" 2>/dev/null || echo "")
+        if [[ "$running" == "running" ]]; then
+            ok "Server is running on ${SSH_HOST}"
+        else
+            warn "Server is not running. Start it from the menu."
+        fi
+    fi
+    echo ""
+    info "You can always re-run this wizard or use individual menu items."
+}
+
+main "$@"
