@@ -110,10 +110,6 @@ mkdir -p "$PREFIX_DIR"
 # 4. Создание симлинка Data Files для Proton/Wine
 # ────────────────────────────────────────────────────
 if [[ -d "$DATA_FILES/Data Files" ]]; then
-    # Симлинк в корне TES3MP (для обратной совместимости)
-    ln -sfn "$DATA_FILES/Data Files" "$TES3MP_DIR/Data Files"
-    info "Symlink created: $TES3MP_DIR/Data Files → $DATA_FILES/Data Files"
-
     # Симлинк в drive_c префикса (чтобы OpenMW видел C:\Morrowind\Data Files)
     MORROWIND_LINK="$PREFIX_DIR/pfx/drive_c/Morrowind"
     mkdir -p "$(dirname "$MORROWIND_LINK")"
@@ -171,11 +167,5 @@ else
 fi
 
 echo ""
-echo "═══════════════════════════════════════════════"
-echo "  Installation complete!"
-echo "═══════════════════════════════════════════════"
-echo ""
-echo "  Next steps:"
-echo "    1. Install mods:    install-mods"
-echo "    2. Launch client:   run-client"
+echo "  Client installed successfully."
 echo ""
