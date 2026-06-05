@@ -81,11 +81,11 @@ fi
 TES3MP_ZIP="/tmp/tes3mp.zip"
 TES3MP_URL="https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp.Win64.release.0.8.1.zip"
 
-info "Downloading TES3MP..."
 if [[ -f "$TES3MP_DIR/tes3mp.exe" ]]; then
     info "TES3MP already installed, skipping."
 else
-    curl -fsSL -o "$TES3MP_ZIP" "$TES3MP_URL" || {
+    info "Downloading TES3MP (this may take a while)..."
+    curl -# -L -o "$TES3MP_ZIP" "$TES3MP_URL" 2>&1 || {
         err "Failed to download TES3MP."
         exit 1
     }
