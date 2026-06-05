@@ -220,20 +220,18 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 6 $TOTAL "UI Configuration"
 
-    if confirm "Configure UI (ttf resolution, font size, scaling)?" "y"; then
-        local settings_cfg=""
-        if [[ -n "${TES3MP_DIR:-}" ]]; then
-            settings_cfg="${TES3MP_DIR/#\~/$HOME}/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/settings.cfg"
-        fi
+    local settings_cfg=""
+    if [[ -n "${TES3MP_DIR:-}" ]]; then
+        settings_cfg="${TES3MP_DIR/#\~/$HOME}/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/settings.cfg"
+    fi
 
-        if [[ -n "$settings_cfg" && -f "$settings_cfg" ]]; then
-            bash "$SCRIPT_DIR/bin/player/configure-ui" || {
-                warn "UI configuration cancelled or failed."
-            }
-        else
-            warn "settings.cfg not found. Run the client at least once first."
-            warn "Skipping UI configuration."
-        fi
+    if [[ -n "$settings_cfg" && -f "$settings_cfg" ]]; then
+        bash "$SCRIPT_DIR/bin/player/configure-ui" || {
+            warn "UI configuration cancelled or failed."
+        }
+    else
+        warn "settings.cfg not found. Run the client at least once first."
+        warn "Skipping UI configuration."
     fi
 
     # ────────────────────────────────────────────────────────
@@ -241,11 +239,9 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 7 $TOTAL "Finish"
 
-    if confirm "Install localization?" "y"; then
-        bash "$SCRIPT_DIR/bin/player/install-localization" || {
-            warn "Localization installation cancelled or failed."
-        }
-    fi
+    bash "$SCRIPT_DIR/bin/player/install-localization" || {
+        warn "Localization installation cancelled or failed."
+    }
 
     if confirm "Launch client now?" "n"; then
         bash "$SCRIPT_DIR/bin/player/run-client" || {

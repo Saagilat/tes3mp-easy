@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# player-install-localization — Установка русской локализации Morrowind
+# player-install-localization — Установка локализации Morrowind
 #
-# Качает архивы с GitHub Releases в $TES3MP_DIR/localizations/ 
-# и запускает установку в папку Morrowind.
+# Показывает список доступных локализаций из client/lib/localization/*/
+# и запускает установку выбранной.
 #
 
 set -euo pipefail
@@ -34,11 +34,60 @@ fi
 LOCALE_DIR="$TES3MP_DIR/localizations"
 mkdir -p "$LOCALE_DIR"
 
-RELEASE_URL="https://github.com/Saagilat/tes3mp-easy/releases/download/russifier-v1.0"
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Install Localization"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+# ────────────────────────────────────────────────────
+# 1. Список доступных локализаций
+# ────────────────────────────────────────────────────
+LOCALES=()
+LOCALE_NAMES=()
+
+for dir in "$SCRIPT_DIR/lib/localization"/*/; do
+    [[ -d "$dir" ]] || continue
+    name="$(basename "$dir")"
+    install_script="$dir/install.sh"
+    if [[ -f "$install_script" ]]; then
+        LOCALES+=("$name")
+        # Первая буква заглавная
+        LOCALE_NAMES+=("$(tr '[:lower:]' '[:upper:]' <<< "${name:0:1}")${name:1}")
+    fi
+done
+
+if [[ ${#LOCALES[@]} -eq 0 ]]; then
+    warn "No localizations found."
+    exit 1
+fi
+
+echo "  Available localizations:"
+for i in "${!LOCALES[@]}"; do
+    printf "  %d) %s\n" $((i+1)) "${LOCALE_NAMES[$i]}"
+done
+echo "  $((${#LOCALES[@]}+1))) Не устанавливать локализацию"
+echo ""
+input "Select option [1-$((${#LOCALES[@]}+1))]" "" LOCALE_CHOICE
+
+# Если пусто или "не устанавливать" — выходим
+if [[ -z "${LOCALE_CHOICE:-}" ]] || [[ "$LOCALE_CHOICE" -eq $((${#LOCALES[@]}+1)) ]]; then
+    info "No localization selected. Skipping."
+    exit 0
+fi
+
+LOCALE_IDX=$((LOCALE_CHOICE - 1))
+if [[ "$LOCALE_IDX" -lt 0 || "$LOCALE_IDX" -ge "${#LOCALES[@]}" ]]; then
+    warn "Invalid selection. Skipping."
+    exit 1
+fi
+
+LOCALE="${LOCALES[$LOCALE_IDX]}"
+LOCALE_NAME="${LOCALE_NAMES[$LOCALE_IDX]}"
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  Install Russian Localization"
+echo "  Installing ${LOCALE_NAME} Localization"
 echo "═══════════════════════════════════════════════"
 echo ""
 echo "  Morrowind:    $MORROWIND_DIR"
@@ -46,61 +95,48 @@ echo "  Cache dir:    $LOCALE_DIR"
 echo ""
 
 # ────────────────────────────────────────────────────
-# 1. Установка install.sh — используется локальная копия
+# 2. Установка install.sh — используется локальная копия
 # ────────────────────────────────────────────────────
-INSTALL_SCRIPT="$SCRIPT_DIR/lib/localization/russian/install.sh"
-if [[ ! -f "$INSTALL_SCRIPT" ]]; then
-    err "Local install.sh not found at $INSTALL_SCRIPT"
-    exit 1
-fi
+INSTALL_SCRIPT="$SCRIPT_DIR/lib/localization/${LOCALE}/install.sh"
 chmod +x "$INSTALL_SCRIPT"
-info "Using local install.sh from client/lib/localization/russian/"
+info "Using install.sh for ${LOCALE_NAME}"
 
 # ────────────────────────────────────────────────────
-# 2. Скачивание russifier.tar
+# 3. Скачивание архива
 # ────────────────────────────────────────────────────
-RUSSIFIER_TAR="$LOCALE_DIR/russifier.tar"
-if [[ -f "$RUSSIFIER_TAR" ]]; then
-    info "russifier.tar already cached, skipping."
+RELEASE_URL="https://github.com/Saagilat/tes3mp-easy/releases/download/${LOCALE}-v1.0"
+LOCALE_TAR="$LOCALE_DIR/${LOCALE}.tar"
+
+if [[ -f "$LOCALE_TAR" ]]; then
+    info "${LOCALE}.tar already cached, skipping."
 else
-    info "Downloading russifier.tar..."
-    curl -fsSL -o "$RUSSIFIER_TAR" "$RELEASE_URL/russifier.tar" || {
-        err "Failed to download russifier.tar"
+    info "Downloading ${LOCALE}.tar..."
+    curl -fsSL -o "$LOCALE_TAR" "$RELEASE_URL/${LOCALE}.tar" || {
+        err "Failed to download ${LOCALE}.tar"
         exit 1
     }
-    ok "russifier.tar downloaded."
+    ok "${LOCALE}.tar downloaded."
 fi
 
 # ────────────────────────────────────────────────────
-# 3. Опционально: скачивание voices_russian.tar
+# 4. Опционально: voices
 # ────────────────────────────────────────────────────
-VOICES_TAR="$LOCALE_DIR/voices_russian.tar"
-if [[ -f "$VOICES_TAR" ]]; then
-    info "voices_russian.tar already cached."
-else
-    echo ""
-    info "Optional: Download Russian voiceover?"
-<<<<<<< HEAD
-    read -r -p "  Download voices_russian.tar (~300 MB)? [y/N]: " DOWNLOAD_VOICES
-    # Remove non-printable characters (e.g. backspace, escape sequences)
-    DOWNLOAD_VOICES=$(tr -dc '[:print:]' <<< "${DOWNLOAD_VOICES:-}")
-=======
-    input "Download voices_russian.tar (~300 MB)?" "n" DOWNLOAD_VOICES
->>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
-    if [[ "${DOWNLOAD_VOICES:-n}" =~ ^[yY] ]]; then
-        info "Downloading voices_russian.tar..."
-        curl -fsSL -o "$VOICES_TAR" "$RELEASE_URL/voices_russian.tar" || {
-            warn "Failed to download voices_russian.tar (may be missing from release)."
+VOICES_TAR="$LOCALE_DIR/voices_${LOCALE}.tar"
+if [[ ! -f "$VOICES_TAR" ]]; then
+    if confirm "Download voices_${LOCALE}.tar?" "n"; then
+        info "Downloading voices_${LOCALE}.tar..."
+        curl -fsSL -o "$VOICES_TAR" "$RELEASE_URL/voices_${LOCALE}.tar" || {
+            warn "Failed to download voices_${LOCALE}.tar (may be missing)."
             rm -f "$VOICES_TAR"
         }
         if [[ -f "$VOICES_TAR" ]]; then
-            ok "voices_russian.tar downloaded."
+            ok "voices_${LOCALE}.tar downloaded."
         fi
     fi
 fi
 
 # ────────────────────────────────────────────────────
-# 4. Запуск install.sh
+# 5. Запуск install.sh
 # ────────────────────────────────────────────────────
 echo ""
 info "Running localization installer..."
@@ -109,7 +145,7 @@ echo ""
 bash "$INSTALL_SCRIPT" "$MORROWIND_DIR"
 
 # ────────────────────────────────────────────────────
-# 5. Установка encoding=win1251 в openmw.cfg
+# 6. Установка encoding=win1251 в openmw.cfg
 # ────────────────────────────────────────────────────
 OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
 
