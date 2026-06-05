@@ -142,10 +142,7 @@ lua_get() {
 # Ask a boolean config setting (local, no SSH)
 ask_bool() {
     local key="$1" prompt="$2" default="$3"
-    local current
-    current=$(lua_get "$key" "")
-    local def="${current:-$default}"
-    if confirm "$prompt" "$def"; then
+    if confirm "$prompt" "$default"; then
         lua_set "$key" "true" "bool"
     else
         lua_set "$key" "false" "bool"
@@ -155,11 +152,8 @@ ask_bool() {
 # Ask a string/number config setting (local, no SSH)
 ask_value() {
     local key="$1" prompt="$2" default="$3" type="${4:-string}"
-    local current
-    current=$(lua_get "$key" "")
-    local def="${current:-$default}"
     local val
-    input "$prompt" "$def" val
+    input "$prompt" "$default" val
     lua_set "$key" "$val" "$type"
 }
 
