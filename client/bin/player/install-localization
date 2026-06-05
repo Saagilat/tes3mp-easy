@@ -145,24 +145,27 @@ echo ""
 bash "$INSTALL_SCRIPT" "$MORROWIND_DIR"
 
 # ────────────────────────────────────────────────────
-# 6. Set encoding=win1251 in openmw.cfg
+# 6. Set encoding=win1251 in openmw.cfg (Cyrillic only)
 # ────────────────────────────────────────────────────
-OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
+CYRILLIC_LOCALES=("russian")
+if [[ " ${CYRILLIC_LOCALES[*]} " == *" ${LOCALE} "* ]]; then
+    OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
 
-if [[ -f "$OPENMW_CFG" ]]; then
-    echo ""
-    info "Setting encoding=win1251 in openmw.cfg for Cyrillic support..."
-    if grep -q "^encoding[[:space:]]*=" "$OPENMW_CFG" 2>/dev/null; then
-        sed -i "s|^encoding[[:space:]]*=.*|encoding=win1251|" "$OPENMW_CFG"
+    if [[ -f "$OPENMW_CFG" ]]; then
+        echo ""
+        info "Setting encoding=win1251 in openmw.cfg for Cyrillic support..."
+        if grep -q "^encoding[[:space:]]*=" "$OPENMW_CFG" 2>/dev/null; then
+            sed -i "s|^encoding[[:space:]]*=.*|encoding=win1251|" "$OPENMW_CFG"
+        else
+            echo "" >> "$OPENMW_CFG"
+            echo "encoding=win1251" >> "$OPENMW_CFG"
+        fi
+        ok "encoding=win1251 set in openmw.cfg"
     else
-        echo "" >> "$OPENMW_CFG"
-        echo "encoding=win1251" >> "$OPENMW_CFG"
+        warn "openmw.cfg not found at: $OPENMW_CFG"
+        warn "encoding=win1251 could not be set automatically."
+        warn "Run the client once to generate config files, then re-run this script."
     fi
-    ok "encoding=win1251 set in openmw.cfg"
-else
-    warn "openmw.cfg not found at: $OPENMW_CFG"
-    warn "encoding=win1251 could not be set automatically."
-    warn "Run the client once to generate config files, then re-run this script."
 fi
 
 echo ""
