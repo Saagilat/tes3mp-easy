@@ -123,9 +123,9 @@ fi
 # ────────────────────────────────────────────────────
 VOICES_TAR="$LOCALE_DIR/voices_${LOCALE}.tar"
 if [[ ! -f "$VOICES_TAR" ]]; then
-    if confirm "Download voices_${LOCALE}.tar?" "n"; then
-        info "Downloading voices_${LOCALE}.tar..."
-        curl -fsSL -o "$VOICES_TAR" "$RELEASE_URL/voices_${LOCALE}.tar" || {
+    if confirm "Download voices_${LOCALE}.tar (~150 MB)?" "n"; then
+        info "Downloading voices_${LOCALE}.tar (this may take a while)..."
+        curl -# -L -o "$VOICES_TAR" "$RELEASE_URL/voices_${LOCALE}.tar" 2>&1 || {
             warn "Failed to download voices_${LOCALE}.tar (may be missing)."
             rm -f "$VOICES_TAR"
         }
