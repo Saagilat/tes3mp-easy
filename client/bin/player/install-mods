@@ -6,7 +6,7 @@
 #   1. Fetches list of mod backups from server
 #   2. Downloads selected/latest archive
 #   3. Removes all old data= and content= from openmw.cfg
-#   4. Extracts plugins into DATA_FILES/Data Files
+#   4. Extracts plugins into MORROWIND_PATH/Data Files
 #   5. Adds data= and content= for all plugins
 #   6. Removes downloaded archive
 #
@@ -101,13 +101,7 @@ else
         ((i++)) || true
     done
     echo ""
-<<<<<<< HEAD
-    read -r -p "  Select number (empty = cancel): " choice
-    # Remove non-printable characters (e.g. backspace, escape sequences)
-    choice=$(tr -dc '[:print:]' <<< "${choice:-}")
-=======
     input "Select number (empty = cancel)" "" choice
->>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
     [[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
     SELECTED="${NAMES[$((choice - 1))]}"
     [[ -z "$SELECTED" ]] && { err "Invalid selection."; exit 1; }
@@ -147,7 +141,7 @@ if [[ ! -d "$PLUGINS_SRC" ]]; then
 fi
 
 # ────────────────────────────────────────────────────
-# 5. Очистка openmw.cfg (удаляем все content=, потом JSON добавит заново в правильном порядке)
+# 5. Очистка openmw.cfg (удаляем все content=)
 # ────────────────────────────────────────────────────
 echo ""
 info "Cleaning old content entries from openmw.cfg..."
@@ -186,14 +180,10 @@ ok "$PLUGIN_COUNT plugin(s) copied to $DATA_FILES_DIR"
 echo ""
 info "Updating openmw.cfg..."
 
-# data= не трогаем — он уже есть в Windows-формате (Z:\...) от openmw-wizard
-
-# content= в порядке из requiredDataFiles.json — сначала оригиналы, потом моды
 ADDED_COUNT=0
 
 REQ_JSON="$PLUGINS_SRC/requiredDataFiles.json"
 if [[ -f "$REQ_JSON" ]]; then
-    # Парсим requiredDataFiles.json, извлекаем имена плагинов в порядке файла
     while IFS= read -r line; do
         if [[ "$line" =~ ^[[:space:]]*\"([^\"]+)\"[[:space:]]*: ]]; then
             filename="${BASH_REMATCH[1]}"
@@ -202,20 +192,11 @@ if [[ -f "$REQ_JSON" ]]; then
         fi
     done < "$REQ_JSON"
 else
-    # Fallback: если нет requiredDataFiles.json — добавляем в алфавитном порядке
     for plugin in "$PLUGINS_SRC"/*.esp "$PLUGINS_SRC"/*.ESP \
                   "$PLUGINS_SRC"/*.esm "$PLUGINS_SRC"/*.ESM \
                   "$PLUGINS_SRC"/*.omwaddon "$PLUGINS_SRC"/*.OMWADDON; do
         [[ -f "$plugin" ]] || continue
         BASENAME=$(basename "$plugin")
-        SKIP=0
-        for orig in "${ORIGINAL_FILES[@]}"; do
-            if [[ "${BASENAME,,}" == "${orig,,}" ]]; then
-                SKIP=1
-                break
-            fi
-        done
-        [[ "$SKIP" -eq 1 ]] && continue
         echo "content=$BASENAME" >> "$OPENMW_CFG"
         ((ADDED_COUNT++)) || true
     done
