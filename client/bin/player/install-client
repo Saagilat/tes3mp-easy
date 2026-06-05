@@ -98,10 +98,22 @@ else
 fi
 
 # ────────────────────────────────────────────────────
-# 3. Создание префикса и запуск openmw-wizard
+# 3. Создание префикса
 # ────────────────────────────────────────────────────
 PREFIX_DIR="$TES3MP_DIR/prefix"
+mkdir -p "$PREFIX_DIR"
 
+# ────────────────────────────────────────────────────
+# 4. Создание симлинка, чтобы wizard увидел Data Files
+# ────────────────────────────────────────────────────
+if [[ -d "$DATA_FILES/Data Files" ]]; then
+    ln -sfn "$DATA_FILES/Data Files" "$TES3MP_DIR/Data Files"
+    info "Symlink created: $TES3MP_DIR/Data Files → $DATA_FILES/Data Files"
+fi
+
+# ────────────────────────────────────────────────────
+# 5. Запуск openmw-wizard
+# ────────────────────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════════"
 echo "  Starting OpenMW Wizard"
@@ -115,8 +127,6 @@ echo "    $DATA_FILES/Data Files"
 echo ""
 info "Запуск мастера настройки OpenMW..."
 echo ""
-
-mkdir -p "$PREFIX_DIR"
 
 STEAM_COMPAT_DATA_PATH="$PREFIX_DIR" \
 STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/steam" \
