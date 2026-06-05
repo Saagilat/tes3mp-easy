@@ -3,8 +3,8 @@
 # setup-wizard — Admin quick setup wizard (fully interactive, no editors)
 #
 # Guides the admin through:
-#   1. SSH_HOST   — configure if missing
-#   2. EXPORT_DIR — configure if missing
+#   1. SSH_HOST   — configure (always shown, connection tested)
+#   2. EXPORT_DIR — configure (always shown, dir checked)
 #   3. Install server
 #   4. Server name (via SSH + config.lua)
 #   5. Mods setup (create dirs + export)
@@ -61,7 +61,7 @@ set_ini() {
 
 require_ssh() {
     if [[ -z "${SSH_HOST:-}" ]]; then
-        err "SSH_HOST is not set. Please set it first."
+        err "SSH_HOST is not set."
         return 1
     fi
     # Test SSH connection
@@ -79,6 +79,83 @@ ssh_sed_config() {
     escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
     escaped_value=$(printf '%s\n' "$value" | sed 's/[\/&"]/\\&/g')
     ssh "$SSH_HOST" "sed -i \"s|^${escaped_key}[[:space:]]*=.*|${escaped_key} = \\\"${escaped_value}\\\"|\" /tes3mp-easy/configs/config.lua" 2>/dev/null
+}
+
+# Prompt for SSH_HOST and test connection (loops until valid or skipped)
+configure_ssh() {
+    local current="${SSH_HOST:-}"
+
+    while true; do
+        if [[ -n "$current" ]]; then
+            input "Enter SSH host (from ~/.ssh/config)" "$current" SSH_HOST
+        else
+            echo ""
+            echo "  You need an SSH host configured in ~/.ssh/config, e.g.:"
+            echo "    Host my-server"
+            echo "        HostName 203.0.113.10"
+            echo "        User root"
+            echo ""
+            input "Enter SSH host" "" SSH_HOST
+        fi
+
+        if [[ -z "$SSH_HOST" ]]; then
+            err "SSH_HOST cannot be empty."
+            current=""
+            continue
+        fi
+
+        # Write to config
+        set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
+
+        # Test connection
+        echo ""
+        info "Testing SSH connection to ${SSH_HOST}..."
+        if ssh -o ConnectTimeout=5 -o BatchMode=yes "$SSH_HOST" "echo ok" 2>/dev/null; then
+            ok "SSH connection successful."
+            return 0
+        else
+            err "Connection to ${SSH_HOST} failed."
+            if confirm "Try again?" "y"; then
+                current="$SSH_HOST"
+                continue
+            else
+                warn "Skipping SSH configuration for now."
+                return 1
+            fi
+        fi
+    done
+}
+
+# Prompt for EXPORT_DIR
+configure_export_dir() {
+    local current="${EXPORT_DIR:-}"
+
+    while true; do
+        if [[ -n "$current" ]]; then
+            input "Enter path to mods directory" "$current" EXPORT_DIR
+        else
+            input "Enter path to mods directory" "./exports" EXPORT_DIR
+        fi
+
+        if [[ -z "$EXPORT_DIR" ]]; then
+            warn "EXPORT_DIR not set — skipping."
+            return 1
+        fi
+
+        set_ini "EXPORT_DIR" "$EXPORT_DIR" "$ADMIN_CONFIG"
+        local resolved="${EXPORT_DIR/#\~/$HOME}"
+
+        if [[ -d "$resolved" ]]; then
+            ok "Directory exists: ${resolved}"
+        else
+            warn "Directory does not exist yet: ${resolved}"
+            if confirm "Create it now?" "y"; then
+                mkdir -p "$resolved"
+                ok "Created: ${resolved}"
+            fi
+        fi
+        return 0
+    done
 }
 
 # ────────────────────────────────────────────────────────────
@@ -103,27 +180,7 @@ main() {
     # Step 1: SSH_HOST
     # ────────────────────────────────────────────────────────
     step_header 1 $TOTAL "SSH Connection"
-
-    if [[ -n "${SSH_HOST:-}" ]]; then
-        info "Current SSH_HOST: ${SSH_HOST}"
-        if ! confirm "Change SSH_HOST?" "n"; then
-            info "Keeping SSH_HOST = ${SSH_HOST}"
-        else
-            input "Enter SSH host (from ~/.ssh/config)" "" SSH_HOST
-            set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
-        fi
-    else
-        warn "SSH_HOST is not set."
-        echo ""
-        echo "  You need an SSH host configured in ~/.ssh/config, e.g.:"
-        echo "    Host my-server"
-        echo "        HostName 203.0.113.10"
-        echo "        User root"
-        echo ""
-        input "Enter SSH host" "" SSH_HOST
-        set_ini "SSH_HOST" "$SSH_HOST" "$ADMIN_CONFIG"
-    fi
-
+    configure_ssh
     # Reload config so EXPORT_DIR etc. are fresh
     load_config "$ADMIN_CONFIG" 2>/dev/null || true
 
@@ -131,23 +188,7 @@ main() {
     # Step 2: EXPORT_DIR
     # ────────────────────────────────────────────────────────
     step_header 2 $TOTAL "Export Directory"
-
-    if [[ -n "${EXPORT_DIR:-}" ]]; then
-        info "Current EXPORT_DIR: ${EXPORT_DIR}"
-        if ! confirm "Change EXPORT_DIR?" "n"; then
-            info "Keeping EXPORT_DIR = ${EXPORT_DIR}"
-        else
-            input "Enter path to mods directory" "./exports" EXPORT_DIR
-            set_ini "EXPORT_DIR" "$EXPORT_DIR" "$ADMIN_CONFIG"
-            EXPORT_DIR="${EXPORT_DIR/#\~/$HOME}"
-        fi
-    else
-        warn "EXPORT_DIR is not set."
-        input "Enter path to mods directory" "./exports" EXPORT_DIR
-        set_ini "EXPORT_DIR" "$EXPORT_DIR" "$ADMIN_CONFIG"
-        EXPORT_DIR="${EXPORT_DIR/#\~/$HOME}"
-    fi
-
+    configure_export_dir
     # Reload config again
     load_config "$ADMIN_CONFIG" 2>/dev/null || true
 
@@ -209,8 +250,9 @@ main() {
     step_header 5 $TOTAL "Mods Setup"
 
     if [[ -n "${EXPORT_DIR:-}" ]]; then
-        local mod_plugins="$EXPORT_DIR/mods/plugins"
-        local mod_scripts="$EXPORT_DIR/mods/scripts"
+        local resolved="${EXPORT_DIR/#\~/$HOME}"
+        local mod_plugins="$resolved/mods/plugins"
+        local mod_scripts="$resolved/mods/scripts"
 
         if [[ -d "$mod_plugins" ]] && [[ -d "$mod_scripts" ]]; then
             ok "Mod directories already exist."
