@@ -310,7 +310,6 @@ show_admin_menu() {
         "${MENU_ADMIN_SERVER_STATUS}|fn|menu_server_status"
         "${MENU_ADMIN_SERVER_LOGS}|fn|menu_server_logs"
         "${MENU_ADMIN_SETUP_WIZARD}|fn|menu_setup_wizard"
-        "${MENU_ADMIN_INSTALL_SERVER}|fn|menu_install_server"
 
         "${MENU_ADMIN_SEP_MODDING}|sep|"
         "${MENU_ADMIN_GENERATE_DATA}|fn|menu_generate_data"

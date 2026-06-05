@@ -175,7 +175,6 @@ show_player_menu() {
         "${MENU_PLAYER_RUN_CLIENT}|fn|menu_run_client"
         "${MENU_PLAYER_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
         "${MENU_PLAYER_SETUP_WIZARD}|fn|menu_setup_wizard"
-        "${MENU_PLAYER_INSTALL_CLIENT}|fn|menu_install_client"
         "${MENU_PLAYER_INSTALL_MODS}|fn|menu_install_mods"
         "${MENU_PLAYER_SEP_LOCALIZATION}|sep|"
         "${MENU_PLAYER_INSTALL_LOCALIZATION}|fn|menu_install_localization"
