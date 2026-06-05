@@ -125,7 +125,7 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/p
 | `run-openmw-cs` | Launch OpenMW Construction Set |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |
 | `install-mods` | Download and unpack latest mods archive |
-| `install-localization` | Install Russian localization |
+| `install-localization` | Install translated UI (e.g., Russian) |
 | `install-fonts` | Install custom fonts |
 | `configure-ui` | Set up OpenMW UI for multiplayer |
 | `download-backup-mods` | Download mod backup archive |

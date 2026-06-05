@@ -34,7 +34,7 @@ This downloads TES3MP (if needed), sets up the Proton prefix, and generates the 
 
 **Step 4 — Install fonts and localization (optional):**
 - From the player menu, select **Install Fonts** (for Cyrillic support)
-- Select **Install Localization** (for Russian UI)
+- Select **Install Localization** (for translated UI)
 
 **Step 5 — Start the player menu:**
 ```bash
