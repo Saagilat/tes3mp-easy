@@ -29,38 +29,6 @@ step_header() {
     echo ""
 }
 
-<<<<<<< HEAD
-confirm() {
-    local prompt="${1:-Continue?}"
-    local default="${2:-y}"
-    local ans
-    if [[ "$default" == "y" ]]; then
-        read -r -p "  ${prompt} [Y/n]: " ans
-    else
-        read -r -p "  ${prompt} [y/N]: " ans
-    fi
-    ans="${ans:-$default}"
-    # Remove non-printable characters (e.g. backspace, escape sequences)
-    ans=$(tr -dc '[:print:]' <<< "$ans")
-    [[ "${ans,,}" == "y" ]]
-}
-
-input() {
-    local prompt="$1" default="$2" result_var="$3"
-    local ans
-    if [[ -n "$default" ]]; then
-        read -r -p "  ${prompt} [${default}]: " ans
-        ans="${ans:-$default}"
-    else
-        read -r -p "  ${prompt}: " ans
-    fi
-    # Remove non-printable characters (e.g. backspace, escape sequences)
-    ans=$(tr -dc '[:print:]' <<< "$ans")
-    printf -v "$result_var" "%s" "$ans"
-}
-
-=======
->>>>>>> 693a590 (refactor: move confirm() and input() to lib/common with backspace filtering)
 set_ini() {
     local key="$1" value="$2" file="$3"
     if grep -q "^${key}[[:space:]]*=" "$file" 2>/dev/null; then
