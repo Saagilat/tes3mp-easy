@@ -2,8 +2,8 @@
 #
 # install-fonts — Install fonts for OpenMW/TES3MP
 #
-# Downloads IBM Plex open-source fonts and configures openmw_font.xml
-# and fallback entries in openmw.cfg.
+# Downloads open-source fonts with Cyrillic support from Google Fonts
+# and configures openmw_font.xml and fallback entries in openmw.cfg.
 #
 
 set -euo pipefail
@@ -24,46 +24,65 @@ OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/Op
 FONTS_DIR="$TES3MP_DIR/openmw-profile"
 [[ ! -d "$FONTS_DIR" ]] && FONTS_DIR="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW"
 
+GF_RAW="https://raw.githubusercontent.com/google/fonts/main/ofl"
+
 echo ""
 echo "═══════════════════════════════════════════════"
 echo "  Install Fonts"
 echo "═══════════════════════════════════════════════"
 echo ""
-echo "  1) Download IBM Plex fonts (free, open-source, Cyrillic)"
-echo "  2) Show Nexus Mods link (Morrowind-style fonts)"
+echo "  Each option installs a set of 3 fonts:"
+echo "    Sans (Magic Cards)  |  Serif (Daedric)  |  Mono (MonoFont)"
 echo ""
-input "Select option [1-2] (empty = skip)" "" FONT_OPT
+echo "  1)  IBM Plex Sans    + IBM Plex Serif    + IBM Plex Mono"
+echo "  2)  Noto Sans        + Noto Serif        + Roboto Mono"
+echo "  3)  Roboto           + Lora              + Cousine"
+echo "  4)  Open Sans        + Noto Serif        + Source Code Pro"
+echo "  5)  Montserrat       + Playfair Display  + Space Mono"
+echo "  6)  Fira Sans        + Lora              + Fira Mono"
+echo "  7)  Arimo            + Noto Serif        + Red Hat Mono"
+echo "  8)  Source Sans 3    + Playfair Display  + Roboto Mono"
+echo "  9)  Noto Sans        + Lora              + Cousine"
+echo " 10)  Roboto           + Playfair Display  + Source Code Pro"
+echo " 11)  Open Sans        + Noto Serif        + Space Mono"
+echo " 12)  Show Nexus Mods link (Morrowind-style fonts)"
+echo ""
+input "Select option [1-12] (empty = skip)" "" FONT_OPT
 
-if [[ "${FONT_OPT:-}" == "1" ]]; then
+FONTS_SUBDIR="$FONTS_DIR/Fonts"
+mkdir -p "$FONTS_SUBDIR"
+
+install_3_fonts() {
+    local main_url="$1"   main_file="$2"
+    local serif_url="$3"  serif_file="$4"
+    local mono_url="$5"   mono_file="$6"
+
+    local OK=true
+
     echo ""
-    info "Downloading IBM Plex..."
+    info "Downloading $main_file ..."
+    curl -fsSL -o "$FONTS_SUBDIR/$main_file" "$main_url" || { err "  Failed: $main_file"; OK=false; }
 
-    FONTS_SUBDIR="$FONTS_DIR/Fonts"
-    mkdir -p "$FONTS_SUBDIR"
+    info "Downloading $serif_file ..."
+    curl -fsSL -o "$FONTS_SUBDIR/$serif_file" "$serif_url" || { err "  Failed: $serif_file"; OK=false; }
 
-    GF_RAW="https://raw.githubusercontent.com/google/fonts/main/ofl"
-    URLS=(
-        "$GF_RAW/ibmplexsans/IBMPlexSans%5Bwdth%2Cwght%5D.ttf"
-        "$GF_RAW/ibmplexmono/IBMPlexMono-Regular.ttf"
-        "$GF_RAW/ibmplexserif/IBMPlexSerif-Regular.ttf"
-    )
-    NAMES=("IBMPlexSans.ttf" "IBMPlexMono.ttf" "IBMPlexSerif.ttf")
-    OK=true
-
-    for i in "${!URLS[@]}"; do
-        info "  ${NAMES[$i]}..."
-        curl -fsSL -o "$FONTS_SUBDIR/${NAMES[$i]}" "${URLS[$i]}" || { err "  Failed: ${NAMES[$i]}"; OK=false; }
-    done
+    info "Downloading $mono_file ..."
+    curl -fsSL -o "$FONTS_SUBDIR/$mono_file" "$mono_url" || { err "  Failed: $mono_file"; OK=false; }
 
     if [[ "$OK" == true ]]; then
         ok "Fonts downloaded to $FONTS_SUBDIR"
 
-        # openmw_font.xml in MyGUI format (same as Nexus archive)
-        cat > "$FONTS_SUBDIR/openmw_font.xml" << 'XML'
+        # Name without extension for openmw_font.xml font names
+        local main_name="${main_file%.ttf}"
+        local serif_name="${serif_file%.ttf}"
+        local mono_name="${mono_file%.ttf}"
+
+        # Generate openmw_font.xml
+        cat > "$FONTS_SUBDIR/openmw_font.xml" << XML
 <?xml version="1.0" encoding="UTF-8"?>
 <MyGUI type="Resource" version="1.1">
     <Resource type="ResourceTrueTypeFont" name="Magic Cards">
-        <Property key="Source" value="IBMPlexSans.ttf"/>
+        <Property key="Source" value="$main_file"/>
         <Property key="Antialias" value="false"/>
         <Property key="TabWidth" value="8"/>
         <Property key="OffsetHeight" value="0"/>
@@ -76,7 +95,7 @@ if [[ "${FONT_OPT:-}" == "1" ]]; then
         </Codes>
     </Resource>
     <Resource type="ResourceTrueTypeFont" name="Daedric">
-        <Property key="Source" value="IBMPlexSerif.ttf"/>
+        <Property key="Source" value="$serif_file"/>
         <Property key="Antialias" value="false"/>
         <Property key="TabWidth" value="8"/>
         <Property key="OffsetHeight" value="0"/>
@@ -85,7 +104,7 @@ if [[ "${FONT_OPT:-}" == "1" ]]; then
         </Codes>
     </Resource>
     <Resource type="ResourceTrueTypeFont" name="MonoFont">
-        <Property key="Source" value="IBMPlexMono.ttf"/>
+        <Property key="Source" value="$mono_file"/>
         <Property key="Antialias" value="false"/>
         <Property key="TabWidth" value="8"/>
         <Property key="OffsetHeight" value="0"/>
@@ -105,9 +124,9 @@ XML
             info "Updating openmw.cfg..."
             for idx in 0 1 2; do
                 case "$idx" in
-                    0) name="Magic Cards" ;;
-                    1) name="Daedric" ;;
-                    2) name="MonoFont" ;;
+                    0) name="$main_name" ;;
+                    1) name="$serif_name" ;;
+                    2) name="$mono_name" ;;
                 esac
                 key="Fonts_Font_$idx"
                 if grep -q "^fallback=${key}," "$OPENMW_CFG" 2>/dev/null || grep -q "^fallback=${key}$" "$OPENMW_CFG" 2>/dev/null; then
@@ -120,16 +139,106 @@ XML
             done
         fi
     fi
-fi
+}
 
-if [[ "${FONT_OPT:-}" == "2" ]]; then
-    echo ""
-    echo "  Download from Nexus Mods:"
-    echo "    https://www.nexusmods.com/morrowind/mods/46854"
-    echo ""
-    echo "  Extract the archive and copy the 'Fonts/' folder into:"
-    echo "    $FONTS_DIR/"
-    echo ""
-    echo "  Then run this script again."
-    echo ""
-fi
+case "${FONT_OPT:-}" in
+    1)
+        echo ""
+        info "Option 1 — IBM Plex..."
+        install_3_fonts \
+            "$GF_RAW/ibmplexsans/IBMPlexSans%5Bwdth%2Cwght%5D.ttf" "IBMPlexSans.ttf" \
+            "$GF_RAW/ibmplexserif/IBMPlexSerif-Regular.ttf" "IBMPlexSerif.ttf" \
+            "$GF_RAW/ibmplexmono/IBMPlexMono-Regular.ttf" "IBMPlexMono.ttf"
+        ;;
+    2)
+        echo ""
+        info "Option 2 — Noto Sans + Noto Serif + Roboto Mono..."
+        install_3_fonts \
+            "$GF_RAW/notosans/NotoSans%5Bwdth,wght%5D.ttf" "NotoSans.ttf" \
+            "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
+            "$GF_RAW/robotomono/RobotoMono%5Bwght%5D.ttf" "RobotoMono.ttf"
+        ;;
+    3)
+        echo ""
+        info "Option 3 — Roboto + Lora + Cousine..."
+        install_3_fonts \
+            "$GF_RAW/roboto/Roboto%5Bwdth,wght%5D.ttf" "Roboto.ttf" \
+            "$GF_RAW/lora/Lora%5Bwght%5D.ttf" "Lora.ttf" \
+            "$GF_RAW/cousine/Cousine-Regular.ttf" "Cousine.ttf"
+        ;;
+    4)
+        echo ""
+        info "Option 4 — Open Sans + Noto Serif + Source Code Pro..."
+        install_3_fonts \
+            "$GF_RAW/opensans/OpenSans%5Bwdth,wght%5D.ttf" "OpenSans.ttf" \
+            "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
+            "$GF_RAW/sourcecodepro/SourceCodePro%5Bwght%5D.ttf" "SourceCodePro.ttf"
+        ;;
+    5)
+        echo ""
+        info "Option 5 — Montserrat + Playfair Display + Space Mono..."
+        install_3_fonts \
+            "$GF_RAW/montserrat/Montserrat%5Bwght%5D.ttf" "Montserrat.ttf" \
+            "$GF_RAW/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf" "PlayfairDisplay.ttf" \
+            "$GF_RAW/spacemono/SpaceMono-Regular.ttf" "SpaceMono.ttf"
+        ;;
+    6)
+        echo ""
+        info "Option 6 — Fira Sans + Lora + Fira Mono..."
+        install_3_fonts \
+            "$GF_RAW/firasans/FiraSans-Regular.ttf" "FiraSans.ttf" \
+            "$GF_RAW/lora/Lora%5Bwght%5D.ttf" "Lora.ttf" \
+            "$GF_RAW/firamono/FiraMono-Regular.ttf" "FiraMono.ttf"
+        ;;
+    7)
+        echo ""
+        info "Option 7 — Arimo + Noto Serif + Red Hat Mono..."
+        install_3_fonts \
+            "$GF_RAW/arimo/Arimo%5Bwght%5D.ttf" "Arimo.ttf" \
+            "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
+            "$GF_RAW/redhatmono/RedHatMono%5Bwght%5D.ttf" "RedHatMono.ttf"
+        ;;
+    8)
+        echo ""
+        info "Option 8 — Source Sans 3 + Playfair Display + Roboto Mono..."
+        install_3_fonts \
+            "$GF_RAW/sourcesans3/SourceSans3%5Bwght%5D.ttf" "SourceSans3.ttf" \
+            "$GF_RAW/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf" "PlayfairDisplay.ttf" \
+            "$GF_RAW/robotomono/RobotoMono%5Bwght%5D.ttf" "RobotoMono.ttf"
+        ;;
+    9)
+        echo ""
+        info "Option 9 — Noto Sans + Lora + Cousine..."
+        install_3_fonts \
+            "$GF_RAW/notosans/NotoSans%5Bwdth,wght%5D.ttf" "NotoSans.ttf" \
+            "$GF_RAW/lora/Lora%5Bwght%5D.ttf" "Lora.ttf" \
+            "$GF_RAW/cousine/Cousine-Regular.ttf" "Cousine.ttf"
+        ;;
+    10)
+        echo ""
+        info "Option 10 — Roboto + Playfair Display + Source Code Pro..."
+        install_3_fonts \
+            "$GF_RAW/roboto/Roboto%5Bwdth,wght%5D.ttf" "Roboto.ttf" \
+            "$GF_RAW/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf" "PlayfairDisplay.ttf" \
+            "$GF_RAW/sourcecodepro/SourceCodePro%5Bwght%5D.ttf" "SourceCodePro.ttf"
+        ;;
+    11)
+        echo ""
+        info "Option 11 — Open Sans + Noto Serif + Space Mono..."
+        install_3_fonts \
+            "$GF_RAW/opensans/OpenSans%5Bwdth,wght%5D.ttf" "OpenSans.ttf" \
+            "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
+            "$GF_RAW/spacemono/SpaceMono-Regular.ttf" "SpaceMono.ttf"
+        ;;
+    12)
+        echo ""
+        echo "  Download from Nexus Mods:"
+        echo "    https://www.nexusmods.com/morrowind/mods/46854"
+        echo ""
+        echo "  Extract the archive and copy the 'Fonts/' folder into:"
+        echo "    $FONTS_DIR/"
+        echo ""
+        echo "  Then run this script again."
+        echo ""
+        ;;
+esac
