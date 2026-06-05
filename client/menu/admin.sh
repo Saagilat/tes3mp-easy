@@ -309,6 +309,7 @@ show_admin_menu() {
         "${MENU_ADMIN_RESTART_SERVER}|fn|menu_server_restart"
         "${MENU_ADMIN_SERVER_STATUS}|fn|menu_server_status"
         "${MENU_ADMIN_SERVER_LOGS}|fn|menu_server_logs"
+        "${MENU_ADMIN_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_ADMIN_INSTALL_SERVER}|fn|menu_install_server"
 
         "${MENU_ADMIN_SEP_MODDING}|sep|"
@@ -334,7 +335,6 @@ show_admin_menu() {
         "${MENU_ADMIN_EDIT_BANLIST}|fn|menu_edit_banlist"
 
         "${MENU_ADMIN_SEP_SYSTEM}|sep|"
-        "${MENU_ADMIN_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_COMMON_EDIT_CONFIG}|fn|menu_common_settings"
         "${MENU_ADMIN_EDIT_CONFIG}|fn|menu_edit_config"
     )
