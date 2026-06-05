@@ -32,7 +32,11 @@ confirm() {
     local prompt="${1:-Continue?}"
     local default="${2:-y}"
     local ans
-    read -r -p "  ${prompt} [${default}/n]: " ans
+    if [[ "$default" == "y" ]]; then
+        read -r -p "  ${prompt} [Y/n]: " ans
+    else
+        read -r -p "  ${prompt} [y/N]: " ans
+    fi
     ans="${ans:-$default}"
     [[ "${ans,,}" == "y" ]]
 }
