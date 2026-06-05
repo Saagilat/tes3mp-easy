@@ -411,9 +411,13 @@ main() {
         fi
 
         if confirm "Export mods to server now?" "n"; then
-            bash "$SCRIPT_DIR/bin/admin/export-mods" || {
+            if bash "$SCRIPT_DIR/bin/admin/export-mods"; then
+                bash "$SCRIPT_DIR/bin/admin/deploy-mods" || {
+                    warn "Deploy failed — mods uploaded but not activated."
+                }
+            else
                 warn "Export failed — you can do it later from the menu."
-            }
+            fi
         fi
     else
         warn "EXPORT_DIR not set — skipping mods setup."
