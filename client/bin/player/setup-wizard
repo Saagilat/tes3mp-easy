@@ -17,8 +17,8 @@ source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-PLAYER_CONFIG="$CONFIG_DIR/tes3mp-easy-player.ini"
-CONFIG_FILE="$PLAYER_CONFIG"
+CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+CONFIG_FILE="$CONFIG"
 
 # ────────────────────────────────────────────────────────────
 # Helpers
@@ -61,7 +61,7 @@ configure_morrowind_path() {
             return 1
         fi
 
-        set_ini "MORROWIND_PATH" "$MORROWIND_PATH" "$PLAYER_CONFIG"
+        set_ini "MORROWIND_PATH" "$MORROWIND_PATH" "$CONFIG"
         local resolved="${MORROWIND_PATH/#\~/$HOME}"
 
         if [[ -f "$resolved/Data Files/Morrowind.esm" ]]; then
@@ -96,7 +96,7 @@ configure_tes3mp_dir() {
             return 1
         fi
 
-        set_ini "TES3MP_DIR" "$TES3MP_DIR" "$PLAYER_CONFIG"
+        set_ini "TES3MP_DIR" "$TES3MP_DIR" "$CONFIG"
         return 0
     done
 }
@@ -133,7 +133,7 @@ configure_proton_path() {
 
         local resolved="${PROTON_PATH/#\~/$HOME}"
         if [[ -f "$resolved/proton" ]]; then
-            set_ini "PROTON_PATH" "$PROTON_PATH" "$PLAYER_CONFIG"
+            set_ini "PROTON_PATH" "$PROTON_PATH" "$CONFIG"
             ok "Proton found: ${resolved}"
             return 0
         else
@@ -165,28 +165,28 @@ main() {
     echo ""
 
     # Load current config
-    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 1: DATA_FILES
     # ────────────────────────────────────────────────────────
     step_header 1 $TOTAL "Morrowind Directory"
     configure_morrowind_path
-    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 2: TES3MP_DIR
     # ────────────────────────────────────────────────────────
     step_header 2 $TOTAL "TES3MP Directory"
     configure_tes3mp_dir
-    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 3: PROTON_PATH
     # ────────────────────────────────────────────────────────
     step_header 3 $TOTAL "Proton Path"
     configure_proton_path
-    load_config "$PLAYER_CONFIG" 2>/dev/null || true
+    load_config 2>/dev/null || true
 
     # ────────────────────────────────────────────────────────
     # Step 4: Install client
