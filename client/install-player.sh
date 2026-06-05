@@ -112,9 +112,9 @@ if [[ ! -f "$PLAYER_CONFIG" ]]; then
     cat > "$PLAYER_CONFIG" << 'INI'
 ; TES3MP Easy player configuration
 
-; Path to Morrowind Data Files (where Morrowind.esm is located)
-; Example: /home/user/.steam/steam/steamapps/common/Morrowind/Data Files
-DATA_FILES = 
+; Path to Morrowind installation directory (where Data Files folder is located)
+; Example: /home/user/.steam/steam/steamapps/common/Morrowind
+MORROWIND_PATH = 
 
 ; Path to TES3MP installation directory (relative to home or absolute)
 ; Example: games/tes3mp  →  /home/user/games/tes3mp

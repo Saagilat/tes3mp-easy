@@ -61,7 +61,7 @@ Three INI-format config files at `~/`:
 |------|-----------|---------|
 | `~/.config/tes3mp-easy/tes3mp-easy.ini` | Both installers | Shared: `LANG_CODE`, `EDITOR`, `BACKUP_DIR` |
 | `~/.config/tes3mp-easy/tes3mp-easy-admin.ini` | `install-admin.sh` | Admin: `SSH_HOST`, `EXPORT_DIR` |
-| `~/.config/tes3mp-easy/tes3mp-easy-player.ini` | `install-player.sh` | Player: `DATA_FILES`, `TES3MP_DIR`, `PROTON_PATH` |
+| `~/.config/tes3mp-easy/tes3mp-easy-player.ini` | `install-player.sh` | Player: `MORROWIND_PATH`, `TES3MP_DIR`, `PROTON_PATH` |
 
 Loading order: shared config first → role config overrides shared values. The parser `parse_ini()` uses regex, not `source`, for safety.
 

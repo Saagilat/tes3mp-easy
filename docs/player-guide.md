@@ -31,13 +31,13 @@ bash ~/.local/share/tes3mp-easy/menu/player.sh
 **Step 4** — Configure `~/.config/tes3mp-easy/tes3mp-easy-player.ini` (manual):
 
 ```ini
-DATA_FILES = /home/user/.../Morrowind/Data Files
+MORROWIND_PATH = /home/user/.steam/steam/steamapps/common/Morrowind
 TES3MP_DIR = games/tes3mp
 ```
 
 | Setting | Description | Example |
 |---------|-------------|---------|
-| `DATA_FILES` | Path containing `Morrowind.esm` | `/home/user/.../Morrowind/Data Files` |
+| `MORROWIND_PATH` | Path to Morrowind installation (parent of `Data Files`) | `/home/user/.../Morrowind` |
 | `TES3MP_DIR` | TES3MP install path | `games/tes3mp` |
 | `PROTON_PATH` | Proton path (auto-detected) | `/home/user/.../Proton 9.0` |
 
@@ -75,5 +75,5 @@ bash ~/.local/share/tes3mp-easy/bin/player/install-client
 | Problem | Solution |
 |---------|----------|
 | "Proton not found" | Install Proton 9.0+ via Steam, or set `PROTON_PATH` |
-| "Morrowind.esm not found" | Check `DATA_FILES` path |
+| "Morrowind.esm not found" | Check `MORROWIND_PATH` path |
 | Connection fails | Check server is running, matching TES3MP versions |
