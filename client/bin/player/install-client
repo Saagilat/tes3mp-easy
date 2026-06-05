@@ -35,6 +35,8 @@ fi
 
 TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
 DATA_FILES="${DATA_FILES/#\~/$HOME}"
+# Убираем trailing slash и "/Data Files" — оставляем только корень Morrowind
+DATA_FILES="${DATA_FILES%/}"
 DATA_FILES="${DATA_FILES%/Data Files}"
 
 check_deps curl unzip
