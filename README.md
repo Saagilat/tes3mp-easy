@@ -10,13 +10,11 @@ Install the admin tools on your local machine:
 curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash
 ```
 
-Start the admin menu:
-
 ```bash
 bash ~/.local/share/tes3mp-easy/menu/admin.sh
 ```
 
-From the menu: configure settings → Install Server → Start Server.
+From the menu: configure settings → install server → install mods → start server.
 
 See the [Admin Guide](./docs/admin-guide.md) for detailed instructions.
 
@@ -28,13 +26,11 @@ Install the player tools:
 curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-player.sh | bash
 ```
 
-Configure `~/.tes3mp-easy-player.ini` and start the menu:
-
 ```bash
 bash ~/.local/share/tes3mp-easy/menu/player.sh
 ```
 
-From the menu: install client → run the game.
+From the menu: install client → configure server connection → install mods → run the game.
 
 See the [Player Guide](./docs/player-guide.md) for detailed instructions.
 
