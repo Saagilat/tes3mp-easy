@@ -18,8 +18,7 @@ source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
 load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"
-    err "Run 'edit-config' to set it up."
+    err "Config not found. Run setup-wizard first."
     exit 1
 }
 
@@ -28,13 +27,13 @@ if [[ -z "${TES3MP_DIR:-}" ]]; then
     exit 1
 fi
 
-if [[ -z "${DATA_FILES:-}" ]]; then
-    err "DATA_FILES is not set in config."
+if [[ -z "${MORROWIND_PATH:-}" ]]; then
+    err "MORROWIND_PATH is not set in config."
     exit 1
 fi
 
 TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
-DATA_FILES="${DATA_FILES/#\~/$HOME}"
+MORROWIND_PATH="${MORROWIND_PATH/#\~/$HOME}"
 
 # Путь к конфигу OpenMW внутри префикса Proton
 PREFIX_DIR="$TES3MP_DIR/prefix"
@@ -167,7 +166,7 @@ ok "All content entries removed (will be re-added from server order)."
 echo ""
 info "Copying plugin files..."
 
-DATA_FILES_DIR="$DATA_FILES/Data Files"
+DATA_FILES_DIR="$MORROWIND_PATH/Data Files"
 mkdir -p "$DATA_FILES_DIR"
 
 PLUGIN_COUNT=0
