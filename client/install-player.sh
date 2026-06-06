@@ -23,7 +23,7 @@ fi
 echo ""
 echo "Downloading TES3MP Easy player scripts..."
 
-mkdir -p "$UPDATE_DIR"/{lib/localization/russian,bin/player,bin/common,menu,lang} "$CONFIG_DIR"
+mkdir -p "$UPDATE_DIR"/{lib/localization/russian,layer1/player,layer2,layer3,lang} "$CONFIG_DIR"
 
 download() {
     local src="$1" dst="$2"
@@ -44,41 +44,46 @@ download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
 download "client/lib/theme.ini"            "$UPDATE_DIR/lib/theme.ini"
 download "client/lib/settings.cfg.example" "$UPDATE_DIR/lib/settings.cfg.example"
 
-echo "  ── backup ──"
-download "client/bin/player/show-backups-mods"        "$UPDATE_DIR/bin/player/show-backups-mods"
-download "client/bin/player/show-backups-players"     "$UPDATE_DIR/bin/player/show-backups-players"
-download "client/bin/player/show-backups-world"       "$UPDATE_DIR/bin/player/show-backups-world"
-download "client/bin/player/download-backup-mods"     "$UPDATE_DIR/bin/player/download-backup-mods"
-download "client/bin/player/download-backup-players"  "$UPDATE_DIR/bin/player/download-backup-players"
-download "client/bin/player/download-backup-world"    "$UPDATE_DIR/bin/player/download-backup-world"
+echo "  ── layer1 (non-interactive) ──"
+download "client/layer1/player/show-backups-mods"        "$UPDATE_DIR/layer1/player/show-backups-mods"
+download "client/layer1/player/show-backups-players"     "$UPDATE_DIR/layer1/player/show-backups-players"
+download "client/layer1/player/show-backups-world"       "$UPDATE_DIR/layer1/player/show-backups-world"
+download "client/layer1/player/download-backup-mods"     "$UPDATE_DIR/layer1/player/download-backup-mods"
+download "client/layer1/player/download-backup-players"  "$UPDATE_DIR/layer1/player/download-backup-players"
+download "client/layer1/player/download-backup-world"    "$UPDATE_DIR/layer1/player/download-backup-world"
 
 echo "  ── setup wizard ──"
-download "client/bin/player/setup-wizard"    "$UPDATE_DIR/bin/player/setup-wizard"
+download "client/layer1/player/set-morrowind-path"  "$UPDATE_DIR/layer1/player/set-morrowind-path"
+download "client/layer1/player/set-tes3mp-dir"      "$UPDATE_DIR/layer1/player/set-tes3mp-dir"
+download "client/layer1/player/set-proton-path"     "$UPDATE_DIR/layer1/player/set-proton-path"
 
 echo "  ── install ──"
-download "client/bin/player/install-client"  "$UPDATE_DIR/bin/player/install-client"
-download "client/bin/player/run-client"      "$UPDATE_DIR/bin/player/run-client"
+download "client/layer1/player/install-client"  "$UPDATE_DIR/layer1/player/install-client"
+download "client/layer1/player/run-client"      "$UPDATE_DIR/layer1/player/run-client"
+download "client/layer1/player/run-openmw-cs"   "$UPDATE_DIR/layer1/player/run-openmw-cs"
 
 echo "  ── mods ──"
-download "client/bin/player/install-mods"    "$UPDATE_DIR/bin/player/install-mods"
-download "client/bin/player/install-localization" "$UPDATE_DIR/bin/player/install-localization"
+download "client/layer1/player/install-mods"    "$UPDATE_DIR/layer1/player/install-mods"
+download "client/layer1/player/install-localization" "$UPDATE_DIR/layer1/player/install-localization"
 
 echo "  ── fonts & ui ──"
-download "client/bin/player/install-fonts"   "$UPDATE_DIR/bin/player/install-fonts"
-download "client/bin/player/configure-ui"    "$UPDATE_DIR/bin/player/configure-ui"
+download "client/layer1/player/install-fonts"   "$UPDATE_DIR/layer1/player/install-fonts"
+download "client/layer1/player/configure-ui"    "$UPDATE_DIR/layer1/player/configure-ui"
 
 echo "  ── config ──"
-download "client/bin/player/edit-client-cfg"  "$UPDATE_DIR/bin/player/edit-client-cfg"
+download "client/layer1/player/edit-client-cfg"  "$UPDATE_DIR/layer1/player/edit-client-cfg"
 
 echo "  ── settings ──"
-download "client/bin/player/edit-config"      "$UPDATE_DIR/bin/player/edit-config"
-download "client/bin/common/edit-config"      "$UPDATE_DIR/bin/common/edit-config"
+download "client/layer1/player/edit-config"      "$UPDATE_DIR/layer1/player/edit-config"
+
+echo "  ── layer2 (interactive wrappers) ──"
+download "client/layer2/player.sh"        "$UPDATE_DIR/layer2/player.sh"
+
+echo "  ── layer3 (menu) ──"
+download "client/layer3/player.sh"        "$UPDATE_DIR/layer3/player.sh"
 
 echo "  ── localization ──"
 download "client/lib/localization/russian/install.sh"  "$UPDATE_DIR/lib/localization/russian/install.sh"
-
-echo "  ── menu ──"
-download "client/menu/player.sh"        "$UPDATE_DIR/menu/player.sh"
 
 printf "  lang/en "
 curl -fsSL "$GITHUB_RAW/client/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null \
@@ -130,10 +135,10 @@ echo "  Config file:"
 echo "    $CONFIG"
 echo ""
 echo "  To start the player menu:"
-echo "    bash $UPDATE_DIR/menu/player.sh"
+echo "    bash $UPDATE_DIR/layer3/player.sh"
 echo ""
 echo "  Alias (add to ~/.bashrc):"
-echo "    alias tes3mp-easy-player='bash $UPDATE_DIR/menu/player.sh'"
+echo "    alias tes3mp-easy-player='bash $UPDATE_DIR/layer3/player.sh'"
 echo ""
 echo "  All commands:"
 echo "    tes3mp-easy-player help"

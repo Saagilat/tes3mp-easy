@@ -1,9 +1,8 @@
 #!/bin/bash
 #
 # install-fonts — Install fonts for OpenMW/TES3MP
-#
-# Downloads open-source fonts with Cyrillic support from Google Fonts
-# and configures openmw_font.xml and fallback entries in openmw.cfg.
+# Layer 1: non-interactive. Takes option number as argument.
+# Usage: install-fonts <option>
 #
 
 set -euo pipefail
@@ -12,12 +11,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"; exit 1
-}
+load_config 2>/dev/null || { err "Config not found."; exit 1; }
 
 [[ -z "${TES3MP_DIR:-}" ]] && { err "TES3MP_DIR is not set in config."; exit 1; }
 TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+
+FONT_OPT="${1:-}"
+[[ -z "$FONT_OPT" ]] && { err "Usage: install-fonts <option (1-12)>"; exit 1; }
 
 SETTINGS_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/settings.cfg"
 OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
@@ -25,29 +25,6 @@ FONTS_DIR="$TES3MP_DIR/openmw-profile"
 [[ ! -d "$FONTS_DIR" ]] && FONTS_DIR="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW"
 
 GF_RAW="https://raw.githubusercontent.com/google/fonts/main/ofl"
-
-echo ""
-echo "═══════════════════════════════════════════════"
-echo "  Install Fonts"
-echo "═══════════════════════════════════════════════"
-echo ""
-echo "  Each option installs a set of 3 fonts:"
-echo "    Sans (Magic Cards)  |  Serif (Daedric)  |  Mono (MonoFont)"
-echo ""
-echo "  1)  IBM Plex Sans    + IBM Plex Serif    + IBM Plex Mono"
-echo "  2)  Noto Sans        + Noto Serif        + Roboto Mono"
-echo "  3)  Roboto           + Lora              + Cousine"
-echo "  4)  Open Sans        + Noto Serif        + Source Code Pro"
-echo "  5)  Montserrat       + Playfair Display  + Space Mono"
-echo "  6)  Fira Sans        + Lora              + Fira Mono"
-echo "  7)  Arimo            + Noto Serif        + Red Hat Mono"
-echo "  8)  Source Sans 3    + Playfair Display  + Roboto Mono"
-echo "  9)  Noto Sans        + Lora              + Cousine"
-echo " 10)  Roboto           + Playfair Display  + Source Code Pro"
-echo " 11)  Open Sans        + Noto Serif        + Space Mono"
-echo " 12)  Show Nexus Mods link (Morrowind-style fonts)"
-echo ""
-input "Select option [1-12] (empty = skip)" "" FONT_OPT
 
 FONTS_SUBDIR="$FONTS_DIR/Fonts"
 mkdir -p "$FONTS_SUBDIR"
@@ -72,12 +49,10 @@ install_3_fonts() {
     if [[ "$OK" == true ]]; then
         ok "Fonts downloaded to $FONTS_SUBDIR"
 
-        # Name without extension for openmw_font.xml font names
         local main_name="${main_file%.ttf}"
         local serif_name="${serif_file%.ttf}"
         local mono_name="${mono_file%.ttf}"
 
-        # Generate openmw_font.xml
         cat > "$FONTS_SUBDIR/openmw_font.xml" << XML
 <?xml version="1.0" encoding="UTF-8"?>
 <MyGUI type="Resource" version="1.1">
@@ -118,7 +93,6 @@ install_3_fonts() {
 XML
         ok "openmw_font.xml created in Fonts/ subfolder"
 
-        # Update fallback in openmw.cfg
         if [[ -f "$OPENMW_CFG" ]]; then
             echo ""
             info "Updating openmw.cfg..."
@@ -141,95 +115,57 @@ XML
     fi
 }
 
-case "${FONT_OPT:-}" in
-    1)
-        echo ""
-        info "Option 1 — IBM Plex..."
-        install_3_fonts \
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Install Fonts"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+case "${FONT_OPT}" in
+    1) install_3_fonts \
             "$GF_RAW/ibmplexsans/IBMPlexSans%5Bwdth%2Cwght%5D.ttf" "IBMPlexSans.ttf" \
             "$GF_RAW/ibmplexserif/IBMPlexSerif-Regular.ttf" "IBMPlexSerif.ttf" \
-            "$GF_RAW/ibmplexmono/IBMPlexMono-Regular.ttf" "IBMPlexMono.ttf"
-        ;;
-    2)
-        echo ""
-        info "Option 2 — Noto Sans + Noto Serif + Roboto Mono..."
-        install_3_fonts \
+            "$GF_RAW/ibmplexmono/IBMPlexMono-Regular.ttf" "IBMPlexMono.ttf" ;;
+    2) install_3_fonts \
             "$GF_RAW/notosans/NotoSans%5Bwdth,wght%5D.ttf" "NotoSans.ttf" \
             "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
-            "$GF_RAW/robotomono/RobotoMono%5Bwght%5D.ttf" "RobotoMono.ttf"
-        ;;
-    3)
-        echo ""
-        info "Option 3 — Roboto + Lora + Cousine..."
-        install_3_fonts \
+            "$GF_RAW/robotomono/RobotoMono%5Bwght%5D.ttf" "RobotoMono.ttf" ;;
+    3) install_3_fonts \
             "$GF_RAW/roboto/Roboto%5Bwdth,wght%5D.ttf" "Roboto.ttf" \
             "$GF_RAW/lora/Lora%5Bwght%5D.ttf" "Lora.ttf" \
-            "$GF_RAW/cousine/Cousine-Regular.ttf" "Cousine.ttf"
-        ;;
-    4)
-        echo ""
-        info "Option 4 — Open Sans + Noto Serif + Source Code Pro..."
-        install_3_fonts \
+            "$GF_RAW/cousine/Cousine-Regular.ttf" "Cousine.ttf" ;;
+    4) install_3_fonts \
             "$GF_RAW/opensans/OpenSans%5Bwdth,wght%5D.ttf" "OpenSans.ttf" \
             "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
-            "$GF_RAW/sourcecodepro/SourceCodePro%5Bwght%5D.ttf" "SourceCodePro.ttf"
-        ;;
-    5)
-        echo ""
-        info "Option 5 — Montserrat + Playfair Display + Space Mono..."
-        install_3_fonts \
+            "$GF_RAW/sourcecodepro/SourceCodePro%5Bwght%5D.ttf" "SourceCodePro.ttf" ;;
+    5) install_3_fonts \
             "$GF_RAW/montserrat/Montserrat%5Bwght%5D.ttf" "Montserrat.ttf" \
             "$GF_RAW/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf" "PlayfairDisplay.ttf" \
-            "$GF_RAW/spacemono/SpaceMono-Regular.ttf" "SpaceMono.ttf"
-        ;;
-    6)
-        echo ""
-        info "Option 6 — Fira Sans + Lora + Fira Mono..."
-        install_3_fonts \
+            "$GF_RAW/spacemono/SpaceMono-Regular.ttf" "SpaceMono.ttf" ;;
+    6) install_3_fonts \
             "$GF_RAW/firasans/FiraSans-Regular.ttf" "FiraSans.ttf" \
             "$GF_RAW/lora/Lora%5Bwght%5D.ttf" "Lora.ttf" \
-            "$GF_RAW/firamono/FiraMono-Regular.ttf" "FiraMono.ttf"
-        ;;
-    7)
-        echo ""
-        info "Option 7 — Arimo + Noto Serif + Red Hat Mono..."
-        install_3_fonts \
+            "$GF_RAW/firamono/FiraMono-Regular.ttf" "FiraMono.ttf" ;;
+    7) install_3_fonts \
             "$GF_RAW/arimo/Arimo%5Bwght%5D.ttf" "Arimo.ttf" \
             "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
-            "$GF_RAW/redhatmono/RedHatMono%5Bwght%5D.ttf" "RedHatMono.ttf"
-        ;;
-    8)
-        echo ""
-        info "Option 8 — Source Sans 3 + Playfair Display + Roboto Mono..."
-        install_3_fonts \
+            "$GF_RAW/redhatmono/RedHatMono%5Bwght%5D.ttf" "RedHatMono.ttf" ;;
+    8) install_3_fonts \
             "$GF_RAW/sourcesans3/SourceSans3%5Bwght%5D.ttf" "SourceSans3.ttf" \
             "$GF_RAW/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf" "PlayfairDisplay.ttf" \
-            "$GF_RAW/robotomono/RobotoMono%5Bwght%5D.ttf" "RobotoMono.ttf"
-        ;;
-    9)
-        echo ""
-        info "Option 9 — Noto Sans + Lora + Cousine..."
-        install_3_fonts \
+            "$GF_RAW/robotomono/RobotoMono%5Bwght%5D.ttf" "RobotoMono.ttf" ;;
+    9) install_3_fonts \
             "$GF_RAW/notosans/NotoSans%5Bwdth,wght%5D.ttf" "NotoSans.ttf" \
             "$GF_RAW/lora/Lora%5Bwght%5D.ttf" "Lora.ttf" \
-            "$GF_RAW/cousine/Cousine-Regular.ttf" "Cousine.ttf"
-        ;;
-    10)
-        echo ""
-        info "Option 10 — Roboto + Playfair Display + Source Code Pro..."
-        install_3_fonts \
+            "$GF_RAW/cousine/Cousine-Regular.ttf" "Cousine.ttf" ;;
+    10) install_3_fonts \
             "$GF_RAW/roboto/Roboto%5Bwdth,wght%5D.ttf" "Roboto.ttf" \
             "$GF_RAW/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf" "PlayfairDisplay.ttf" \
-            "$GF_RAW/sourcecodepro/SourceCodePro%5Bwght%5D.ttf" "SourceCodePro.ttf"
-        ;;
-    11)
-        echo ""
-        info "Option 11 — Open Sans + Noto Serif + Space Mono..."
-        install_3_fonts \
+            "$GF_RAW/sourcecodepro/SourceCodePro%5Bwght%5D.ttf" "SourceCodePro.ttf" ;;
+    11) install_3_fonts \
             "$GF_RAW/opensans/OpenSans%5Bwdth,wght%5D.ttf" "OpenSans.ttf" \
             "$GF_RAW/notoserif/NotoSerif%5Bwdth,wght%5D.ttf" "NotoSerif.ttf" \
-            "$GF_RAW/spacemono/SpaceMono-Regular.ttf" "SpaceMono.ttf"
-        ;;
+            "$GF_RAW/spacemono/SpaceMono-Regular.ttf" "SpaceMono.ttf" ;;
     12)
         echo ""
         echo "  Download from Nexus Mods:"
@@ -237,8 +173,6 @@ case "${FONT_OPT:-}" in
         echo ""
         echo "  Extract the archive and copy the 'Fonts/' folder into:"
         echo "    $FONTS_DIR/"
-        echo ""
-        echo "  Then run this script again."
         echo ""
         ;;
 esac

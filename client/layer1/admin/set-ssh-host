@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# set-ssh-host — Save SSH_HOST to config and test connection
+# Layer 1: non-interactive.
+# Usage: set-ssh-host <host>
+# Returns 0 if connection successful, 1 if failed.
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy/tes3mp-easy.ini"
+
+host="${1:-}"
+[[ -z "$host" ]] && { err "Usage: set-ssh-host <host>"; exit 1; }
+
+if grep -q "^SSH_HOST[[:space:]]*=" "$CONFIG" 2>/dev/null; then
+    sed -i "s|^SSH_HOST[[:space:]]*=.*|SSH_HOST = ${host}|" "$CONFIG"
+else
+    echo "SSH_HOST = ${host}" >> "$CONFIG"
+fi
+ok "SSH_HOST set to: ${host}"
+
+# Test connection
+if ssh -o ConnectTimeout=5 -o BatchMode=yes "$host" "echo ok" 2>/dev/null; then
+    ok "SSH connection successful."
+    return 0
+else
+    err "Connection to ${host} failed."
+    return 1
+fi

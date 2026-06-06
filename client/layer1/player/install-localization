@@ -1,0 +1,112 @@
+#!/bin/bash
+#
+# install-localization — Install Morrowind localization
+# Layer 1: non-interactive. Takes locale code as argument.
+# Usage: install-localization <locale_code>
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config 2>/dev/null || { err "Config not found."; exit 1; }
+
+[[ -z "${TES3MP_DIR:-}" ]] && { err "TES3MP_DIR is not set in config."; exit 1; }
+[[ -z "${MORROWIND_PATH:-}" ]] && { err "MORROWIND_PATH is not set in config."; exit 1; }
+
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+MORROWIND_PATH="${MORROWIND_PATH/#\~/$HOME}"
+
+LOCALE="${1:-}"
+[[ -z "$LOCALE" ]] && { err "Usage: install-localization <locale_code>"; exit 1; }
+
+if [[ ! -d "$MORROWIND_PATH/Data Files" ]]; then
+    err "Morrowind Data Files not found at: $MORROWIND_PATH/Data Files"
+    exit 1
+fi
+
+LOCALE_DIR="$TES3MP_DIR/localizations"
+mkdir -p "$LOCALE_DIR"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Installing ${LOCALE} Localization"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  Morrowind:    $MORROWIND_PATH"
+echo "  Cache dir:    $LOCALE_DIR"
+echo ""
+
+# Get install.sh — use local copy
+INSTALL_SCRIPT="$SCRIPT_DIR/lib/localization/${LOCALE}/install.sh"
+if [[ ! -f "$INSTALL_SCRIPT" ]]; then
+    err "Localization install script not found: $INSTALL_SCRIPT"
+    exit 1
+fi
+chmod +x "$INSTALL_SCRIPT"
+info "Using install.sh for ${LOCALE}"
+
+# Download archive
+RELEASE_URL="https://github.com/Saagilat/tes3mp-easy/releases/download/${LOCALE}-v1.0"
+LOCALE_TAR="$LOCALE_DIR/${LOCALE}.tar"
+
+if [[ -f "$LOCALE_TAR" ]]; then
+    info "${LOCALE}.tar already cached, skipping."
+else
+    info "Downloading ${LOCALE}.tar (this may take a while)..."
+    curl -# -L -o "$LOCALE_TAR" "$RELEASE_URL/${LOCALE}.tar" 2>&1 || {
+        err "Failed to download ${LOCALE}.tar"
+        exit 1
+    }
+    ok "${LOCALE}.tar downloaded."
+fi
+
+# Optional: voices
+VOICES_TAR="$LOCALE_DIR/voices_${LOCALE}.tar"
+if [[ ! -f "$VOICES_TAR" ]]; then
+    if [[ "${DOWNLOAD_VOICES:-}" == "true" ]]; then
+        info "Downloading voices_${LOCALE}.tar (this may take a while)..."
+        curl -# -L -o "$VOICES_TAR" "$RELEASE_URL/voices_${LOCALE}.tar" 2>&1 || {
+            warn "Failed to download voices_${LOCALE}.tar (may be missing)."
+            rm -f "$VOICES_TAR"
+        }
+        if [[ -f "$VOICES_TAR" ]]; then
+            ok "voices_${LOCALE}.tar downloaded."
+        fi
+    fi
+fi
+
+# Run install.sh
+echo ""
+info "Running localization installer..."
+echo ""
+
+bash "$INSTALL_SCRIPT" "$MORROWIND_PATH" "$LOCALE_TAR" "$VOICES_TAR"
+
+# Set encoding=win1251 in openmw.cfg (Cyrillic only)
+CYRILLIC_LOCALES=("russian")
+if [[ " ${CYRILLIC_LOCALES[*]} " == *" ${LOCALE} "* ]]; then
+    OPENMW_CFG="$TES3MP_DIR/prefix/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
+
+    if [[ -f "$OPENMW_CFG" ]]; then
+        echo ""
+        info "Setting encoding=win1251 in openmw.cfg for Cyrillic support..."
+        if grep -q "^encoding[[:space:]]*=" "$OPENMW_CFG" 2>/dev/null; then
+            sed -i "s|^encoding[[:space:]]*=.*|encoding=win1251|" "$OPENMW_CFG"
+        else
+            echo "" >> "$OPENMW_CFG"
+            echo "encoding=win1251" >> "$OPENMW_CFG"
+        fi
+        ok "encoding=win1251 set in openmw.cfg"
+    else
+        warn "openmw.cfg not found at: $OPENMW_CFG"
+    fi
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Localization installation complete!"
+echo "═══════════════════════════════════════════════"
+echo ""

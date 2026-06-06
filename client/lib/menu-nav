@@ -143,13 +143,13 @@ run_menu() {
     [[ $fn_total -gt 0 ]] && cursor=${fn_map[0]}
 
     # Functions that should NOT show "Press Enter" pause
-    # Must match the exact function names from menu/admin.sh and menu/player.sh
+    # Must match the exact function names (from layer2 or layer3)
     _NO_PAUSE_ACTIONS=(
         "switch_to_player"
-        "menu_edit_server_cfg"
-        "menu_edit_lua"
-        "menu_edit_banlist"
-        "menu_edit_config"
+        "interactive_edit_server_cfg"
+        "interactive_edit_lua"
+        "interactive_edit_banlist"
+        "interactive_edit_config"
     )
 
     _should_pause() {
@@ -232,8 +232,8 @@ run_menu() {
                     load_lang "${LANG_CODE:-en}" 2>/dev/null || true
                 fi
                 if [[ -n "$ssh_host" ]]; then
-                    needs_restart=$(check_restart_flag)
-                    server_status=$(check_server_status)
+                    needs_restart=$(interactive_check_restart_flag)
+                    server_status=$(interactive_check_server_status)
                 fi
             fi
             continue
@@ -283,8 +283,8 @@ run_menu() {
                 load_lang "${LANG_CODE:-en}" 2>/dev/null || true
             fi
             if [[ -n "$ssh_host" ]]; then
-                needs_restart=$(check_restart_flag)
-                server_status=$(check_server_status)
+                needs_restart=$(interactive_check_restart_flag)
+                server_status=$(interactive_check_server_status)
             fi
         fi
     done
