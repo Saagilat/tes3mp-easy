@@ -49,6 +49,7 @@ download "client/lib/common"           "$UPDATE_DIR/lib/common"
 download "client/lib/log"              "$UPDATE_DIR/lib/log"
 download "client/lib/config"           "$UPDATE_DIR/lib/config"
 download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
+download "client/lib/menu-strings"     "$UPDATE_DIR/lib/menu-strings"
 download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
 download "client/lib/settings.cfg.example" "$UPDATE_DIR/lib/settings.cfg.example"
 

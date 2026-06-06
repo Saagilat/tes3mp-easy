@@ -15,11 +15,12 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     LIB_DIR="$PROJECT_DIR/lib"
     source "$LIB_DIR/common"
     source "$LIB_DIR/config"
+    source "$LIB_DIR/menu-strings"
     source "$LIB_DIR/menu-nav"
 fi
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.ini"
+CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.json"
 
 LAYER1_ADMIN="$LAYER1_DIR/admin"
 LAYER2_ADMIN="$LAYER2_DIR/admin"

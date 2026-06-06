@@ -15,11 +15,12 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     LIB_DIR="$PROJECT_DIR/lib"
     source "$LIB_DIR/common"
     source "$LIB_DIR/config"
+    source "$LIB_DIR/menu-strings"
     source "$LIB_DIR/menu-nav"
 fi
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.ini"
+CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.json"
 
 LAYER1_PLAYER="$LAYER1_DIR/player"
 LAYER2_PLAYER="$LAYER2_DIR/player"
@@ -106,7 +107,7 @@ show_player_menu() {
         "${MENU_PLAYER_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_PLAYER_INSTALL_MODS}|fn|menu_install_mods"
         "${MENU_PLAYER_SEP_LOCALIZATION}|sep|"
-        "Install game localization|fn|menu_install_localization"
+        "${MENU_PLAYER_INSTALL_LOCALIZATION}|fn|menu_install_localization"
         "${MENU_PLAYER_INSTALL_FONTS}|fn|menu_install_fonts"
         "${MENU_PLAYER_CONFIGURE_UI}|fn|menu_configure_ui"
 
