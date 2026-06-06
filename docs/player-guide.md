@@ -9,7 +9,6 @@
 
 ## 1. Client Setup
 
-**Tip:** After installation, run **Quick Setup Wizard** from the player menu — it will guide you through the entire setup process step by step.
 
 **Step 1** — Install player tools:
 

@@ -15,8 +15,6 @@
 
 ## 1. Server Setup
 
-**Tip:** Use the **Quick Setup Wizard** — it will set everything up.
-
 **Step 1 — Install admin tools on your local machine:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash

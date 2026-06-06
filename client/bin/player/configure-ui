@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || {
+load_config "$HOME/.tes3mp-easy-player.ini" 2>/dev/null || {
     err "Config not found at ~/.tes3mp-easy-player.ini"; exit 1
 }
 
@@ -55,6 +55,15 @@ fi
 
 for key_val in "ttf resolution=$TTF_RES" "font size=$FONT_SIZE" "scaling factor=$SCALING"; do
     key="${key_val%=*}"
+    val="${key_val#*=}"
+    if grep -q "^${key}[[:space:]]*=" <(awk '/^\[GUI\]/,0' "$SETTINGS_CFG" 2>/dev/null); then
+        line_num=$(awk '/^\[GUI\]/,0' "$SETTINGS_CFG" | grep -n "^${key}[[:space:]]*=" | head -1 | cut -d: -f1)
+        abs_line=$(( $(grep -n "^\[GUI\]" "$SETTINGS_CFG" | head -1 | cut -d: -f1) + line_num - 1 ))
+        sed -i "${abs_line}s|^${key}[[:space:]]*=.*|${key} = ${val}|" "$SETTINGS_CFG"
+    else
+        sed -i "/^\[GUI\]/a ${key} = ${val}" "$SETTINGS_CFG"
+    fi
+done
     val="${key_val#*=}"
     if grep -q "^${key}[[:space:]]*=" <(awk '/^\[GUI\]/,0' "$SETTINGS_CFG" 2>/dev/null); then
         line_num=$(awk '/^\[GUI\]/,0' "$SETTINGS_CFG" | grep -n "^${key}[[:space:]]*=" | head -1 | cut -d: -f1)
