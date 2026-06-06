@@ -43,6 +43,7 @@ download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
 download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
 download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
 
+echo "  ── layer1 (non-interactive) ──"
 echo "  ── setup wizard ──"
 download "client/layer1/admin/set-ssh-host"    "$UPDATE_DIR/layer1/admin/set-ssh-host"
 download "client/layer1/admin/set-export-dir"  "$UPDATE_DIR/layer1/admin/set-export-dir"
