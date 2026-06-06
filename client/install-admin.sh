@@ -65,9 +65,9 @@ download "client/bin/admin/deploy-players"    "$UPDATE_DIR/bin/admin/deploy-play
 download "client/bin/admin/deploy-world"      "$UPDATE_DIR/bin/admin/deploy-world"
 
 echo "  ── backup ──"
-download "client/bin/admin/backup-mods"       "$UPDATE_DIR/bin/admin/backup-mods"
-download "client/bin/admin/backup-players"    "$UPDATE_DIR/bin/admin/backup-players"
-download "client/bin/admin/backup-world"      "$UPDATE_DIR/bin/admin/backup-world"
+download "client/bin/admin/download-backup-mods"       "$UPDATE_DIR/bin/admin/download-backup-mods"
+download "client/bin/admin/download-backup-players"    "$UPDATE_DIR/bin/admin/download-backup-players"
+download "client/bin/admin/download-backup-world"      "$UPDATE_DIR/bin/admin/download-backup-world"
 download "client/bin/admin/show-backups-mods" "$UPDATE_DIR/bin/admin/show-backups-mods"
 download "client/bin/admin/show-backups-players" "$UPDATE_DIR/bin/admin/show-backups-players"
 download "client/bin/admin/show-backups-world" "$UPDATE_DIR/bin/admin/show-backups-world"

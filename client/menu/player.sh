@@ -85,10 +85,11 @@ menu_edit_config() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Download backup menu — list via HTTP, select, download via curl
+# Download backup menu — get list via HTTP, select, download via bin/
 # ────────────────────────────────────────────────────────────
 menu_download_backup() {
     local type="$1"
+    local label="${type^}"
     local SERVER_URL
 
     SERVER_URL=$(_get_server_url) || {
@@ -99,14 +100,14 @@ menu_download_backup() {
 
     echo ""
     echo "═══════════════════════════════════════════════"
-    echo "  Download ${type^} Backup"
+    echo "  Download $label Backup"
     echo "═══════════════════════════════════════════════"
     echo ""
 
     local json
     json=$(curl -sf "$SERVER_URL/list-backups/$type" 2>/dev/null || echo "")
     if [[ -z "$json" || "$json" == "[]" ]]; then
-        warn "No ${type^} backups available on server."
+        warn "No $label backups available on server."
         return
     fi
 
@@ -118,7 +119,7 @@ menu_download_backup() {
     done < <(echo "$json")
 
     if [[ ${#names[@]} -eq 0 ]]; then
-        warn "No ${type^} backups found."
+        warn "No $label backups found."
         return
     fi
 
@@ -143,15 +144,13 @@ menu_download_backup() {
         return
     fi
 
-    local dest="$HOME/Downloads/$selected"
-    mkdir -p "$(dirname "$dest")"
     echo ""
     info "Downloading $selected..."
-    curl -sfL "$SERVER_URL/download/$type/$selected" -o "$dest" || {
+    bash "$BIN_DIR/download-backup-${type}" "$selected" || {
         err "Download failed."
         return
     }
-    ok "Saved to: $dest"
+    ok "Done."
 }
 
 menu_download_mods()    { menu_download_backup "mods"; }

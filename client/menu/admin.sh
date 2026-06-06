@@ -38,6 +38,9 @@ dispatch_admin() {
         deploy-mods) bash "$BIN_DIR/deploy-mods" ;;
         deploy-players) bash "$BIN_DIR/deploy-players" ;;
         deploy-world) bash "$BIN_DIR/deploy-world" ;;
+        download-backup-mods) bash "$BIN_DIR/download-backup-mods" ;;
+        download-backup-players) bash "$BIN_DIR/download-backup-players" ;;
+        download-backup-world) bash "$BIN_DIR/download-backup-world" ;;
         show-backups-mods) bash "$BIN_DIR/show-backups-mods" ;;
         show-backups-players) bash "$BIN_DIR/show-backups-players" ;;
         show-backups-world) bash "$BIN_DIR/show-backups-world" ;;
@@ -50,6 +53,7 @@ dispatch_admin() {
             echo "  server-logs, server-status, export-mods, export-players, export-world,"
             echo "  generate-required-data, deploy-mods, deploy-players, deploy-world,"
             echo "  show-backups-mods, show-backups-players, show-backups-world,"
+            echo "  download-backup-mods, download-backup-players, download-backup-world,"
             echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist, setup-wizard, menu"
             ;;
         menu|"") show_admin_menu ;;
@@ -105,21 +109,14 @@ require_ssh_host() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Download backup menu — list via HTTP, select, download via curl
+# Download backup menu — list via SSH, select, download via SCP
 # ────────────────────────────────────────────────────────────
 _download_backup_menu() {
     local type="$1"
     local label="$2"
+    local download_bin="$3"  # path to bin/admin/download-backup-*
 
-    if [[ -z "${SERVER_URL:-}" ]] && [[ -n "${SSH_HOST:-}" ]]; then
-        SERVER_URL="http://${SSH_HOST}:8085"
-    fi
-
-    if [[ -z "${SERVER_URL:-}" ]]; then
-        err "SERVER_URL is not set."
-        err "Set it in Admin Menu Settings or ensure SSH_HOST is configured."
-        return 1
-    fi
+    require_ssh_host || return 1
 
     echo ""
     echo "═══════════════════════════════════════════════"
@@ -127,28 +124,19 @@ _download_backup_menu() {
     echo "═══════════════════════════════════════════════"
     echo ""
 
-    # Fetch JSON list from server
-    local json
-    json=$(curl -sf "$SERVER_URL/list-backups/$type" 2>/dev/null || echo "")
-    if [[ -z "$json" || "$json" == "[]" ]]; then
+    local archives
+    archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$type/*.tar.gz 2>/dev/null | head -10 | xargs -n1 basename" 2>/dev/null)
+    if [[ -z "$archives" ]]; then
         warn "No $label backups available on server."
         return
     fi
 
-    # Parse names from JSON
-    local names=()
-    while IFS= read -r line; do
-        if [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+) ]]; then
-            names+=("${BASH_REMATCH[1]}")
-        fi
-    done < <(echo "$json")
-
-    if [[ ${#names[@]} -eq 0 ]]; then
-        warn "No $label backups found."
-        return
-    fi
-
     # Show numbered list
+    local names=()
+    while IFS= read -r name; do
+        names+=("$name")
+    done <<< "$archives"
+
     local i=1
     for name in "${names[@]}"; do
         echo "  $i) $name"
@@ -170,14 +158,13 @@ _download_backup_menu() {
         return
     fi
 
-    local dest="$PWD/$selected"
     echo ""
     info "Downloading $selected..."
-    curl -sfL "$SERVER_URL/download/$type/$selected" -o "$dest" || {
+    bash "$download_bin" "$selected" || {
         err "Download failed."
         return
     }
-    ok "Saved to: $dest"
+    ok "Done."
 }
 
 # ────────────────────────────────────────────────────────────
@@ -251,9 +238,9 @@ menu_deploy_world()   { _deploy_menu "world" "World" "$BIN_DIR/deploy-world"; }
 # ────────────────────────────────────────────────────────────
 # Download wrappers
 # ────────────────────────────────────────────────────────────
-menu_download_mods()    { _download_backup_menu "mods" "Mods"; }
-menu_download_players() { _download_backup_menu "players" "Players"; }
-menu_download_world()   { _download_backup_menu "world" "World"; }
+menu_download_mods()    { _download_backup_menu "mods" "Mods" "$BIN_DIR/download-backup-mods"; }
+menu_download_players() { _download_backup_menu "players" "Players" "$BIN_DIR/download-backup-players"; }
+menu_download_world()   { _download_backup_menu "world" "World" "$BIN_DIR/download-backup-world"; }
 
 # ────────────────────────────────────────────────────────────
 # check_restart_flag — query server via SSH
