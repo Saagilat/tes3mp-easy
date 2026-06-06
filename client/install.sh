@@ -1,12 +1,14 @@
 #!/bin/bash
 #
-# install-admin.sh — download TES3MP Easy admin tools
+# install.sh — download TES3MP Easy scripts (admin + player)
 #
-# Usage:  curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash
+# Usage:  curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install.sh | bash
 #
-# Downloads all scripts to ~/.local/share/tes3mp-easy/.
+# Downloads ALL scripts to ~/.local/share/tes3mp-easy/.
+# Always performs a clean install (removes previous scripts).
 # Existing configuration is never overwritten.
-# Full uninstall via: tes3mp-easy-admin uninstall
+# Full uninstall via: tes3mp-easy-admin uninstall  or  tes3mp-easy-player uninstall
+#
 
 set -euo pipefail
 
@@ -21,9 +23,16 @@ if ! command -v curl &>/dev/null; then
 fi
 
 echo ""
-echo "Downloading TES3MP Easy admin scripts..."
+echo "Downloading TES3MP Easy scripts (admin + player)..."
+echo ""
 
-mkdir -p "$UPDATE_DIR"/{lib,layer1/admin,layer2,layer3,lang,server/scripts} "$CONFIG_DIR"
+# ── Clean install: remove old scripts, keep config ──
+if [[ -d "$UPDATE_DIR" ]]; then
+    echo "  Removing previous scripts..."
+    rm -rf "$UPDATE_DIR"
+fi
+
+mkdir -p "$UPDATE_DIR"/{lib/localization/russian,layer1/admin,layer1/player,layer2/admin,layer2/player,layer3,lang,server/scripts} "$CONFIG_DIR"
 
 download() {
     local src="$1" dst="$2"
@@ -42,8 +51,9 @@ download "client/lib/config"           "$UPDATE_DIR/lib/config"
 download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
 download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
 download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
+download "client/lib/settings.cfg.example" "$UPDATE_DIR/lib/settings.cfg.example"
 
-echo "  ── layer1 (non-interactive) ──"
+echo "  ── layer1 admin (non-interactive) ──"
 echo "  ── setup wizard ──"
 download "client/layer1/admin/set-ssh-host"    "$UPDATE_DIR/layer1/admin/set-ssh-host"
 download "client/layer1/admin/set-export-dir"  "$UPDATE_DIR/layer1/admin/set-export-dir"
@@ -86,7 +96,36 @@ download "client/layer1/admin/edit-lua"          "$UPDATE_DIR/layer1/admin/edit-
 download "client/layer1/admin/edit-banlist"      "$UPDATE_DIR/layer1/admin/edit-banlist"
 download "client/layer1/admin/edit-config"       "$UPDATE_DIR/layer1/admin/edit-config"
 
-echo "  ── layer2 (interactive wrappers) ──"
+echo "  ── layer1 player (non-interactive) ──"
+echo "  ── backup ──"
+download "client/layer1/player/show-backups-mods"        "$UPDATE_DIR/layer1/player/show-backups-mods"
+download "client/layer1/player/show-backups-players"     "$UPDATE_DIR/layer1/player/show-backups-players"
+download "client/layer1/player/show-backups-world"       "$UPDATE_DIR/layer1/player/show-backups-world"
+download "client/layer1/player/download-backup-mods"     "$UPDATE_DIR/layer1/player/download-backup-mods"
+download "client/layer1/player/download-backup-players"  "$UPDATE_DIR/layer1/player/download-backup-players"
+download "client/layer1/player/download-backup-world"    "$UPDATE_DIR/layer1/player/download-backup-world"
+
+echo "  ── setup wizard ──"
+download "client/layer1/player/set-morrowind-path"  "$UPDATE_DIR/layer1/player/set-morrowind-path"
+download "client/layer1/player/set-tes3mp-dir"      "$UPDATE_DIR/layer1/player/set-tes3mp-dir"
+download "client/layer1/player/set-proton-path"     "$UPDATE_DIR/layer1/player/set-proton-path"
+
+echo "  ── install, run, mods ──"
+download "client/layer1/player/install-client"  "$UPDATE_DIR/layer1/player/install-client"
+download "client/layer1/player/run-client"      "$UPDATE_DIR/layer1/player/run-client"
+download "client/layer1/player/run-openmw-cs"   "$UPDATE_DIR/layer1/player/run-openmw-cs"
+download "client/layer1/player/install-mods"    "$UPDATE_DIR/layer1/player/install-mods"
+download "client/layer1/player/install-localization" "$UPDATE_DIR/layer1/player/install-localization"
+
+echo "  ── fonts & ui ──"
+download "client/layer1/player/install-fonts"   "$UPDATE_DIR/layer1/player/install-fonts"
+download "client/layer1/player/configure-ui"    "$UPDATE_DIR/layer1/player/configure-ui"
+
+echo "  ── config ──"
+download "client/layer1/player/edit-client-cfg"  "$UPDATE_DIR/layer1/player/edit-client-cfg"
+download "client/layer1/player/edit-config"      "$UPDATE_DIR/layer1/player/edit-config"
+
+echo "  ── layer2 admin (interactive wrappers) ──"
 download "client/layer2/admin/interactive-deploy-mods"         "$UPDATE_DIR/layer2/admin/interactive-deploy-mods"
 download "client/layer2/admin/interactive-deploy-players"      "$UPDATE_DIR/layer2/admin/interactive-deploy-players"
 download "client/layer2/admin/interactive-deploy-world"        "$UPDATE_DIR/layer2/admin/interactive-deploy-world"
@@ -96,11 +135,24 @@ download "client/layer2/admin/interactive-download-world"      "$UPDATE_DIR/laye
 download "client/layer2/admin/interactive-setup-wizard"        "$UPDATE_DIR/layer2/admin/interactive-setup-wizard"
 download "client/layer2/admin/interactive-configure-server"    "$UPDATE_DIR/layer2/admin/interactive-configure-server"
 
-echo "  ── layer3 (menu) ──"
+echo "  ── layer2 player (interactive wrappers) ──"
+download "client/layer2/player/interactive-install-fonts"    "$UPDATE_DIR/layer2/player/interactive-install-fonts"
+download "client/layer2/player/interactive-install-localization" "$UPDATE_DIR/layer2/player/interactive-install-localization"
+download "client/layer2/player/interactive-configure-ui"     "$UPDATE_DIR/layer2/player/interactive-configure-ui"
+download "client/layer2/player/interactive-setup-wizard"     "$UPDATE_DIR/layer2/player/interactive-setup-wizard"
+download "client/layer2/player/interactive-download-mods"    "$UPDATE_DIR/layer2/player/interactive-download-mods"
+download "client/layer2/player/interactive-download-players" "$UPDATE_DIR/layer2/player/interactive-download-players"
+download "client/layer2/player/interactive-download-world"   "$UPDATE_DIR/layer2/player/interactive-download-world"
+
+echo "  ── layer3 (menus) ──"
 download "client/layer3/admin.sh"         "$UPDATE_DIR/layer3/admin.sh"
+download "client/layer3/player.sh"        "$UPDATE_DIR/layer3/player.sh"
 
 echo "  ── extras ──"
 download "server/scripts/package.sh"    "$UPDATE_DIR/server/scripts/package.sh"
+
+echo "  ── localization ──"
+download "client/lib/localization/russian/install.sh"  "$UPDATE_DIR/lib/localization/russian/install.sh"
 
 printf "  lang/en "
 curl -fsSL "$GITHUB_RAW/client/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null \
@@ -140,6 +192,18 @@ SSH_HOST =
 ;   $EXPORT_DIR/world/recordstore/
 ;   $EXPORT_DIR/world/custom/
 EXPORT_DIR = 
+
+; Path to Morrowind installation directory (where Data Files folder is located)
+; Example: /home/user/.steam/steam/steamapps/common/Morrowind
+MORROWIND_PATH = 
+
+; Path to TES3MP installation directory (relative to home or absolute)
+; Example: games/tes3mp  →  /home/user/games/tes3mp
+TES3MP_DIR = 
+
+; Path to Proton installation (auto-detected on first install)
+; Example: /home/user/.steam/steam/steamapps/common/Proton 9.0
+PROTON_PATH = 
 INI
     echo "✓ Config created: $CONFIG"
 fi
@@ -149,7 +213,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "  To reset configs to defaults, delete and re-run:"
 echo "    rm -f $CONFIG"
-echo "    curl -fsSL $GITHUB_RAW/client/install-admin.sh | bash"
+echo "    curl -fsSL $GITHUB_RAW/client/install.sh | bash"
 echo ""
 echo "  Config file:"
 echo "    $CONFIG"
@@ -157,13 +221,19 @@ echo ""
 echo "  To start the admin menu:"
 echo "    bash $UPDATE_DIR/layer3/admin.sh"
 echo ""
-echo "  Alias (add to ~/.bashrc):"
+echo "  To start the player menu:"
+echo "    bash $UPDATE_DIR/layer3/player.sh"
+echo ""
+echo "  Aliases (add to ~/.bashrc):"
 echo "    alias tes3mp-easy-admin='bash $UPDATE_DIR/layer3/admin.sh'"
+echo "    alias tes3mp-easy-player='bash $UPDATE_DIR/layer3/player.sh'"
 echo ""
 echo "  All commands:"
 echo "    tes3mp-easy-admin help"
+echo "    tes3mp-easy-player help"
 echo ""
 echo "  To remove completely:"
 echo "    tes3mp-easy-admin uninstall"
+echo "    tes3mp-easy-player uninstall"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -15,14 +15,14 @@
 
 ## 1. Server Setup
 
-**Step 1 — Install admin tools on your local machine:**
+**Step 1 — Install scripts on your local machine:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install.sh | bash
 ```
 
-**Step 2 — Start the menu:**
+**Step 2 — Start the admin menu:**
 ```bash
-bash ~/.local/share/tes3mp-easy/menu/admin.sh
+bash ~/.local/share/tes3mp-easy/layer3/admin.sh
 ```
 
 **Step 3 — Run Quick Setup Wizard:**

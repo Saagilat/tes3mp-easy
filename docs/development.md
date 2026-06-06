@@ -119,8 +119,7 @@ User selects "Download player backup"
 
 ```
 ├── client/                     # Client-side scripts (bash)
-│   ├── install-admin.sh        # One-line installer (curl | bash)
-│   ├── install-player.sh       # One-line installer (curl | bash)
+│   ├── install.sh              # One-line installer (curl | bash)
 │   ├── layer1/                 # Non-interactive commands
 │   │   ├── admin/              #   Admin CLI (24 files)
 │   │   │   ├── start-server    #     SSH → docker compose up
@@ -316,11 +315,11 @@ The `run_menu` calls `check_restart_flag()` and `check_server_status()` function
 
 ## How Installation Works
 
-### `install-admin.sh` / `install-player.sh`
+### `install.sh`
 
-Downloads individual files from GitHub via `curl`, places them in `~/.local/share/tes3mp-easy/`, creates default configs.
+Downloads individual files from GitHub via `curl`, places them in `~/.local/share/tes3mp-easy/`, creates default configs. Always performs a clean install (removes previous scripts) but preserves existing configuration.
 
-Each command script must be added to the download list in the corresponding installer.
+Each command script must be added to the download list in the installer.
 
 ### `server/scripts/install.sh`
 
@@ -423,7 +422,7 @@ Add labels in `client/lang/en` and `client/lang/ru`.
 
 ### 6. Add Download Line in Installer
 
-Add a `download` line in `client/install-player.sh` or `client/install-admin.sh`:
+Add a `download` line in `client/install.sh`:
 
 ```bash
 download "client/layer1/player/my-command" "$UPDATE_DIR/layer1/player/my-command"

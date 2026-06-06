@@ -10,16 +10,16 @@
 ## 1. Client Setup
 
 
-**Step 1** — Install player tools:
+**Step 1** — Install scripts:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-player.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install.sh | bash
 ```
 
 **Step 2** — Start the player menu:
 
 ```bash
-bash ~/.local/share/tes3mp-easy/menu/player.sh
+bash ~/.local/share/tes3mp-easy/layer3/player.sh
 ```
 
 **Step 3** — Run Setup Wizard (recommended):

@@ -2,32 +2,30 @@
 
 A set of tools to set up a **TES3MP** multiplayer server and connect to it as a player.
 
-## Administrator
+## Installation
 
-Install the admin tools on your local machine:
+Install the scripts on your local machine:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-admin.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install.sh | bash
 ```
 
+This installs both admin and player tools. Existing configuration is preserved.
+
+### Administrator
+
 ```bash
-bash ~/.local/share/tes3mp-easy/menu/admin.sh
+bash ~/.local/share/tes3mp-easy/layer3/admin.sh
 ```
 
 From the menu you can: run the setup wizard → install the server → configure settings (38 options from `config.lua`) → create and export mods → deploy backups → start/stop/restart the server.
 
 See the [Admin Guide](./docs/admin-guide.md) for detailed instructions.
 
-## Player (Linux)
-
-Install the player tools:
+### Player (Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/client/install-player.sh | bash
-```
-
-```bash
-bash ~/.local/share/tes3mp-easy/menu/player.sh
+bash ~/.local/share/tes3mp-easy/layer3/player.sh
 ```
 
 From the menu you can: run the setup wizard → install the client → configure server connection → install mods → run the game.
