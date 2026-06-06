@@ -65,6 +65,8 @@ info "Server: $SERVER_URL"
 # ────────────────────────────────────────────────────
 # 2. Получаем список бэкапов модов
 # ────────────────────────────────────────────────────
+check_deps jq
+
 info "Fetching list of mod backups..."
 
 JSON=$(curl -sf "$SERVER_URL/list-backups/mods" 2>/dev/null || echo "")
@@ -73,14 +75,13 @@ if [[ -z "$JSON" || "$JSON" == "[]" ]]; then
     exit 1
 fi
 
-# Ищем current backup (тот, что помечен как deployed на сервере)
-SELECTED=""
-while IFS= read -r line; do
-    if [[ "$line" =~ \"current\":[[:space:]]*true ]] && [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
-        SELECTED="${BASH_REMATCH[1]}"
-        break
-    fi
-done < <(echo "$JSON")
+# Ищем current backup: файл, чей sha256 совпадает с полем current
+SELECTED=$(echo "$JSON" | jq -r '
+    . as $root |
+    $root.files[] |
+    select(.sha256 == $root.current) |
+    .name
+' 2>/dev/null)
 
 if [[ -z "$SELECTED" ]]; then
     err "No current mod backup available on server."
