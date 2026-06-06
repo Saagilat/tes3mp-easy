@@ -54,6 +54,10 @@ parse_ini() {
 # Loads the single tes3mp-easy.ini (if exists).
 # ────────────────────────────────────────────────────────────
 load_config() {
+    if [[ $# -gt 0 ]]; then
+        err "load_config: does not accept arguments (got: $*)"
+        return 1
+    fi
     [[ -f "$SHARED_CONFIG" ]] && parse_ini "$SHARED_CONFIG" && return 0
     return 1
 }
