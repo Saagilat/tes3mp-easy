@@ -24,8 +24,8 @@ if [[ -f "$resolved/proton" ]]; then
         echo "PROTON_PATH = ${path}" >> "$CONFIG"
     fi
     ok "PROTON_PATH set to: ${path}"
-    return 0
+    exit 0
 else
     err "proton executable not found at: ${resolved}"
-    return 1
+    exit 1
 fi
