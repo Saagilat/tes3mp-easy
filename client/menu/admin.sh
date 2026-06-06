@@ -93,7 +93,21 @@ menu_edit_config() {
 _list_backups() {
     local type="$1"
     require_ssh_host || return 1
-    ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$type/*.tar.gz 2>/dev/null | xargs -n1 basename" 2>/dev/null
+
+    # Read current.txt to find which archive is current (only for mods)
+    local current_name=""
+    if [ "$type" = "mods" ]; then
+        current_name=$(ssh "$SSH_HOST" "cat /tes3mp-easy/backups/$type/current.txt 2>/dev/null | awk '{print \$2}'" 2>/dev/null)
+    fi
+
+    # List archives with names only, and output with (current) marker
+    ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$type/*.tar.gz 2>/dev/null | xargs -n1 basename" 2>/dev/null | while IFS= read -r name; do
+        if [ -n "$current_name" ] && [ "$name" = "$current_name" ]; then
+            echo "$name  (current)"
+        else
+            echo "$name"
+        fi
+    done
 }
 
 # ────────────────────────────────────────────────────────────
@@ -105,6 +119,16 @@ require_ssh_host() {
         err "SSH_HOST is not set."
         err "Run 'Admin Menu Settings' first."
         return 1
+    fi
+}
+
+# ────────────────────────────────────────────────────────────
+# Helper: get current archive name for a type (reads current.txt via SSH)
+# ────────────────────────────────────────────────────────────
+_get_current_ssh() {
+    local type="$1"
+    if [ "$type" = "mods" ]; then
+        ssh "$SSH_HOST" "cat /tes3mp-easy/backups/$type/current.txt 2>/dev/null | awk '{print \$2}'" 2>/dev/null
     fi
 }
 
@@ -131,6 +155,9 @@ _download_backup_menu() {
         return
     fi
 
+    local current_name
+    current_name=$(_get_current_ssh "$type")
+
     # Show numbered list
     local names=()
     while IFS= read -r name; do
@@ -139,7 +166,11 @@ _download_backup_menu() {
 
     local i=1
     for name in "${names[@]}"; do
-        echo "  $i) $name"
+        if [[ -n "$current_name" && "$name" == "$current_name" ]]; then
+            echo "  $i) $name  (current)"
+        else
+            echo "  $i) $name"
+        fi
         ((i++)) || true
     done
     echo ""

@@ -112,9 +112,16 @@ menu_download_backup() {
     fi
 
     local names=()
+    local current_flag=()
     while IFS= read -r line; do
-        if [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+) ]]; then
+        if [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
             names+=("${BASH_REMATCH[1]}")
+            # Check if this entry has "current": true
+            if [[ "$line" =~ \"current\":[[:space:]]*true ]]; then
+                current_flag+=("true")
+            else
+                current_flag+=("false")
+            fi
         fi
     done < <(echo "$json")
 
@@ -125,7 +132,12 @@ menu_download_backup() {
 
     local i=1
     for name in "${names[@]}"; do
-        echo "  $i) $name"
+        idx=$((i - 1))
+        if [[ "${current_flag[$idx]}" == "true" ]]; then
+            echo "  $i) $name  (current)"
+        else
+            echo "  $i) $name"
+        fi
         ((i++)) || true
     done
     echo ""

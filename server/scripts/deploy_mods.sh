@@ -263,7 +263,7 @@ echo "[5/6] Generating customScripts.lua..."
 generate_custom_scripts_lua
 ok "customScripts.lua generated"
 
-# Step 6: Write current.txt and nginx symlink
+# Step 6: Write current.txt
 echo ""
 echo "[6/6] Writing current.txt..."
 ARCHIVE_FILENAME=$(basename "$ARCHIVE_PATH")
@@ -271,11 +271,6 @@ ARCHIVE_SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d' ' -f1)
 mkdir -p "$BACKUPS_DIR/mods"
 echo "$ARCHIVE_SHA256 $ARCHIVE_FILENAME" > "$CURRENT_FILE"
 ok "current.txt updated: $ARCHIVE_SHA256 $ARCHIVE_FILENAME"
-
-# Nginx symlink
-NGINX_SYMLINK="$BACKUPS_DIR/mods/current.tar.gz"
-ln -sf "$(basename "$ARCHIVE_PATH")" "$NGINX_SYMLINK"
-ok "Nginx symlink: $NGINX_SYMLINK → $(basename "$ARCHIVE_PATH")"
 
 touch /tes3mp-easy/needs_restart.flag 2>/dev/null || true
 echo ""

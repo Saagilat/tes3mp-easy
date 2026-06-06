@@ -62,25 +62,46 @@ urldecode() {
 # ─────────────────────────────────────────────
 # JSON list of backups for a given type
 # ─────────────────────────────────────────────
+# Read current filename from current.txt for a given backup type
+# Returns empty string if file doesn't exist
+_get_current_filename() {
+    local type="$1"
+    local current_file="$BACKUPS_DIR/$type/current.txt"
+    if [ -f "$current_file" ]; then
+        local sha256 name
+        read -r sha256 name < "$current_file" 2>/dev/null
+        echo "$name"
+    fi
+}
+
 list_backups_json() {
     local type="$1"  # mods, players, world
     local dir="$BACKUPS_DIR/$type"
     local tmp
     tmp=$(mktemp)
 
+    # Determine current file name for this backup type
+    local current_name
+    current_name=$(_get_current_filename "$type")
+
     if [ -d "$dir" ]; then
         # List files sorted by mtime (newest first), output JSON
-        # Format: [{"name":"file.tar.gz","mtime":"2025-01-01T12:00:00","size":12345}]
+        # Format: [{"name":"file.tar.gz","mtime":"2025-01-01T12:00:00","size":12345,"current":true}]
         local first=1
         echo "[" > "$tmp"
         for f in $(ls -t "$dir"/*.tar.gz 2>/dev/null); do
-            local name mtime size
+            local name mtime size is_current
             name=$(basename "$f")
             mtime=$(date -u -d "@$(stat -c %Y "$f")" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "null")
             size=$(stat -c %s "$f" 2>/dev/null || echo 0)
             [ "$first" -eq 0 ] && echo "," >> "$tmp"
             first=0
-            printf '{"name":"%s","mtime":"%s","size":%s}' "$name" "$mtime" "$size" >> "$tmp"
+            if [ -n "$current_name" ] && [ "$name" = "$current_name" ]; then
+                is_current="true"
+            else
+                is_current="false"
+            fi
+            printf '{"name":"%s","mtime":"%s","size":%s,"current":%s}' "$name" "$mtime" "$size" "$is_current" >> "$tmp"
         done
         echo "]" >> "$tmp"
     else
@@ -152,14 +173,18 @@ run_export() {
 ensure_fresh_backup() {
     local type="$1"
 
-    # For mods: resolve current.tar.gz symlink to real filename
+    # For mods: read current.txt and return the real archive path
     if [ "$type" = "mods" ]; then
-        local current_link="$BACKUPS_DIR/mods/current.tar.gz"
-        if [ -L "$current_link" ] && [ -f "$current_link" ]; then
-            echo "$current_link"
-        else
-            get_newest_backup "mods"
+        local current_name
+        current_name=$(_get_current_filename "mods")
+        if [ -n "$current_name" ]; then
+            local real_path="$BACKUPS_DIR/mods/$current_name"
+            if [ -f "$real_path" ]; then
+                echo "$real_path"
+                return
+            fi
         fi
+        get_newest_backup "mods"
         return
     fi
 

@@ -31,4 +31,12 @@ if [[ -z "$json" || "$json" == "[]" ]]; then
     exit 0
 fi
 
-echo "$json" | python3 -m json.tool 2>/dev/null || echo "$json"
+# Parse JSON and display with (current) marker
+echo "$json" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for entry in data:
+    name = entry.get('name', '?')
+    marker = '  (current)' if entry.get('current') else ''
+    print(f'  {name}{marker}')
+" 2>/dev/null || echo "$json" | python3 -m json.tool 2>/dev/null || echo "$json"

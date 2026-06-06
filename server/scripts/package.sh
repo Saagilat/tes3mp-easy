@@ -90,12 +90,28 @@ _package_stage() {
 _extract_required_json() {
     local stage_dir="$1"
 
-    if [ -f "$BACKUPS_DIR/mods/current.tar.gz" ]; then
-        if tar xzf "$BACKUPS_DIR/mods/current.tar.gz" -C "$stage_dir" \
+    # Read current.txt to find the real archive filename
+    local current_file="$BACKUPS_DIR/mods/current.txt"
+    local archive_path=""
+    if [ -f "$current_file" ]; then
+        local sha256 name
+        read -r sha256 name < "$current_file" 2>/dev/null
+        if [ -n "$name" ]; then
+            archive_path="$BACKUPS_DIR/mods/$name"
+        fi
+    fi
+
+    # Fallback: try current.tar.gz symlink if it still exists
+    if [ -z "$archive_path" ] && [ -f "$BACKUPS_DIR/mods/current.tar.gz" ]; then
+        archive_path="$BACKUPS_DIR/mods/current.tar.gz"
+    fi
+
+    if [ -n "$archive_path" ] && [ -f "$archive_path" ]; then
+        if tar xzf "$archive_path" -C "$stage_dir" \
             "plugins/requiredDataFiles.json" 2>/dev/null; then
             mv "$stage_dir/plugins/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
             rmdir "$stage_dir/plugins" 2>/dev/null || true
-            echo "[package.sh]   requiredDataFiles.json: from current.tar.gz"
+            echo "[package.sh]   requiredDataFiles.json: from $(basename "$archive_path")"
             return
         fi
     fi
@@ -110,7 +126,7 @@ _extract_required_json() {
         ((i++)) || true
     done
     printf "\n]\n" >> "$stage_dir/requiredDataFiles.json"
-    echo "[package.sh]   requiredDataFiles.json: minimal (current.tar.gz not available)"
+    echo "[package.sh]   requiredDataFiles.json: minimal (no current archive available)"
 }
 
 # ────────────────────────────────────────────────────────────────

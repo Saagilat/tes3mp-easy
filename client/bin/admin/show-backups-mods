@@ -23,7 +23,20 @@ echo "  Mod backup archives on $SSH_HOST"
 echo "═══════════════════════════════════════════════"
 echo ""
 
-ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/mods/*.tar.gz 2>/dev/null" || {
+# Read current.txt to find which archive is currently deployed
+current_name=$(ssh "$SSH_HOST" "cat /tes3mp-easy/backups/mods/current.txt 2>/dev/null | awk '{print \$2}'" 2>/dev/null)
+
+# List archives and mark the current one
+list=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/mods/*.tar.gz 2>/dev/null" 2>/dev/null) || {
     err "No mod backups found"
     exit 1
 }
+
+while IFS= read -r file; do
+    name=$(basename "$file")
+    if [[ -n "$current_name" && "$name" == "$current_name" ]]; then
+        echo "  $name  (current)"
+    else
+        echo "  $name"
+    fi
+done <<< "$list"
