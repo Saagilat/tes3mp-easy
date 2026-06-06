@@ -34,6 +34,10 @@ From the menu you can: run the setup wizard → install the client → configure
 
 See the [Player Guide](./docs/player-guide.md) for detailed instructions.
 
+## Developer
+
+Interested in the internals? See the [Development Guide](./docs/development.md) for architecture, layer design, how to add new commands, and full command references.
+
 ## Acknowledgements
 
 Thanks to the [TES3MP](https://github.com/TES3MP) and [OpenMW](https://github.com/OpenMW) teams for their work on making Morrowind multiplayer possible.

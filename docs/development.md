@@ -2,6 +2,8 @@
 
 Full reference for developers and anyone who needs to understand the project internals.
 
+> **All documentation must be written in English.** This includes code comments, commit messages, pull requests, and any other project documentation.
+
 ## Architecture
 
 ```
@@ -80,15 +82,15 @@ esac
 When adding a new operation:
 
 ```
-Нужна операция
+Need an operation
     ↓
-Есть взаимодействие с пользователем? (выбор, опрос, wizard)
-    ├── НЕТ → пишем Layer 1 (client/layer1/player/xxx или admin/xxx)
-    │         Вызываем из Layer 3 напрямую: bash layer1/player/xxx
-    └── ДА  → пишем Layer 1 + Layer 2
-              Layer 1: клиентская логика (SSH/HTTP/файлы)
-              Layer 2: интерактив (меню, опрос) → вызывает Layer 1
-              Layer 3: пункт меню → bash layer2/player/interactive-xxx
+Is there user interaction? (selection, prompt, wizard)
+    ├── NO → write Layer 1 (client/layer1/player/xxx or admin/xxx)
+    │         Call from Layer 3 directly: bash layer1/player/xxx
+    └── YES → write Layer 1 + Layer 2
+              Layer 1: client logic (SSH/HTTP/files)
+              Layer 2: interactive (menu, prompt) → calls Layer 1
+              Layer 3: menu item → bash layer2/player/interactive-xxx
 ```
 
 ### Data Flow
@@ -345,11 +347,11 @@ All located at `/tes3mp-easy/scripts/` on the VPS:
 ### 1. Determine Which Layers Are Needed
 
 ```
-Нужна операция
+Need an operation
     ↓
-Есть взаимодействие с пользователем? (выбор, опрос, wizard)
-    ├── НЕТ → только Layer 1
-    └── ДА  → Layer 1 + Layer 2
+Is there user interaction? (selection, prompt, wizard)
+    ├── NO → Layer 1 only
+    └── YES → Layer 1 + Layer 2
 ```
 
 ### 2. Create Layer 1 Script
