@@ -1,12 +1,14 @@
 #!/bin/bash
 #
 # interactive-configure-server — Interactive config.lua editor via SSH
-# Layer 2: loads config from server, prompts for each setting, saves changes
+# Layer 2: loads config via layer1/read-config-lua, prompts, saves via layer1/write-config-lua
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 source "$PROJECT_DIR/lib/common"
 source "$PROJECT_DIR/lib/config"
+
+LAYER1="$PROJECT_DIR/layer1/admin"
 
 load_config 2>/dev/null || true
 if [[ -z "${SSH_HOST:-}" ]]; then
@@ -23,7 +25,7 @@ while IFS='=' read -r key val; do
     [[ -z "$key" || "$key" == '--'* ]] && continue
     val="${val# \"}"; val="${val%\"}"; val="${val# }"; val="${val% }"
     _LUA_CONF["$key"]="$val"
-done < <(ssh "$SSH_HOST" "grep '^config\.' /tes3mp-easy/configs/config.lua" 2>/dev/null || true)
+done < <(bash "$LAYER1/read-config-lua" 2>/dev/null || true)
 
 declare -g -A _LUA_CHANGED=()
 declare -g -A _LUA_TYPE=()
@@ -129,10 +131,13 @@ if [[ ${#_LUA_CHANGED[@]} -gt 0 ]]; then
         esac
     done
 
-    scp /tmp/tes3mp-wizard-local.sed "$SSH_HOST:$script_path" >/dev/null 2>&1
+    bash "$LAYER1/write-config-lua" /tmp/tes3mp-wizard-local.sed || {
+        rm -f /tmp/tes3mp-wizard-local.sed
+        err "Failed to save configuration."
+        exit 1
+    }
     rm -f /tmp/tes3mp-wizard-local.sed
-    ssh "$SSH_HOST" "sed -i -f $script_path /tes3mp-easy/configs/config.lua && rm -f $script_path" 2>/dev/null
-    ok "Server configuration updated."
+    # ok message already printed by layer1/write-config-lua
 else
     info "No changes to save."
 fi

@@ -24,14 +24,29 @@ echo ""
 echo "  Choose archive to deploy (or press Enter for latest):"
 echo ""
 
-archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$TYPE/*.tar.gz 2>/dev/null | head -10 | xargs -n1 basename" 2>/dev/null)
-if [[ -z "$archives" ]]; then
+json=$(bash "$PROJECT_DIR/layer1/admin/show-backups-${TYPE}" 2>/dev/null)
+if [[ -z "$json" ]]; then
     warn "No archives found on server."
     exit 1
 fi
 
 names=()
-while IFS= read -r name; do names+=("$name"); done <<< "$archives"
+files_part=$(echo "$json" | grep -o '"files":\[.*\]' | sed 's/"files":\[//;s/\]$//')
+if [[ -n "$files_part" ]]; then
+    IFS="}" read -ra objects <<< "$files_part"
+    for obj in "${objects[@]}"; do
+        obj="${obj#\{}"; obj="${obj#,}"; obj="${obj%,}"; obj="${obj%\]}"
+        [[ -z "$obj" ]] && continue
+        if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
+            names+=("${BASH_REMATCH[1]}")
+        fi
+    done
+fi
+
+if [[ ${#names[@]} -eq 0 ]]; then
+    warn "No archives found on server."
+    exit 1
+fi
 
 i=1
 for name in "${names[@]}"; do
@@ -41,7 +56,6 @@ done
 echo ""
 
 read -r -p "  Select number (empty = latest): " choice
-
 if [[ -z "$choice" ]]; then
     archive="${names[0]}"
 else

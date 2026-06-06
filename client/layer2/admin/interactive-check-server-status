@@ -1,21 +1,11 @@
 #!/bin/bash
 #
-# interactive-check-server-status — Check if server is running
-# Outputs "Running", "Stopped", or empty string.
+# interactive-check-server-status — Outputs "Running", "Stopped", or ""
+# Layer 2: delegates to layer1/admin/check-server-status
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 source "$PROJECT_DIR/lib/common"
 source "$PROJECT_DIR/lib/config"
 
-load_config 2>/dev/null || true
-if [[ -n "${SSH_HOST:-}" ]]; then
-    state=$(ssh "$SSH_HOST" "cd /tes3mp-easy && docker compose ps --format '{{.State}}' 2>/dev/null | head -1" 2>/dev/null || echo "")
-    if [[ "$state" == "running" ]]; then
-        echo "Running"
-    else
-        echo "Stopped"
-    fi
-else
-    echo ""
-fi
+bash "$PROJECT_DIR/layer1/admin/check-server-status"

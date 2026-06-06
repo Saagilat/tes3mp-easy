@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # interactive-deploy-mods — Deploy mods archive on VPS
-# Layer 2: lists archives via SSH, prompts, calls layer1
+# Layer 2: lists archives via layer1 show-backups, prompts, calls layer1 deploy
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -25,14 +25,31 @@ echo ""
 echo "  Choose archive to deploy (or press Enter for latest):"
 echo ""
 
-archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$TYPE/*.tar.gz 2>/dev/null | head -10 | xargs -n1 basename" 2>/dev/null)
-if [[ -z "$archives" ]]; then
+# Get archive list from layer1 show-backups JSON
+json=$(bash "$PROJECT_DIR/layer1/admin/show-backups-${TYPE}" 2>/dev/null)
+if [[ -z "$json" ]]; then
     warn "No archives found on server."
     exit 1
 fi
 
+# Extract "name" from each JSON object in the "files" array
 names=()
-while IFS= read -r name; do names+=("$name"); done <<< "$archives"
+files_part=$(echo "$json" | grep -o '"files":\[.*\]' | sed 's/"files":\[//;s/\]$//')
+if [[ -n "$files_part" ]]; then
+    IFS="}" read -ra objects <<< "$files_part"
+    for obj in "${objects[@]}"; do
+        obj="${obj#\{}"; obj="${obj#,}"; obj="${obj%,}"; obj="${obj%\]}"
+        [[ -z "$obj" ]] && continue
+        if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
+            names+=("${BASH_REMATCH[1]}")
+        fi
+    done
+fi
+
+if [[ ${#names[@]} -eq 0 ]]; then
+    warn "No archives found on server."
+    exit 1
+fi
 
 i=1
 for name in "${names[@]}"; do

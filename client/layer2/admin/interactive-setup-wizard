@@ -62,9 +62,10 @@ step_header 3 $TOTAL "Server Installation"
 if [[ -z "${SSH_HOST:-}" ]]; then
     warn "SSH_HOST not set — skipping."
 else
-    server_installed=false
-    if ssh "$SSH_HOST" "test -f /tes3mp-easy/docker-compose.yml" 2>/dev/null; then
+    if bash "$LAYER1/check-server-installed" 2>/dev/null; then
         server_installed=true
+    else
+        server_installed=false
     fi
     if $server_installed; then
         ok "Server is already installed."
