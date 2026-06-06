@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # show-backups-mods — List mod backup archives from TES3MP server
-# Layer 1: outputs filenames one-per-line, no formatting.
+# Layer 1: outputs JSON, no formatting.
 # Usage: show-backups-mods
 #
 
@@ -13,23 +13,4 @@ load_config 2>/dev/null || exit 1
 
 SERVER_URL=$(_get_server_url) || exit 1
 
-json=$(curl -sf "$SERVER_URL/list-backups/mods" 2>/dev/null || echo "")
-[[ -z "$json" || "$json" == "[]" ]] && exit 0
-
-# Parse JSON array — split into individual objects, extract "name" field
-# JSON format: [{"name":"file1","...":"..."},{"name":"file2",...}]
-json="${json#\[}"  # strip leading [
-json="${json%\]}"  # strip trailing ]
-[[ -z "$json" ]] && exit 0
-
-# Split by "},{" and process each object
-IFS="}" read -ra objects <<< "$json"
-for obj in "${objects[@]}"; do
-    # Strip leading garbage (comma, brace remnants)
-    obj="${obj#\{}"
-    obj="${obj#,}"
-    # Find "name":"<value>"
-    if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
-        echo "${BASH_REMATCH[1]}"
-    fi
-done
+curl -sf "$SERVER_URL/list-backups/mods" 2>/dev/null || echo '{"files":[],"current":null}'
