@@ -73,39 +73,21 @@ if [[ -z "$JSON" || "$JSON" == "[]" ]]; then
     exit 1
 fi
 
-# Парсим имена файлов
-NAMES=()
+# Ищем current backup (тот, что помечен как deployed на сервере)
+SELECTED=""
 while IFS= read -r line; do
-    if [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+) ]]; then
-        NAMES+=("${BASH_REMATCH[1]}")
+    if [[ "$line" =~ \"current\":[[:space:]]*true ]] && [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
+        SELECTED="${BASH_REMATCH[1]}"
+        break
     fi
 done < <(echo "$JSON")
 
-if [[ ${#NAMES[@]} -eq 0 ]]; then
-    err "No mod backups found."
+if [[ -z "$SELECTED" ]]; then
+    err "No current mod backup available on server."
+    err "Ask admin to deploy mods first."
     exit 1
 fi
-
-# Выбираем: если один — автоматом, если несколько — показываем список
-SELECTED=""
-if [[ ${#NAMES[@]} -eq 1 ]]; then
-    SELECTED="${NAMES[0]}"
-    info "Found: $SELECTED"
-else
-    echo ""
-    echo "  Select mod backup to install:"
-    echo ""
-    i=1
-    for name in "${NAMES[@]}"; do
-        echo "  $i) $name"
-        ((i++)) || true
-    done
-    echo ""
-    input "Select number (empty = cancel)" "" choice
-    [[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
-    SELECTED="${NAMES[$((choice - 1))]}"
-    [[ -z "$SELECTED" ]] && { err "Invalid selection."; exit 1; }
-fi
+info "Current mods: $SELECTED"
 
 # ────────────────────────────────────────────────────
 # 3. Скачиваем архив
