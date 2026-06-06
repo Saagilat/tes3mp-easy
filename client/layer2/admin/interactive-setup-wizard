@@ -9,7 +9,7 @@ source "$PROJECT_DIR/lib/common"
 source "$PROJECT_DIR/lib/config"
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+CONFIG="$CONFIG_DIR/tes3mp-easy.json"
 LAYER1_ADMIN="$PROJECT_DIR/layer1/admin"
 LAYER1_SHARED="$PROJECT_DIR/layer1/shared"
 TOTAL=8
@@ -35,7 +35,7 @@ echo "  Auto-detection order: \$EDITOR → nano → vim → vi"
 echo ""
 input "Enter editor" "${EDITOR:-}" EDITOR_VAL
 if [[ -n "$EDITOR_VAL" ]]; then
-    bash "$LAYER1_SHARED/set-editor" "$EDITOR_VAL"
+    bash "$LAYER1_SHARED/edit-config-record" "EDITOR" "$EDITOR_VAL"
 fi
 load_config 2>/dev/null || true
 
@@ -54,9 +54,13 @@ while true; do
         err "SSH_HOST cannot be empty."
         continue
     fi
-    if bash "$LAYER1_ADMIN/set-ssh-host" "$SSH_HOST_VAL"; then
+    bash "$LAYER1_SHARED/edit-config-record" "SSH_HOST" "$SSH_HOST_VAL"
+    # Test connection
+    if ssh -o ConnectTimeout=5 -o BatchMode=yes "$SSH_HOST_VAL" "echo ok" 2>/dev/null; then
+        ok "SSH connection successful."
         break
     else
+        err "Connection to ${SSH_HOST_VAL} failed."
         confirm "Try again?" "y" || { warn "Skipping SSH."; break; }
     fi
 done
@@ -66,7 +70,12 @@ load_config 2>/dev/null || true
 step_header 3 $TOTAL "Export Directory"
 input "Enter path to export directory" "${EXPORT_DIR:-./exports}" EXPORT_DIR_VAL
 if [[ -n "$EXPORT_DIR_VAL" ]]; then
-    bash "$LAYER1_ADMIN/set-export-dir" "$EXPORT_DIR_VAL"
+    bash "$LAYER1_SHARED/edit-config-record" "EXPORT_DIR" "$EXPORT_DIR_VAL"
+    # Create export directory if needed
+    resolved="${EXPORT_DIR_VAL/#\~/$HOME}"
+    if [[ ! -d "$resolved" ]]; then
+        mkdir -p "$resolved" 2>/dev/null && ok "Created: ${resolved}" || warn "Could not create: ${resolved}"
+    fi
 fi
 load_config 2>/dev/null || true
 
@@ -122,7 +131,12 @@ echo "  Directory where downloaded backup archives will be stored."
 echo ""
 input "Enter backup directory" "${BACKUP_DIR:-}" BACKUP_VAL
 if [[ -n "$BACKUP_VAL" ]]; then
-    bash "$LAYER1_SHARED/set-backup-dir" "$BACKUP_VAL"
+    bash "$LAYER1_SHARED/edit-config-record" "BACKUP_DIR" "$BACKUP_VAL"
+    # Create backup directory if needed
+    resolved="${BACKUP_VAL/#\~/$HOME}"
+    if [[ ! -d "$resolved" ]]; then
+        mkdir -p "$resolved" 2>/dev/null && ok "Created: ${resolved}" || warn "Could not create: ${resolved}"
+    fi
 fi
 load_config 2>/dev/null || true
 

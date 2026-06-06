@@ -14,7 +14,7 @@ set -euo pipefail
 
 UPDATE_DIR="${HOME}/.local/share/tes3mp-easy"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
-CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+CONFIG="$CONFIG_DIR/tes3mp-easy.json"
 GITHUB_RAW="https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master"
 
 if ! command -v curl &>/dev/null; then
@@ -53,13 +53,10 @@ download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
 download "client/lib/settings.cfg.example" "$UPDATE_DIR/lib/settings.cfg.example"
 
 echo "  ── shared ──"
-download "client/layer1/shared/set-editor"     "$UPDATE_DIR/layer1/shared/set-editor"
-download "client/layer1/shared/set-backup-dir" "$UPDATE_DIR/layer1/shared/set-backup-dir"
+download "client/layer1/shared/edit-config-record" "$UPDATE_DIR/layer1/shared/edit-config-record"
 
 echo "  ── layer1 admin (non-interactive) ──"
 echo "  ── setup wizard ──"
-download "client/layer1/admin/set-ssh-host"    "$UPDATE_DIR/layer1/admin/set-ssh-host"
-download "client/layer1/admin/set-export-dir"  "$UPDATE_DIR/layer1/admin/set-export-dir"
 download "client/layer1/admin/check-restart-flag"    "$UPDATE_DIR/layer1/admin/check-restart-flag"
 download "client/layer1/admin/check-server-status"   "$UPDATE_DIR/layer1/admin/check-server-status"
 download "client/layer1/admin/check-server-installed" "$UPDATE_DIR/layer1/admin/check-server-installed"
@@ -109,9 +106,7 @@ download "client/layer1/player/download-backup-players"  "$UPDATE_DIR/layer1/pla
 download "client/layer1/player/download-backup-world"    "$UPDATE_DIR/layer1/player/download-backup-world"
 
 echo "  ── setup wizard ──"
-download "client/layer1/player/set-morrowind-path"  "$UPDATE_DIR/layer1/player/set-morrowind-path"
-download "client/layer1/player/set-tes3mp-dir"      "$UPDATE_DIR/layer1/player/set-tes3mp-dir"
-download "client/layer1/player/set-proton-path"     "$UPDATE_DIR/layer1/player/set-proton-path"
+# (paths set via shared/edit-config-record)
 
 echo "  ── install, run, mods ──"
 download "client/layer1/player/install-client"  "$UPDATE_DIR/layer1/player/install-client"
@@ -162,42 +157,17 @@ echo "✓ Scripts downloaded to $UPDATE_DIR"
 
 # Create config if it doesn't exist
 if [[ ! -f "$CONFIG" ]]; then
-    cat > "$CONFIG" << 'INI'
-; TES3MP Easy configuration (all settings)
-
-; Preferred editor (auto-detected if empty)
-EDITOR = 
-
-; Directory for downloaded backup archives
-BACKUP_DIR = 
-
-; SSH host of your VPS (from ~/.ssh/config)
-SSH_HOST = 
-
-; --- Local export directory ---
-; Export will upload data from subdirectories:
-;   $EXPORT_DIR/mods/plugins/     — .esp/.esm files
-;   $EXPORT_DIR/mods/scripts/     — Lua scripts
-;   $EXPORT_DIR/players/player/   — player JSON files
-;   $EXPORT_DIR/world/cell/       — world data
-;   $EXPORT_DIR/world/world/
-;   $EXPORT_DIR/world/map/
-;   $EXPORT_DIR/world/recordstore/
-;   $EXPORT_DIR/world/custom/
-EXPORT_DIR = 
-
-; Path to Morrowind installation directory (where Data Files folder is located)
-; Example: /home/user/.steam/steam/steamapps/common/Morrowind
-MORROWIND_PATH = 
-
-; Path to TES3MP installation directory (relative to home or absolute)
-; Example: games/tes3mp  →  /home/user/games/tes3mp
-TES3MP_DIR = 
-
-; Path to Proton installation (auto-detected on first install)
-; Example: /home/user/.steam/steam/steamapps/common/Proton 9.0
-PROTON_PATH = 
-INI
+    cat > "$CONFIG" << 'JSON'
+{
+  "EDITOR": "",
+  "BACKUP_DIR": "",
+  "SSH_HOST": "",
+  "EXPORT_DIR": "",
+  "MORROWIND_PATH": "",
+  "TES3MP_DIR": "",
+  "PROTON_PATH": ""
+}
+JSON
     echo "✓ Config created: $CONFIG"
 fi
 
