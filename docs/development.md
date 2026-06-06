@@ -22,50 +22,95 @@ Three Docker services on the VPS:
 
 ## Layer Architecture
 
-The CLI follows a strict two-layer separation:
+The CLI is divided into three strict layers. Each layer has a clear responsibility and calls the layer below it.
 
-### Layer 1 — Machine-Readable (`client/bin/`)
+### Layer 1 — Non-Interactive (`client/layer1/`)
 
-Non-interactive scripts that accept arguments and return structured output (filenames line-by-line, JSON, etc.).
+Scripts that perform a single operation: fetch data, run a command, edit a file. No interaction with the user.
 
-Rules:
+**Rules:**
 - **No TUI** — no prompts, no menus, no `read` from user.
-- **No formatting** — no ANSI colors, no headers, no `[WARN]` / `[OK]` prefixes.
-- **Output** — only data (e.g. filenames one-per-line). Empty output is valid (no results).
-- **Exit code** — zero on success, non-zero on failure (caller handles error messages).
+- **No formatting** — no ANSI colors, no headers, no `[WARN]` / `[OK]` prefixes. (Some legacy scripts still have them; new scripts should not.)
+- **All SSH and HTTP calls live here** — no lower layer makes network requests.
+- **Output** — data on stdout (JSON, filenames, status strings). Empty output is valid.
+- **Exit code** — zero on success, non-zero on failure.
 - **Dependencies** — minimal; prefer curl/ssh over python/jq for portability.
+- **CLI usage** — every script is callable from the command line: `bash layer1/player/download-backup-mods "file.tar.gz"`
 
-Examples: `show-backups-players`, `download-backup-players`, `install-mods`.
+**Examples:** `show-backups-mods` (returns JSON), `deploy-mods "archive.tar.gz"` (deploys via SSH), `check-server-status` (outputs "Running"/"Stopped"), `install-client` (downloads and extracts TES3MP).
 
-### Layer 2 — Interactive (`client/menu/`)
+### Layer 2 — Interactive Wrappers (`client/layer2/`)
 
-Interactive menus that call Layer 1 scripts and present their output to the user.
+Scripts that add human-friendly interaction on top of Layer 1. They exist **only** when user input is needed: selecting from a list, answering prompts, running a multi-step wizard.
 
-Rules:
-- **No data fetching** — never re-implement HTTP or SSH calls that Layer 1 already handles.
-- **No low-level parsing** — delegate parsing to Layer 1, consume its output.
+**Rules:**
+- **No SSH/HTTP calls** — all network requests go through Layer 1.
+- **No data fetching or parsing** — delegate to Layer 1, consume its output.
 - **Adds UI** — headers, colors, numbering, error messages, confirmation prompts.
+- **Each file is a standalone CLI utility** — callable directly: `bash layer2/player/interactive-download-mods`
+- **If Layer 2 adds no interaction** — don't create it. Call Layer 1 directly from Layer 3.
 
-Examples: `menu_download_backup`, `menu_install_mods` with progress feedback.
+**Examples:** `interactive-download-mods` (parses JSON from `show-backups-mods`, shows menu, calls `download-backup-mods`), `interactive-install-fonts` (shows font list, calls `install-fonts <option>`), `interactive-setup-wizard` (multi-step guided setup).
+
+### Layer 3 — Menu / TUI (`client/layer3/`)
+
+The interactive menu system. Pure structure, no business logic.
+
+**Rules:**
+- **No logic** — each menu item calls either Layer 1 (`bash layer1/player/xxx`) or Layer 2 (`bash layer2/player/interactive-xxx`).
+- **dispatch()** — handles CLI arguments and routes them to the appropriate layer.
+- **show_menu()** — builds the menu items array and calls `run_menu()`.
+- **No data fetching** — all data comes from layers below.
+
+**Example dispatch entry:**
+```bash
+case "${1:-}" in
+    # Non-interactive → Layer 1
+    run-client)     bash "$LAYER1_PLAYER/run-client" ;;
+    show-backups)   bash "$LAYER1_PLAYER/show-backups-mods" ;;
+
+    # Interactive → Layer 2
+    install-fonts)  bash "$LAYER2_PLAYER/interactive-install-fonts" ;;
+    download-mods)  bash "$LAYER2_PLAYER/interactive-download-mods" ;;
+esac
+```
+
+### Decision Flow
+
+When adding a new operation:
+
+```
+Нужна операция
+    ↓
+Есть взаимодействие с пользователем? (выбор, опрос, wizard)
+    ├── НЕТ → пишем Layer 1 (client/layer1/player/xxx или admin/xxx)
+    │         Вызываем из Layer 3 напрямую: bash layer1/player/xxx
+    └── ДА  → пишем Layer 1 + Layer 2
+              Layer 1: клиентская логика (SSH/HTTP/файлы)
+              Layer 2: интерактив (меню, опрос) → вызывает Layer 1
+              Layer 3: пункт меню → bash layer2/player/interactive-xxx
+```
 
 ### Data Flow
 
 ```
-User → Layer 2 (menu) → Layer 1 (bin/) → HTTP / SSH → Server
-                                                    ↓
-User ← Layer 2 (menu) ← Layer 1 (bin/) ← JSON / stdout
+User → Layer 3 (menu) ──→ Layer 2 (interactive) ──→ Layer 1 (non-int.) ──→ HTTP / SSH → Server
+                            (if interaction needed)     (all network)              ↓
+User ← Layer 3 (menu) ←── Layer 2 (interactive) ←── Layer 1 (non-int.) ←── JSON / stdout
 ```
 
 ### Example: Backup Workflow
 
 ```
 User selects "Download player backup"
-  → Layer 2: menu_download_backup("players")
-    → Layer 1: show-backups-players (prints filenames)
-    → Layer 2: parses stdout, shows numbered menu
-    → User picks a file
-    → Layer 1: download-backup-players "file.tar.gz"
-    → Layer 2: prints success message
+  → Layer 3: menu → menu_download_players()
+    → Layer 2: interactive-download-players
+      → Layer 1: show-backups-players (returns JSON via HTTP/SSH)
+      → Layer 2: parses JSON, shows numbered menu
+      → User picks a file
+      → Layer 1: download-backup-players "file.tar.gz" (download via HTTP/SSH)
+      → Layer 2: prints success message
+    → Layer 3: returns to menu
 ```
 
 ## Repository Structure
@@ -74,28 +119,45 @@ User selects "Download player backup"
 ├── client/                     # Client-side scripts (bash)
 │   ├── install-admin.sh        # One-line installer (curl | bash)
 │   ├── install-player.sh       # One-line installer (curl | bash)
-│   ├── bin/
-│   │   ├── admin/              # Admin CLI subcommands (Layer 1)
-│   │   ├── player/             # Player CLI subcommands (Layer 1)
-│   │   └── common/             # Shared subcommands (edit-config)
+│   ├── layer1/                 # Non-interactive commands
+│   │   ├── admin/              #   Admin CLI (24 files)
+│   │   │   ├── start-server    #     SSH → docker compose up
+│   │   │   ├── show-backups-*  #     JSON via SSH
+│   │   │   ├── deploy-*        #     SSH → deploy script
+│   │   │   ├── check-*         #     Status queries
+│   │   │   └── ...
+│   │   └── player/             #   Player CLI (20 files)
+│   │       ├── run-client      #     Proton launch
+│   │       ├── download-*      #     HTTP download
+│   │       ├── install-*       #     Installers
+│   │       └── ...
+│   ├── layer2/                 # Interactive wrappers
+│   │   ├── admin/              #   Admin (8 files)
+│   │   │   ├── interactive-deploy-*      # Archive selection → Layer 1
+│   │   │   ├── interactive-download-*    # Backup selection → Layer 1
+│   │   │   └── interactive-setup-wizard  # Multi-step setup
+│   │   └── player/             #   Player (7 files)
+│   │       ├── interactive-install-fonts # Font selection → Layer 1
+│   │       ├── interactive-download-*    # Backup selection → Layer 1
+│   │       └── interactive-setup-wizard  # Multi-step setup
+│   ├── layer3/                 # Interactive menu (TUI)
+│   │   ├── admin.sh            #   Admin menu
+│   │   └── player.sh           #   Player menu
 │   ├── lib/                    # Shared libraries (sourced, not executed)
-│   │   ├── common              # Colors, logging, utility functions
-│   │   ├── config              # INI config parser and editor
-│   │   ├── menu-nav            # Interactive TUI menu engine
-│   │   └── lang                # Internationalization loader
-│   ├── menu/                   # Interactive menu wrappers (Layer 2)
-│   │   ├── admin.sh            # Admin menu (dispatches to bin/admin/)
-│   │   └── player.sh           # Player menu (dispatches to bin/player/)
+│   │   ├── common              #   Colors, logging, utility functions
+│   │   ├── config              #   INI config parser and editor
+│   │   ├── menu-nav            #   Interactive TUI menu engine
+│   │   └── lang                #   Internationalization loader
 │   └── lang/                   # Translation files
-│       ├── en                  # English
-│       └── ru                  # Russian
+│       ├── en                  #   English
+│       └── ru                  #   Russian
 ├── server/                     # Server-side scripts (bash)
 │   ├── scripts/                # VPS-hosted utilities
-│   │   ├── install.sh          # Server installer (curl | sudo bash)
-│   │   ├── package.sh          # Archive packer (sourced by export service)
-│   │   ├── deploy_*.sh         # Deploy archives into active directories
-│   │   ├── import_*.sh         # Import data into server directories
-│   │   └── export_*.sh         # Export scripts for export service
+│   │   ├── install.sh          #   Server installer (curl | sudo bash)
+│   │   ├── package.sh          #   Archive packer (sourced by export service)
+│   │   ├── deploy_*.sh         #   Deploy archives into active directories
+│   │   ├── import_*.sh         #   Import data into server directories
+│   │   └── export_*.sh         #   Export scripts for export service
 │   ├── docker/                 # Docker Compose, Dockerfiles, nginx config
 │   └── common                  # Server-side shared library
 └── docs/
@@ -113,65 +175,67 @@ The parser `parse_ini()` uses regex, not `source`, for safety.
 
 ## Admin Commands (Full Reference)
 
-All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/admin/<command>`
+All accessible from the menu or directly.
 
-### Server Control
+### Layer 1 (Non-Interactive)
+
+Call via: `bash ~/.local/share/tes3mp-easy/layer1/admin/<command> [args]`
 
 | Command | Description |
 |---------|-------------|
-| `install-server` | Runs server installer on VPS via SSH, then interactive configurator for `config.lua` |
+| `install-server` | Run server installer on VPS via SSH |
 | `start-server` | Start Docker Compose stack |
 | `stop-server` | Stop Docker Compose stack |
 | `restart-server` | Restart all Docker services |
 | `server-status` | Show running state |
 | `server-logs` | Tail TES3MP logs |
-| `setup-wizard` | Interactive guided setup (SSH, export dir, server install, config, mods, start) |
-
-### Export
-
-| Command | Description |
-|---------|-------------|
 | `export-mods` | Create `mods.tar.gz` from local `EXPORT_DIR/mods/` and upload via SSH |
 | `export-players` | Create `players.tar.gz` from local `EXPORT_DIR/players/` and upload |
 | `export-world` | Create `world.tar.gz` from local `EXPORT_DIR/world/` and upload |
 | `generate-data` | Generate `requiredDataFiles.json` for mod verification |
-
-### Deploy
-
-| Command | Description |
-|---------|-------------|
-| `deploy-mods` | Extract a selected archive into `mods/` |
-| `deploy-players` | Extract a selected archive into `players/` |
-| `deploy-world` | Extract a selected archive into `world/` |
-
-### Backup Management
-
-| Command | Description |
-|---------|-------------|
-| `show-backups-mods` | List mod backup archives |
-| `show-backups-players` | List player backup archives |
-| `show-backups-world` | List world backup archives |
-
-### Backup Download (via HTTP)
-
-| Command | Description |
-|---------|-------------|
-| `backup-mods` | Download a mod backup archive (interactive: lists and selects from HTTP endpoint) |
-| `backup-players` | Download a player backup archive (interactive) |
-| `backup-world` | Download a world backup archive (interactive) |
-
-### Config Editing
-
-| Command | Description |
-|---------|-------------|
+| `deploy-mods <archive>` | Extract a specific archive into `mods/` |
+| `deploy-players <archive>` | Extract a specific archive into `players/` |
+| `deploy-world <archive>` | Extract a specific archive into `world/` |
+| `show-backups-mods` | List mod backup archives (JSON) |
+| `show-backups-players` | List player backup archives (JSON) |
+| `show-backups-world` | List world backup archives (JSON) |
+| `download-backup-mods <file>` | Download a specific mod backup |
+| `download-backup-players <file>` | Download a specific player backup |
+| `download-backup-world <file>` | Download a specific world backup |
 | `edit-server-cfg` | Edit `tes3mp-server-default.cfg` on VPS |
 | `edit-lua` | Edit `customScripts.lua` on VPS |
 | `edit-banlist` | Edit `banlist.json` on VPS |
 | `edit-config` | Edit local admin config |
+| `set-ssh-host <host>` | Save SSH_HOST and test connection |
+| `set-export-dir <path>` | Save EXPORT_DIR and create if needed |
+| `check-restart-flag` | Output "1" if restart needed |
+| `check-server-status` | Output "Running" / "Stopped" |
+| `check-server-installed` | Exit 0 if server is installed |
+| `read-config-lua` | Output config.lua settings (key=value lines) |
+| `write-config-lua <sed_script>` | Apply sed script to config.lua |
+
+### Layer 2 (Interactive)
+
+Call via: `bash ~/.local/share/tes3mp-easy/layer2/admin/<command>`
+
+| Command | Description |
+|---------|-------------|
+| `interactive-deploy-mods` | List archives via `show-backups`, prompt, deploy |
+| `interactive-deploy-players` | List archives via `show-backups`, prompt, deploy |
+| `interactive-deploy-world` | List archives via `show-backups`, prompt, deploy |
+| `interactive-download-mods` | List backups via `show-backups`, prompt, download |
+| `interactive-download-players` | List backups via `show-backups`, prompt, download |
+| `interactive-download-world` | List backups via `show-backups`, prompt, download |
+| `interactive-setup-wizard` | Guided setup (SSH, export dir, install, configure, start) |
+| `interactive-configure-server` | Interactive config.lua editor (38 settings) |
 
 ## Player Commands (Full Reference)
 
-All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/player/<command>`
+All accessible from the menu or directly.
+
+### Layer 1 (Non-Interactive)
+
+Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 
 | Command | Description |
 |---------|-------------|
@@ -180,16 +244,33 @@ All accessible from the menu or directly: `bash ~/.local/share/tes3mp-easy/bin/p
 | `run-openmw-cs` | Launch OpenMW Construction Set |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |
 | `install-mods` | Download and unpack latest mods archive |
-| `install-localization` | Install translated UI (e.g., Russian) |
-| `install-fonts` | Install custom fonts |
-| `configure-ui` | Set up OpenMW UI for multiplayer (resolution, font size, scaling) |
-| `download-backup-mods` | Download a specific mod backup archive to `~/Downloads/` |
-| `download-backup-players` | Download a specific player backup archive to `~/Downloads/` |
-| `download-backup-world` | Download a specific world backup archive to `~/Downloads/` |
-| `show-backups-mods` | List mod backups available on server |
-| `show-backups-players` | List player backups available on server |
-| `show-backups-world` | List world backups available on server |
+| `install-localization <locale>` | Install a specific localization (non-interactive) |
+| `install-fonts <option>` | Install a specific font set (1-12) |
+| `configure-ui <ttf_res> <font_size> <scale>` | Set OpenMW UI settings |
+| `download-backup-mods <file>` | Download a specific mod backup |
+| `download-backup-players <file>` | Download a specific player backup |
+| `download-backup-world <file>` | Download a specific world backup |
+| `show-backups-mods` | List mod backups (JSON) |
+| `show-backups-players` | List player backups (JSON) |
+| `show-backups-world` | List world backups (JSON) |
 | `edit-config` | Edit player config |
+| `set-morrowind-path <path>` | Validate and save MORROWIND_PATH |
+| `set-tes3mp-dir <path>` | Save TES3MP_DIR |
+| `set-proton-path <path>` | Validate and save PROTON_PATH |
+
+### Layer 2 (Interactive)
+
+Call via: `bash ~/.local/share/tes3mp-easy/layer2/player/<command>`
+
+| Command | Description |
+|---------|-------------|
+| `interactive-install-fonts` | Show font selection menu, install chosen set |
+| `interactive-install-localization` | List available localizations, prompt, install |
+| `interactive-configure-ui` | Read current settings, prompt for new values, apply |
+| `interactive-setup-wizard` | Guided setup (Morrowind path, TES3MP dir, Proton, install, fonts, UI, localization) |
+| `interactive-download-mods` | List backups via `show-backups`, prompt, download |
+| `interactive-download-players` | List backups via `show-backups`, prompt, download |
+| `interactive-download-world` | List backups via `show-backups`, prompt, download |
 
 ## Library Modules
 
@@ -223,6 +304,8 @@ Parameters:
 - `needs_restart` — "1" to show restart warning
 - `server_status` — "Running" / "Stopped"
 - `items...` — menu item definitions
+
+The `run_menu` calls `check_restart_flag()` and `check_server_status()` functions after each action to refresh the display. These functions must be defined in the calling Layer 3 script and delegate to `layer1/admin/check-restart-flag` and `layer1/admin/check-server-status`.
 
 ### `client/lib/lang`
 
@@ -259,17 +342,96 @@ All located at `/tes3mp-easy/scripts/` on the VPS:
 
 ## How to Add a New Command
 
-1. Create a **Layer 1** script in `client/bin/admin/<command>` or `client/bin/player/<command>`
-   - Accept arguments, print data to stdout, exit 0 on success / non-zero on failure.
-   - No TUI, no colors, no prompts.
-2. Create a **Layer 2** wrapper in `client/menu/admin.sh` or `client/menu/player.sh`
-   - Add wrapper function that calls the Layer 1 script.
-   - Add dispatch entry in the `case` block.
-   - Add menu item to the items array.
-3. Add translations in `client/lang/en` and `client/lang/ru`.
-4. Add download line in `install-admin.sh` or `install-player.sh`.
+### 1. Determine Which Layers Are Needed
 
-See the existing scripts for examples.
+```
+Нужна операция
+    ↓
+Есть взаимодействие с пользователем? (выбор, опрос, wizard)
+    ├── НЕТ → только Layer 1
+    └── ДА  → Layer 1 + Layer 2
+```
+
+### 2. Create Layer 1 Script
+
+Create a file in `client/layer1/<player|admin>/<command>`:
+
+```bash
+#!/bin/bash
+# Description of what this script does.
+# Usage: <command> [args]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+# Do the work
+# - Accept arguments via $1, $2, ...
+# - Print data to stdout (JSON, filenames, or nothing)
+# - Exit 0 on success, non-zero on failure
+```
+
+**Rules:**
+- No prompts, no menus, no `read` from user.
+- No colors, no headers, no `[OK]`/`[WARN]` prefixes (legacy scripts may still have them).
+- All SSH/HTTP calls go here.
+
+### 3. (Optional) Create Layer 2 Script
+
+Only if user interaction is needed. Create a file in `client/layer2/<player|admin>/interactive-<command>`:
+
+```bash
+#!/bin/bash
+# Description with interaction.
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+# Interact with user (menu, prompts, confirmations)
+# Delegate work to Layer 1:
+#   bash "$PROJECT_DIR/layer1/player/<command>" "$selected_option"
+```
+
+### 4. Add Menu Entry in Layer 3
+
+Edit `client/layer3/player.sh` or `client/layer3/admin.sh`:
+
+- Add a **dispatch case** if it should be callable from CLI:
+  ```bash
+  # Layer 1 (no interaction):
+  my-command) bash "$LAYER1_PATH/my-command" "$@" ;;
+  # Layer 2 (interactive):
+  my-command) bash "$LAYER2_PATH/interactive-my-command" ;;
+  ```
+
+- Add a **function wrapper** for `run_menu`:
+  ```bash
+  menu_my_command() { bash "$LAYER1_PLAYER/my-command"; }
+  ```
+
+- Add the item to the menu array:
+  ```bash
+  "${MENU_LABEL}|fn|menu_my_command"
+  ```
+
+### 5. Add Translations
+
+Add labels in `client/lang/en` and `client/lang/ru`.
+
+### 6. Add Download Line in Installer
+
+Add a `download` line in `client/install-player.sh` or `client/install-admin.sh`:
+
+```bash
+download "client/layer1/player/my-command" "$UPDATE_DIR/layer1/player/my-command"
+```
+
+If Layer 2 was created, add it too:
+
+```bash
+download "client/layer2/player/interactive-my-command" "$UPDATE_DIR/layer2/player/interactive-my-command"
+```
 
 ## Docker Infrastructure
 
