@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # show-backups-players — List player backup archives on remote VPS via SSH
-# Layer 1: outputs filenames one-per-line, no formatting.
+# Layer 1: outputs JSON, no formatting.
 # Usage: show-backups-players
 #
 
@@ -12,6 +12,4 @@ source "$SCRIPT_DIR/lib/config"
 load_config 2>/dev/null || exit 1
 [[ -z "${SSH_HOST:-}" ]] && exit 1
 
-ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/players/*.tar.gz 2>/dev/null" 2>/dev/null | while IFS= read -r file; do
-    basename "$file"
-done
+ssh "$SSH_HOST" "bash /tes3mp-easy/scripts/list-backups.sh players" 2>/dev/null || echo '{"files":[],"current":null}'

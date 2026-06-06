@@ -114,17 +114,48 @@ _download_backup_menu() {
     echo "═══════════════════════════════════════════════"
     echo ""
 
-    local names=()
-    local rc=0
-    while IFS= read -r name; do
-        [[ -z "$name" ]] && continue
-        names+=("$name")
-    done < <(bash "$BIN_DIR/show-backups-${type}"); rc=$?
-
-    if [[ $rc -ne 0 ]]; then
-        err "Failed to list backups."
+    # Layer 1 returns JSON: {"files":[...],"current":"sha256..."}
+    local json
+    json=$(bash "$BIN_DIR/show-backups-${type}")
+    if [[ -z "$json" ]]; then
+        warn "No $label backups available on server."
         return
     fi
+
+    # Extract current sha256 (null-safe)
+    local current_sha256
+    current_sha256=$(echo "$json" | grep -o '"current":"[^"]*"' | head -1 | sed 's/"current":"//;s/"//')
+
+    # Extract names array from JSON
+    local names=()
+    local sha256s=()
+
+    local files_part
+    files_part=$(echo "$json" | grep -o '"files":\[.*\]' | sed 's/"files":\[//;s/\]$//')
+    if [[ -z "$files_part" ]]; then
+        warn "No $label backups available on server."
+        return
+    fi
+
+    IFS="}" read -ra objects <<< "$files_part"
+    for obj in "${objects[@]}"; do
+        obj="${obj#\{}"
+        obj="${obj#,}"
+        obj="${obj%,}"
+        obj="${obj%\]}"
+        [[ -z "$obj" ]] && continue
+
+        local name="" sha256=""
+        if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
+            name="${BASH_REMATCH[1]}"
+        fi
+        if [[ "$obj" =~ \"sha256\":[[:space:]]*\"([^\"]+)\" ]]; then
+            sha256="${BASH_REMATCH[1]}"
+        fi
+        [[ -z "$name" ]] && continue
+        names+=("$name")
+        sha256s+=("$sha256")
+    done
 
     if [[ ${#names[@]} -eq 0 ]]; then
         warn "No $label backups available on server."
@@ -133,7 +164,12 @@ _download_backup_menu() {
 
     local i=1
     for name in "${names[@]}"; do
-        echo "  $i) $name"
+        local idx=$((i - 1))
+        if [[ -n "$current_sha256" && "${sha256s[$idx]}" == "$current_sha256" ]]; then
+            echo "  $i) $name  (current)"
+        else
+            echo "  $i) $name"
+        fi
         ((i++)) || true
     done
     echo ""
