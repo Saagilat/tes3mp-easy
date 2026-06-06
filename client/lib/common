@@ -177,6 +177,40 @@ is_os() {
 }
 
 # ────────────────────────────────────────────────────────────
+# retry — execute a command with retries on failure
+# Output: stdout passthrough; stderr for retry messages (no ANSI — Layer 1 compliant)
+# Returns: exit code of the command
+# Usage: retry [-n N] [-d SEC] command [args...]
+#   -n N  — max attempts (default: 3)
+#   -d SEC — delay between attempts (default: 2)
+# ────────────────────────────────────────────────────────────
+retry() {
+    local max_attempts=3 delay=2
+
+    # Parse flags
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -n) max_attempts="$2"; shift 2 ;;
+            -d) delay="$2"; shift 2 ;;
+            --) shift; break ;;
+            *) break ;;
+        esac
+    done
+
+    local attempt=1 rc
+    while [[ $attempt -le $max_attempts ]]; do
+        if [[ $attempt -gt 1 ]]; then
+            echo "Retry $attempt/$max_attempts after ${delay}s..." >&2
+        fi
+        "$@" && return 0 || rc=$?
+        sleep "$delay"
+        ((attempt++)) || true
+    done
+    echo "Command failed after $max_attempts attempts." >&2
+    return "$rc"
+}
+
+# ────────────────────────────────────────────────────────────
 # input — interactive text input prompt
 # Reads from /dev/tty if available, otherwise falls back to stdin.
 # Usage: input "Prompt: " "default_value" VARNAME

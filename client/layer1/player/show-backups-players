@@ -13,4 +13,4 @@ load_config 2>/dev/null || exit 1
 
 SERVER_URL=$(_get_server_url) || exit 1
 
-curl -sf "$SERVER_URL/list-backups/players" 2>/dev/null || echo '{"files":[],"current":null}'
+retry curl -sf --max-time 10 "$SERVER_URL/list-backups/players" 2>/dev/null || exit 1
