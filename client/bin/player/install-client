@@ -82,7 +82,7 @@ if [[ -f "$TES3MP_DIR/tes3mp.exe" ]]; then
     info "TES3MP already installed, skipping."
 else
     info "Downloading TES3MP (this may take a while)..."
-    curl -# -L -o "$TES3MP_ZIP" "$TES3MP_URL" 2>&1 || {
+    curl -# -L --fail -o "$TES3MP_ZIP" "$TES3MP_URL" 2>&1 || {
         err "Failed to download TES3MP."
         exit 1
     }

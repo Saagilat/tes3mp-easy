@@ -3,29 +3,45 @@
 # common.sh — shared utilities for tes3mp-easy scripts
 #
 
+_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$_LIB_DIR/log"
+unset _LIB_DIR
+
 # ────────────────────────────────────────────────────────────
-# err — print error message to stderr
+# err — print error message to stderr + log
 # Usage: err "message"
 # ────────────────────────────────────────────────────────────
-err() { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; }
+err() {
+    echo -e "\033[0;31m[ERROR]\033[0m $*" >&2
+    _log_write "ERROR" "$*"
+}
 
 # ────────────────────────────────────────────────────────────
-# ok — print success message
+# ok — print success message + log
 # Usage: ok "message"
 # ────────────────────────────────────────────────────────────
-ok() { echo -e "\033[0;32m[OK]\033[0m   $*"; }
+ok() {
+    echo -e "\033[0;32m[OK]\033[0m   $*"
+    _log_write "OK" "$*"
+}
 
 # ────────────────────────────────────────────────────────────
-# warn — print warning message
+# warn — print warning message + log
 # Usage: warn "message"
 # ────────────────────────────────────────────────────────────
-warn() { echo -e "\033[1;33m[WARN]\033[0m $*"; }
+warn() {
+    echo -e "\033[1;33m[WARN]\033[0m $*"
+    _log_write "WARN" "$*"
+}
 
 # ────────────────────────────────────────────────────────────
-# info — print info message
+# info — print info message + log
 # Usage: info "message"
 # ────────────────────────────────────────────────────────────
-info() { echo -e "\033[0;34m[INFO]\033[0m $*"; }
+info() {
+    echo -e "\033[0;34m[INFO]\033[0m $*"
+    _log_write "INFO" "$*"
+}
 
 # ────────────────────────────────────────────────────────────
 # check_deps — ensure required commands exist

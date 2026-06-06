@@ -201,7 +201,7 @@ main() {
         err "TES3MP_DIR is not set. Please configure it first."
     else
         if confirm "Install / update client now?" "y"; then
-            bash "$SCRIPT_DIR/bin/player/install-client" || {
+            run_logged bash "$SCRIPT_DIR/bin/player/install-client" || {
                 err "Client installation failed."
             }
         fi
@@ -213,7 +213,7 @@ main() {
     step_header 5 $TOTAL "Fonts"
 
     if confirm "Install fonts?" "y"; then
-        bash "$SCRIPT_DIR/bin/player/install-fonts" || {
+        run_logged bash "$SCRIPT_DIR/bin/player/install-fonts" || {
             warn "Font installation cancelled or failed."
         }
     fi
@@ -229,7 +229,7 @@ main() {
     fi
 
     if [[ -n "$settings_cfg" && -f "$settings_cfg" ]]; then
-        bash "$SCRIPT_DIR/bin/player/configure-ui" || {
+        run_logged bash "$SCRIPT_DIR/bin/player/configure-ui" || {
             warn "UI configuration cancelled or failed."
         }
     else
@@ -242,7 +242,7 @@ main() {
     # ────────────────────────────────────────────────────────
     step_header 7 $TOTAL "Finish"
 
-    bash "$SCRIPT_DIR/bin/player/install-localization" || {
+    run_logged bash "$SCRIPT_DIR/bin/player/install-localization" || {
         warn "Localization installation cancelled or failed."
     }
 

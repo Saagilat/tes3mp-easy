@@ -370,14 +370,14 @@ main() {
             ok "Server is already installed on ${SSH_HOST}."
             if confirm "Re-install / upgrade server?" "n"; then
                 info "Re-installing server..."
-                bash "$SCRIPT_DIR/bin/admin/install-server" || {
+                run_logged bash "$SCRIPT_DIR/bin/admin/install-server" || {
                     err "Server installation failed."
                 }
             fi
         else
             if confirm "Install server on ${SSH_HOST}?" "y"; then
                 info "Installing server..."
-                bash "$SCRIPT_DIR/bin/admin/install-server" || {
+                run_logged bash "$SCRIPT_DIR/bin/admin/install-server" || {
                     err "Server installation failed."
                 }
             fi
@@ -421,7 +421,7 @@ main() {
 
     if require_ssh; then
         if confirm "Start server now?" "n"; then
-            bash "$SCRIPT_DIR/bin/admin/start-server" || {
+            run_logged bash "$SCRIPT_DIR/bin/admin/start-server" || {
                 err "Failed to start server."
             }
         fi
