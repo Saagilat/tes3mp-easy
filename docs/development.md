@@ -15,6 +15,13 @@ Admin Menu (bash) ───[SSH]──► ┌───────────�
   ├─ Export Mods/Players      │  export (backup cron) │
   ├─ Deploy backups           └─────────────────────┘
   └─ Edit configs
+
+Player Menu (bash) ──[HTTP]─►
+  ├─ Install Client (GitHub)
+  ├─ Launch TES3MP
+  ├─ Install Mods / Fonts
+  ├─ Download backups
+  └─ Configure UI / Localization
 ```
 
 Three Docker services on the VPS:
@@ -32,7 +39,7 @@ Scripts that perform a single operation: fetch data, run a command, edit a file.
 
 **Rules:**
 - **No TUI** — no prompts, no menus, no `read` from user.
-- **No formatting** — no ANSI colors, no headers, no `[WARN]` / `[OK]` prefixes. (Some legacy scripts still have them; new scripts should not.)
+- **No formatting** — no ANSI colors, no headers, no `[WARN]` / `[OK]` prefixes.
 - **All SSH and HTTP calls live here** — no lower layer makes network requests.
 - **Output** — data on stdout (JSON, filenames, status strings). Empty output is valid.
 - **Exit code** — zero on success, non-zero on failure.
@@ -121,13 +128,13 @@ User selects "Download player backup"
 ├── client/                     # Client-side scripts (bash)
 │   ├── install.sh              # One-line installer (curl | bash)
 │   ├── layer1/                 # Non-interactive commands
-│   │   ├── admin/              #   Admin CLI (24 files)
+│   │   ├── admin/              #   Admin CLI (28 files)
 │   │   │   ├── start-server    #     SSH → docker compose up
 │   │   │   ├── show-backups-*  #     JSON via SSH
 │   │   │   ├── deploy-*        #     SSH → deploy script
 │   │   │   ├── check-*         #     Status queries
 │   │   │   └── ...
-│   │   └── player/             #   Player CLI (20 files)
+│   │   └── player/             #   Player CLI (15 files)
 │   │       ├── run-client      #     Proton launch
 │   │       ├── download-*      #     HTTP download
 │   │       ├── install-*       #     Installers
@@ -136,7 +143,8 @@ User selects "Download player backup"
 │   │   ├── admin/              #   Admin (8 files)
 │   │   │   ├── interactive-deploy-*      # Archive selection → Layer 1
 │   │   │   ├── interactive-download-*    # Backup selection → Layer 1
-│   │   │   └── interactive-setup-wizard  # Multi-step setup
+│   │   │   ├── interactive-setup-wizard  # Multi-step setup
+│   │   │   └── interactive-configure-server  # Config.lua editor
 │   │   └── player/             #   Player (7 files)
 │   │       ├── interactive-install-fonts # Font selection → Layer 1
 │   │       ├── interactive-download-*    # Backup selection → Layer 1
@@ -145,20 +153,23 @@ User selects "Download player backup"
 │   │   ├── admin.sh            #   Admin menu
 │   │   └── player.sh           #   Player menu
 │   ├── lib/                    # Shared libraries (sourced, not executed)
-│   │   ├── common              #   Colors, logging, utility functions
-│   │   ├── config              #   INI config parser and editor
+│   │   ├── common              #   Colors, logging wrappers, utility functions
+│   │   ├── log                 #   Logging subsystem (automatic log files)
+│   │   ├── config              #   JSON config parser and editor
 │   │   ├── menu-nav            #   Interactive TUI menu engine
-│   │   └── lang                #   Internationalization loader
-│   └── lang/                   # Translation files
-│       ├── en                  #   English
-│       └── ru                  #   Russian
+│   │   ├── menu-strings        #   English menu string constants
+│   │   ├── settings.cfg.example  #   Example TES3MP settings
+│   │   └── localization/       # Translation installers
+│   │       └── russian/        #   Russian localization installer
+│   └── localization/           # (Legacy — use lib/localization/)
 ├── server/                     # Server-side scripts (bash)
 │   ├── scripts/                # VPS-hosted utilities
 │   │   ├── install.sh          #   Server installer (curl | sudo bash)
 │   │   ├── package.sh          #   Archive packer (sourced by export service)
 │   │   ├── deploy_*.sh         #   Deploy archives into active directories
 │   │   ├── import_*.sh         #   Import data into server directories
-│   │   └── export_*.sh         #   Export scripts for export service
+│   │   ├── export_*.sh         #   Export scripts for export service
+│   │   └── list-backups.sh     #   List backup archives for nginx endpoint
 │   ├── docker/                 # Docker Compose, Dockerfiles, nginx config
 │   └── common                  # Server-side shared library
 └── docs/
@@ -166,13 +177,13 @@ User selects "Download player backup"
 
 ## Configuration System
 
-Single INI-format config file at `~/.config/tes3mp-easy/`:
+Single JSON config file at `~/.config/tes3mp-easy/`:
 
 | File | Purpose |
 |------|---------|
-| `tes3mp-easy.ini` | All settings: `LANG_CODE`, `EDITOR`, `BACKUP_DIR`, `SSH_HOST`, `EXPORT_DIR`, `MORROWIND_PATH`, `TES3MP_DIR`, `PROTON_PATH` |
+| `tes3mp-easy.json` | All settings: `EDITOR`, `BACKUP_DIR`, `SSH_HOST`, `EXPORT_DIR`, `MORROWIND_PATH`, `TES3MP_DIR`, `PROTON_PATH` |
 
-The parser `parse_ini()` uses regex, not `source`, for safety.
+The parser `parse_json()` uses `jq`, not `source`, for safety.
 
 ## Admin Commands (Full Reference)
 
@@ -206,9 +217,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/admin/<command> [args]`
 | `edit-server-cfg` | Edit `tes3mp-server-default.cfg` on VPS |
 | `edit-lua` | Edit `customScripts.lua` on VPS |
 | `edit-banlist` | Edit `banlist.json` on VPS |
-| `edit-config` | Edit local admin config |
-| `set-ssh-host <host>` | Save SSH_HOST and test connection |
-| `set-export-dir <path>` | Save EXPORT_DIR and create if needed |
+| `edit-config` | Edit local admin config in detected editor |
 | `check-restart-flag` | Output "1" if restart needed |
 | `check-server-status` | Output "Running" / "Stopped" |
 | `check-server-installed` | Exit 0 if server is installed |
@@ -254,10 +263,9 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | `show-backups-mods` | List mod backups (JSON) |
 | `show-backups-players` | List player backups (JSON) |
 | `show-backups-world` | List world backups (JSON) |
-| `edit-config` | Edit player config |
-| `set-morrowind-path <path>` | Validate and save MORROWIND_PATH |
-| `set-tes3mp-dir <path>` | Save TES3MP_DIR |
-| `set-proton-path <path>` | Validate and save PROTON_PATH |
+| `edit-config` | Edit player config in detected editor |
+
+> **Note:** `install-fonts`, `install-localization`, and `configure-ui` have corresponding Layer 1 scripts, but the Layer 3 dispatch routes them through Layer 2 (interactive) wrappers for convenience. To call them non-interactively, invoke the Layer 1 script directly.
 
 ### Layer 2 (Interactive)
 
@@ -277,19 +285,27 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer2/player/<command>`
 
 ### `client/lib/common`
 
-- **Colors** — loaded from `theme.ini` (`T_LABEL`, `T_ACCENT`)
-- **Logging** — `info()`, `ok()`, `warn()`, `err()`
-- **Interactive input** — `confirm(prompt, default)` (yes/no prompt), `input(prompt, default, result_var)` (string input)
+- **Logging wrappers** — `info()`, `ok()`, `warn()`, `err()` — delegate to `client/lib/log` for file logging. Colors are hardcoded ANSI escape codes.
+- **Interactive input** — `confirm(prompt, default)` (yes/no prompt), `input(prompt, default, var_name)` (string input, sets `var_name`)
 - **Deps** — `check_deps cmd1 cmd2 ...` (exits if any command is missing)
 - **OS detection** — `is_os("linux")`, `is_os("windows")`, `is_os("macos")`
 - **Server URL** — `_get_server_url()` builds `http://<server-addr>:8085` from TES3MP config
+- **SSH resolution** — `_resolve_ssh_host_ip <host>` resolves SSH host alias to IP from `~/.ssh/config`
+
+### `client/lib/log`
+
+- **Automatic logging** — when sourced, creates `~/.config/tes3mp-easy/logs/YYYY-MM-DD/HH-MM-SS_<script>.log`
+- **`_log_write level msg`** — internal: append a line to the log file (called by `err`/`ok`/`warn`/`info`)
+- **`log_file`** — prints absolute path to current log file
+- **`run_logged CMD`** — runs a command, captures stdout+stderr to console and log file simultaneously
 
 ### `client/lib/config`
 
-- `parse_ini <file> [prefix]` — safe INI parser (uses regex, not `source`)
-- `load_config [path]` — loads shared config from `tes3mp-easy.ini`
-- `find_editor` — detects available editor (checks `EDITOR` env var → config → nano → vim → vi)
-- `edit_config [file]` — opens config in detected editor
+- `parse_json <file>` — safe JSON parser (uses `jq`, not `source`)
+- `load_config` — loads shared config from `tes3mp-easy.json`
+- `write_config <key> <value>` — atomically set a key=value in JSON config using `jq`
+- `find_editor` — detects available editor (checks `EDITOR` env var → `VISUAL` → `EDITOR` → nano → vim → vi)
+- `edit_config` — opens config in detected editor
 
 ### `client/lib/menu-nav`
 
@@ -308,26 +324,33 @@ Parameters:
 
 The `run_menu` calls `check_restart_flag()` and `check_server_status()` functions after each action to refresh the display. These functions must be defined in the calling Layer 3 script and delegate to `layer1/admin/check-restart-flag` and `layer1/admin/check-server-status`.
 
-### `client/lib/lang`
+### `client/lib/menu-strings`
 
-- `load_lang(code)` — loads language file
-- `lang_available()` — lists installed languages
+Contains all English menu string constants used in Layer 3:
+- `MENU_TITLE_ADMIN`, `MENU_TITLE_PLAYER`
+- `MENU_ADMIN_*`, `MENU_PLAYER_*` — per-item labels for menu entries
+- Separator constants for menu section headers (`MENU_ADMIN_SEP_*`, `MENU_PLAYER_SEP_*`)
+
+### `client/lib/localization/`
+
+Contains locale-specific installer scripts:
+- `russian/install.sh` — installs Russian game localization files
 
 ## How Installation Works
 
 ### `install.sh`
 
-Downloads individual files from GitHub via `curl`, places them in `~/.local/share/tes3mp-easy/`, creates default configs. Always performs a clean install (removes previous scripts) but preserves existing configuration.
+Downloads individual files from GitHub via `curl`, places them in `~/.local/share/tes3mp-easy/`, creates default JSON config. Always performs a clean install (removes previous scripts) but preserves existing configuration.
 
 Each command script must be added to the download list in the installer.
 
 ### `server/scripts/install.sh`
 
-Runs on VPS via `install-server` command. Installs Docker, downloads Docker files, builds image, extracts configs, creates init backups.
+Runs on VPS via `install-server` command. Installs Docker, downloads Docker files to `/tes3mp-easy/`, builds image, creates directory structure, extracts configs, creates init backups.
 
 ## Server-Side Scripts
 
-All located at `/tes3mp-easy/scripts/` on the VPS:
+All located at `/tes3mp-easy/scripts/` on the VPS (downloaded to this path by `server/scripts/install.sh`):
 
 | Script | Purpose |
 |--------|---------|
@@ -340,6 +363,7 @@ All located at `/tes3mp-easy/scripts/` on the VPS:
 | `import_world.sh` | Import world data from external sources |
 | `export_players.sh` | Export player data to backup archives (for export Docker service) |
 | `export_world.sh` | Export world data to backup archives (for export Docker service) |
+| `list-backups.sh` | Lists available backups for nginx endpoint |
 
 ## How to Add a New Command
 
@@ -374,7 +398,7 @@ source "$SCRIPT_DIR/lib/config"
 
 **Rules:**
 - No prompts, no menus, no `read` from user.
-- No colors, no headers, no `[OK]`/`[WARN]` prefixes (legacy scripts may still have them).
+- No colors, no headers, no `[OK]`/`[WARN]` prefixes.
 - All SSH/HTTP calls go here.
 
 ### 3. (Optional) Create Layer 2 Script
@@ -418,7 +442,7 @@ Edit `client/layer3/player.sh` or `client/layer3/admin.sh`:
 
 ### 5. Add Translations
 
-Add labels in `client/lang/en` and `client/lang/ru`.
+Add labels in `client/lib/menu-strings` and/or locale installers in `client/lib/localization/`.
 
 ### 6. Add Download Line in Installer
 
