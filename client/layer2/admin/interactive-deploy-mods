@@ -25,6 +25,8 @@ echo ""
 echo "  Choose archive to deploy (or press Enter for latest):"
 echo ""
 
+check_deps jq
+
 # Get archive list from layer1 show-backups JSON
 json=$(bash "$PROJECT_DIR/layer1/admin/show-backups-${TYPE}" 2>/dev/null)
 if [[ -z "$json" ]]; then
@@ -32,19 +34,8 @@ if [[ -z "$json" ]]; then
     exit 1
 fi
 
-# Extract "name" from each JSON object in the "files" array
-names=()
-files_part=$(echo "$json" | grep -o '"files":\[.*\]' | sed 's/"files":\[//;s/\]$//')
-if [[ -n "$files_part" ]]; then
-    IFS="}" read -ra objects <<< "$files_part"
-    for obj in "${objects[@]}"; do
-        obj="${obj#\{}"; obj="${obj#,}"; obj="${obj%,}"; obj="${obj%\]}"
-        [[ -z "$obj" ]] && continue
-        if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
-            names+=("${BASH_REMATCH[1]}")
-        fi
-    done
-fi
+# Extract names from JSON using jq
+mapfile -t names < <(echo "$json" | jq -r '.files[].name' 2>/dev/null)
 
 if [[ ${#names[@]} -eq 0 ]]; then
     warn "No archives found on server."
