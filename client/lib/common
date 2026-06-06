@@ -55,7 +55,9 @@ check_deps() {
             missing=1
         fi
     done
-    [[ "$missing" -ne 0 ]] && exit 1
+    if [[ "$missing" -ne 0 ]]; then
+        exit 1
+    fi
 }
 
 # ────────────────────────────────────────────────────────────
@@ -149,15 +151,17 @@ _get_server_url() {
 # ────────────────────────────────────────────────────────────
 is_os() {
     local os="${1,,}"
+    local uname_s
+    uname_s="$(uname -s)"
     case "$os" in
         linux)
-            [[ "$(uname -s)" == "Linux" ]]
+            [[ "$uname_s" == "Linux" ]] && return 0 || return 1
             ;;
         macos|darwin)
-            [[ "$(uname -s)" == "Darwin" ]]
+            [[ "$uname_s" == "Darwin" ]] && return 0 || return 1
             ;;
         windows)
-            [[ "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]
+            [[ "$uname_s" =~ ^(MINGW|MSYS|CYGWIN) ]] && return 0 || return 1
             ;;
         *)
             return 1
