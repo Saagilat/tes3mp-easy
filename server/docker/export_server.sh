@@ -152,7 +152,7 @@ run_export() {
 ensure_fresh_backup() {
     local type="$1"
 
-    # For mods: just get current.tar.gz (symlink maintained by deploy_mods.sh)
+    # For mods: resolve current.tar.gz symlink to real filename
     if [ "$type" = "mods" ]; then
         local current_link="$BACKUPS_DIR/mods/current.tar.gz"
         if [ -L "$current_link" ] && [ -f "$current_link" ]; then
@@ -184,8 +184,39 @@ ensure_fresh_backup() {
 # ─────────────────────────────────────────────
 # Serve a file via HTTP
 # ─────────────────────────────────────────────
+# Resolve symlinks to the real file path (portable approach)
+_resolve_real_path() {
+    local path="$1"
+    local real
+
+    # Try realpath first (GNU/coreutils)
+    real=$(realpath "$path" 2>/dev/null) && { echo "$real"; return; }
+
+    # Fallback: readlink -f (busybox)
+    real=$(readlink -f "$path" 2>/dev/null) && { echo "$real"; return; }
+
+    # Manual symlink resolution
+    if [ -L "$path" ]; then
+        local link_target
+        link_target=$(readlink "$path")
+        local dir
+        dir=$(dirname "$path")
+        if [ "${link_target:0:1}" = "/" ]; then
+            echo "$link_target"
+        else
+            echo "$dir/$link_target"
+        fi
+    else
+        echo "$path"
+    fi
+}
+
 serve_file() {
     local file_path="$1"
+
+    # Resolve symlinks so the real filename is used in Content-Disposition
+    file_path=$(_resolve_real_path "$file_path")
+
     local filename
     filename=$(basename "$file_path")
 
