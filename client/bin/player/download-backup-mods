@@ -22,7 +22,8 @@ SERVER_URL=$(_get_server_url) || {
 
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: download-backup-mods <filename> [destination]"; exit 1; }
-dest="${2:-${BACKUP_DIR:-$HOME/Downloads}/$filename}"
+base_dir="${BACKUP_DIR:-$HOME/Downloads}"
+dest="${2:-$base_dir/mods/$filename}"
 
 mkdir -p "$(dirname "$dest")"
 
