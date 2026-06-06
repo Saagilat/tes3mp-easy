@@ -148,3 +148,46 @@ is_os() {
             ;;
     esac
 }
+
+# ────────────────────────────────────────────────────────────
+# input — interactive text input prompt
+# Reads from /dev/tty if available, otherwise falls back to stdin.
+# Usage: input "Prompt: " "default_value" VARNAME
+# Sets VARNAME to user input, or to default if user pressed Enter.
+# ────────────────────────────────────────────────────────────
+input() {
+    local prompt="$1" default="$2" var_name="$3"
+    local input_val=""
+
+    if [[ -c /dev/tty ]]; then
+        read -r -p "$prompt [$default]: " input_val </dev/tty || true
+    elif [[ -t 0 ]]; then
+        read -r -p "$prompt [$default]: " input_val || true
+    else
+        err "Interactive input required but no TTY available."
+        return 1
+    fi
+
+    printf -v "$var_name" "%s" "${input_val:-$default}"
+}
+
+# ────────────────────────────────────────────────────────────
+# confirm — yes/no prompt via input()
+# Usage: confirm "Continue?" "y"  && do_something
+#        confirm "Continue?" "n"  || echo "Skipped"
+# Returns: 0 for yes, 1 for no
+# ────────────────────────────────────────────────────────────
+confirm() {
+    local prompt="$1" default="${2:-n}"
+    local hint
+    case "$default" in
+        y|Y|yes|YES) hint="Y/n" ;;
+        *)           hint="y/N" ;;
+    esac
+    local response=""
+    input "$prompt" "$default" response
+    case "${response,,}" in
+        y|yes) return 0 ;;
+        *)     return 1 ;;
+    esac
+}
