@@ -250,6 +250,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | Command | Description |
 |---------|-------------|
 | `install-client` | Download TES3MP, set up Proton prefix, generate config |
+| `run-with-mods` | Install mods, then launch TES3MP via Proton |
 | `run-client` | Launch TES3MP via Proton |
 | `run-openmw-cs` | Launch OpenMW Construction Set |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |

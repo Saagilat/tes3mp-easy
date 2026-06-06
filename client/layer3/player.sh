@@ -31,6 +31,7 @@ LAYER2_PLAYER="$LAYER2_DIR/player"
 dispatch_player() {
     case "${1:-}" in
         install-client)         bash "$LAYER1_PLAYER/install-client" ;;
+        run-with-mods)          bash "$LAYER1_PLAYER/run-with-mods" ;;
         install-mods)           bash "$LAYER1_PLAYER/install-mods" ;;
         install-fonts)          bash "$LAYER2_PLAYER/interactive-install-fonts" ;;
         configure-ui)           bash "$LAYER2_PLAYER/interactive-configure-ui" ;;
@@ -73,6 +74,7 @@ dispatch_player() {
 # Function wrappers for run_menu
 # ────────────────────────────────────────────────────────────
 # layer1 calls (simple — just run)
+menu_run_with_mods()     { bash "$LAYER1_PLAYER/run-with-mods"; }
 menu_run_client()        { bash "$LAYER1_PLAYER/run-client"; }
 menu_run_openmw_cs()     { bash "$LAYER1_PLAYER/run-openmw-cs"; }
 menu_install_mods()      { bash "$LAYER1_PLAYER/install-mods"; }
@@ -102,10 +104,10 @@ show_player_menu() {
 
     local player_menu=(
         "${MENU_PLAYER_SEP_PLAY}|sep|"
+        "${MENU_PLAYER_RUN_WITH_MODS}|fn|menu_run_with_mods"
         "${MENU_PLAYER_RUN_CLIENT}|fn|menu_run_client"
         "${MENU_PLAYER_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
         "${MENU_PLAYER_SETUP_WIZARD}|fn|menu_setup_wizard"
-        "${MENU_PLAYER_INSTALL_MODS}|fn|menu_install_mods"
         "${MENU_PLAYER_SEP_LOCALIZATION}|sep|"
         "${MENU_PLAYER_INSTALL_LOCALIZATION}|fn|menu_install_localization"
         "${MENU_PLAYER_INSTALL_FONTS}|fn|menu_install_fonts"

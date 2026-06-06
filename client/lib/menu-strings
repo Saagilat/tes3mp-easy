@@ -37,10 +37,9 @@ MENU_ADMIN_EDIT_CONFIG="Settings"
 
 # ─── Player menu items ───
 MENU_PLAYER_SEP_PLAY="Play"
-MENU_PLAYER_RUN_CLIENT="Launch client"
+MENU_PLAYER_RUN_WITH_MODS="Launch client (with mods)"
 MENU_PLAYER_RUN_OPENMW_CS="OpenMW-CS"
 MENU_PLAYER_INSTALL_CLIENT="Install client"
-MENU_PLAYER_INSTALL_MODS="Install mods"
 MENU_PLAYER_SEP_LOCALIZATION="Localization"
 MENU_PLAYER_INSTALL_LOCALIZATION="Install game localization"
 MENU_PLAYER_INSTALL_FONTS="Install fonts"
