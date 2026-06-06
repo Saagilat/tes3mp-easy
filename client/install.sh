@@ -32,7 +32,7 @@ if [[ -d "$UPDATE_DIR" ]]; then
     rm -rf "$UPDATE_DIR"
 fi
 
-mkdir -p "$UPDATE_DIR"/{lib/localization/russian,layer1/admin,layer1/player,layer2/admin,layer2/player,layer3,lang,server/scripts} "$CONFIG_DIR"
+mkdir -p "$UPDATE_DIR"/{lib/localization/russian,layer1/shared,layer1/admin,layer1/player,layer2/admin,layer2/player,layer3,server/scripts} "$CONFIG_DIR"
 
 download() {
     local src="$1" dst="$2"
@@ -49,9 +49,12 @@ download "client/lib/common"           "$UPDATE_DIR/lib/common"
 download "client/lib/log"              "$UPDATE_DIR/lib/log"
 download "client/lib/config"           "$UPDATE_DIR/lib/config"
 download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
-download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
 download "client/lib/theme.ini"        "$UPDATE_DIR/lib/theme.ini"
 download "client/lib/settings.cfg.example" "$UPDATE_DIR/lib/settings.cfg.example"
+
+echo "  ── shared ──"
+download "client/layer1/shared/set-editor"     "$UPDATE_DIR/layer1/shared/set-editor"
+download "client/layer1/shared/set-backup-dir" "$UPDATE_DIR/layer1/shared/set-backup-dir"
 
 echo "  ── layer1 admin (non-interactive) ──"
 echo "  ── setup wizard ──"
@@ -154,13 +157,6 @@ download "server/scripts/package.sh"    "$UPDATE_DIR/server/scripts/package.sh"
 echo "  ── localization ──"
 download "client/lib/localization/russian/install.sh"  "$UPDATE_DIR/lib/localization/russian/install.sh"
 
-printf "  lang/en "
-curl -fsSL "$GITHUB_RAW/client/lang/en" -o "$UPDATE_DIR/lang/en" 2>/dev/null \
-    && echo "✓" || echo "✗"
-printf "  lang/ru "
-curl -fsSL "$GITHUB_RAW/client/lang/ru" -o "$UPDATE_DIR/lang/ru" 2>/dev/null \
-    && echo "✓" || echo "✗"
-
 echo ""
 echo "✓ Scripts downloaded to $UPDATE_DIR"
 
@@ -168,9 +164,6 @@ echo "✓ Scripts downloaded to $UPDATE_DIR"
 if [[ ! -f "$CONFIG" ]]; then
     cat > "$CONFIG" << 'INI'
 ; TES3MP Easy configuration (all settings)
-
-; Language (available: en, ru)
-LANG_CODE = en
 
 ; Preferred editor (auto-detected if empty)
 EDITOR = 

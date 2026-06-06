@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# set-backup-dir — Save BACKUP_DIR to config and create if needed
+# Layer 1: non-interactive, shared (admin + player).
+# Usage: set-backup-dir <path>
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy/tes3mp-easy.ini"
+
+path="${1:-}"
+[[ -z "$path" ]] && { err "Usage: set-backup-dir <path>"; exit 1; }
+
+resolved="${path/#\~/$HOME}"
+
+if grep -q "^BACKUP_DIR[[:space:]]*=" "$CONFIG" 2>/dev/null; then
+    sed -i "s|^BACKUP_DIR[[:space:]]*=.*|BACKUP_DIR = ${path}|" "$CONFIG"
+else
+    echo "BACKUP_DIR = ${path}" >> "$CONFIG"
+fi
+
+if [[ -d "$resolved" ]]; then
+    ok "Directory exists: ${resolved}"
+else
+    if mkdir -p "$resolved" 2>/dev/null; then
+        ok "Created: ${resolved}"
+    else
+        warn "Could not create: ${resolved}"
+    fi
+fi
+ok "BACKUP_DIR set to: ${path}"

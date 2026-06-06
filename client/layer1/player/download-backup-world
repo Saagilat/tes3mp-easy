@@ -14,6 +14,8 @@ load_config 2>/dev/null || {
     exit 1
 }
 
+[[ -z "${BACKUP_DIR:-}" ]] && { err "BACKUP_DIR is not set in config"; exit 1; }
+
 SERVER_URL=$(_get_server_url) || {
     err "Could not determine server URL."
     err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
@@ -22,8 +24,7 @@ SERVER_URL=$(_get_server_url) || {
 
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: download-backup-world <filename> [destination]"; exit 1; }
-base_dir="${BACKUP_DIR:-$HOME/Downloads}"
-dest="${2:-$base_dir/world/$filename}"
+dest="${2:-$BACKUP_DIR/world/$filename}"
 
 mkdir -p "$(dirname "$dest")"
 

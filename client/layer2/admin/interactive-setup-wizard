@@ -10,8 +10,9 @@ source "$PROJECT_DIR/lib/config"
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
-LAYER1="$PROJECT_DIR/layer1/admin"
-TOTAL=6
+LAYER1_ADMIN="$PROJECT_DIR/layer1/admin"
+LAYER1_SHARED="$PROJECT_DIR/layer1/shared"
+TOTAL=8
 
 step_header() { local num="$1" total="$2" title="$3"; echo ""; echo "  ━━━ [${num}/${total}] ${title} ━━━"; echo ""; }
 
@@ -26,8 +27,20 @@ echo ""
 
 load_config 2>/dev/null || true
 
+# Step 0: EDITOR
+step_header 1 $TOTAL "Preferred Editor"
+echo ""
+echo "  Enter your preferred text editor (or leave empty for auto-detect)."
+echo "  Auto-detection order: \$EDITOR → nano → vim → vi"
+echo ""
+input "Enter editor" "${EDITOR:-}" EDITOR_VAL
+if [[ -n "$EDITOR_VAL" ]]; then
+    bash "$LAYER1_SHARED/set-editor" "$EDITOR_VAL"
+fi
+load_config 2>/dev/null || true
+
 # Step 1: SSH_HOST
-step_header 1 $TOTAL "SSH Connection"
+step_header 2 $TOTAL "SSH Connection"
 while true; do
     if [[ -n "${SSH_HOST:-}" ]]; then
         input "Enter SSH host (from ~/.ssh/config)" "$SSH_HOST" SSH_HOST_VAL
@@ -41,7 +54,7 @@ while true; do
         err "SSH_HOST cannot be empty."
         continue
     fi
-    if bash "$LAYER1/set-ssh-host" "$SSH_HOST_VAL"; then
+    if bash "$LAYER1_ADMIN/set-ssh-host" "$SSH_HOST_VAL"; then
         break
     else
         confirm "Try again?" "y" || { warn "Skipping SSH."; break; }
@@ -50,19 +63,19 @@ done
 load_config 2>/dev/null || true
 
 # Step 2: EXPORT_DIR
-step_header 2 $TOTAL "Export Directory"
+step_header 3 $TOTAL "Export Directory"
 input "Enter path to export directory" "${EXPORT_DIR:-./exports}" EXPORT_DIR_VAL
 if [[ -n "$EXPORT_DIR_VAL" ]]; then
-    bash "$LAYER1/set-export-dir" "$EXPORT_DIR_VAL"
+    bash "$LAYER1_ADMIN/set-export-dir" "$EXPORT_DIR_VAL"
 fi
 load_config 2>/dev/null || true
 
 # Step 3: Install server
-step_header 3 $TOTAL "Server Installation"
+step_header 4 $TOTAL "Server Installation"
 if [[ -z "${SSH_HOST:-}" ]]; then
     warn "SSH_HOST not set — skipping."
 else
-    if bash "$LAYER1/check-server-installed" 2>/dev/null; then
+    if bash "$LAYER1_ADMIN/check-server-installed" 2>/dev/null; then
         server_installed=true
     else
         server_installed=false
@@ -70,21 +83,21 @@ else
     if $server_installed; then
         ok "Server is already installed."
         if confirm "Re-install / upgrade server?" "n"; then
-            bash "$LAYER1/install-server" || err "Installation failed."
+            bash "$LAYER1_ADMIN/install-server" || err "Installation failed."
         fi
     else
         if confirm "Install server?" "y"; then
-            bash "$LAYER1/install-server" || err "Installation failed."
+            bash "$LAYER1_ADMIN/install-server" || err "Installation failed."
         fi
     fi
 fi
 
 # Step 4: Server configuration
-step_header 4 $TOTAL "Server Configuration"
+step_header 5 $TOTAL "Server Configuration"
 bash "$PROJECT_DIR/layer2/admin/interactive-configure-server"
 
 # Step 5: Mods setup
-step_header 5 $TOTAL "Mods Setup"
+step_header 6 $TOTAL "Mods Setup"
 load_config 2>/dev/null || true
 if [[ -n "${EXPORT_DIR:-}" ]]; then
     resolved="${EXPORT_DIR/#\~/$HOME}"
@@ -102,11 +115,22 @@ else
     warn "EXPORT_DIR not set — skipping."
 fi
 
-# Step 6: Start server
-step_header 6 $TOTAL "Start Server"
+# Step 6: Backup directory
+step_header 7 $TOTAL "Backup Directory"
+echo ""
+echo "  Directory where downloaded backup archives will be stored."
+echo ""
+input "Enter backup directory" "${BACKUP_DIR:-}" BACKUP_VAL
+if [[ -n "$BACKUP_VAL" ]]; then
+    bash "$LAYER1_SHARED/set-backup-dir" "$BACKUP_VAL"
+fi
+load_config 2>/dev/null || true
+
+# Step 7: Start server
+step_header 8 $TOTAL "Start Server"
 if [[ -n "${SSH_HOST:-}" ]]; then
     if confirm "Start server now?" "n"; then
-        bash "$LAYER1/start-server" || err "Failed to start server."
+        bash "$LAYER1_ADMIN/start-server" || err "Failed to start server."
     fi
 fi
 

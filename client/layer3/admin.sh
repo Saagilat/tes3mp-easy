@@ -15,7 +15,6 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     LIB_DIR="$PROJECT_DIR/lib"
     source "$LIB_DIR/common"
     source "$LIB_DIR/config"
-    source "$LIB_DIR/lang"
     source "$LIB_DIR/menu-nav"
 fi
 
@@ -114,7 +113,6 @@ menu_download_world() { bash "$LAYER2_ADMIN/interactive-download-world"; }
 # ────────────────────────────────────────────────────────────
 show_admin_menu() {
     load_config 2>/dev/null || true
-    load_lang "${LANG_CODE:-en}"
 
     local restart_flag
     restart_flag=$(check_restart_flag)
@@ -171,6 +169,5 @@ show_admin_menu() {
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     load_config 2>/dev/null || true
-    load_lang "${LANG_CODE:-en}"
     dispatch_admin "$@"
 fi

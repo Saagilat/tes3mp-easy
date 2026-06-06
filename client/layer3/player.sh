@@ -15,7 +15,6 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     LIB_DIR="$PROJECT_DIR/lib"
     source "$LIB_DIR/common"
     source "$LIB_DIR/config"
-    source "$LIB_DIR/lang"
     source "$LIB_DIR/menu-nav"
 fi
 
@@ -99,7 +98,6 @@ menu_download_world()         { bash "$LAYER2_PLAYER/interactive-download-world"
 # ────────────────────────────────────────────────────────────
 show_player_menu() {
     load_config 2>/dev/null || true
-    load_lang "${LANG_CODE:-en}"
 
     local player_menu=(
         "${MENU_PLAYER_SEP_PLAY}|sep|"
@@ -108,7 +106,7 @@ show_player_menu() {
         "${MENU_PLAYER_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_PLAYER_INSTALL_MODS}|fn|menu_install_mods"
         "${MENU_PLAYER_SEP_LOCALIZATION}|sep|"
-        "${MENU_PLAYER_INSTALL_LOCALIZATION}|fn|menu_install_localization"
+        "Install game localization|fn|menu_install_localization"
         "${MENU_PLAYER_INSTALL_FONTS}|fn|menu_install_fonts"
         "${MENU_PLAYER_CONFIGURE_UI}|fn|menu_configure_ui"
 
@@ -142,6 +140,5 @@ show_player_menu() {
 # ────────────────────────────────────────────────────────────
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     load_config 2>/dev/null || true
-    load_lang "${LANG_CODE:-en}"
     dispatch_player "$@"
 fi
