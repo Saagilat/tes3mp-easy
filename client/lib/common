@@ -192,10 +192,11 @@ input() {
 }
 
 # ────────────────────────────────────────────────────────────
-# confirm — yes/no prompt via input()
+# confirm — yes/no prompt
 # Usage: confirm "Continue?" "y"  && do_something
 #        confirm "Continue?" "n"  || echo "Skipped"
 # Returns: 0 for yes, 1 for no
+# Displays [Y/n] or [y/N] hint based on default.
 # ────────────────────────────────────────────────────────────
 confirm() {
     local prompt="$1" default="${2:-n}"
@@ -205,7 +206,15 @@ confirm() {
         *)           hint="y/N" ;;
     esac
     local response=""
-    input "$prompt" "$default" response
+    if [[ -c /dev/tty ]]; then
+        read -r -p "$prompt [$hint]: " response </dev/tty || true
+    elif [[ -t 0 ]]; then
+        read -r -p "$prompt [$hint]: " response || true
+    else
+        err "Interactive input required but no TTY available."
+        return 1
+    fi
+    response="${response:-$default}"
     case "${response,,}" in
         y|yes) return 0 ;;
         *)     return 1 ;;

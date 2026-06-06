@@ -12,7 +12,6 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 CONFIG="$CONFIG_DIR/tes3mp-easy.json"
 LAYER1="$PROJECT_DIR/layer1/player"
 LAYER1_SHARED="$PROJECT_DIR/layer1/shared"
-TOTAL=8
 
 step_header() {
     local num="$1" total="$2" title="$3"
@@ -30,20 +29,23 @@ echo ""
 
 load_config 2>/dev/null || true
 
-# Step 0: EDITOR
-step_header 1 $TOTAL "Preferred Editor"
-echo ""
-echo "  Enter your preferred text editor (or leave empty for auto-detect)."
-echo "  Auto-detection order: \$EDITOR → nano → vim → vi"
-echo ""
-input "Enter editor" "${EDITOR:-}" EDITOR_VAL
+# ────────────────────────────────────
+# Section: Configuration
+# ────────────────────────────────────
+echo ""; echo "  ── Configuration ──"; echo ""
+
+NUM=1; TOTAL=4
+
+# 1. EDITOR
+step_header $NUM $TOTAL "Preferred Editor"
+input "Enter editor (leave empty for auto-detect)" "${EDITOR:-}" EDITOR_VAL
 if [[ -n "$EDITOR_VAL" ]]; then
     bash "$LAYER1_SHARED/edit-config-record" "EDITOR" "$EDITOR_VAL"
 fi
-load_config 2>/dev/null || true
+load_config 2>/dev/null || true; NUM=$((NUM + 1))
 
-# Step 1: MORROWIND_PATH
-step_header 2 $TOTAL "Morrowind Directory"
+# 2. MORROWIND_PATH
+step_header $NUM $TOTAL "Morrowind Directory"
 while true; do
     input "Enter path to Morrowind directory" "${MORROWIND_PATH:-}" MW_PATH
     if [[ -z "$MW_PATH" ]]; then
@@ -51,7 +53,6 @@ while true; do
         break
     fi
     bash "$LAYER1_SHARED/edit-config-record" "MORROWIND_PATH" "$MW_PATH"
-    # Verify the path exists
     resolved="${MW_PATH/#\~/$HOME}"
     if [[ -d "$resolved" ]]; then
         ok "Morrowind directory found: ${resolved}"
@@ -61,30 +62,25 @@ while true; do
         confirm "Try again?" "y" || { warn "Skipping."; break; }
     fi
 done
-load_config 2>/dev/null || true
+load_config 2>/dev/null || true; NUM=$((NUM + 1))
 
-# Step 2: TES3MP_DIR
-step_header 3 $TOTAL "TES3MP Directory"
+# 3. TES3MP_DIR
+step_header $NUM $TOTAL "TESMP Directory"
 input "Enter TES3MP directory" "${TES3MP_DIR:-games/tes3mp}" T_DIR
 if [[ -n "$T_DIR" ]]; then
     bash "$LAYER1_SHARED/edit-config-record" "TES3MP_DIR" "$T_DIR"
 fi
-load_config 2>/dev/null || true
+load_config 2>/dev/null || true; NUM=$((NUM + 1))
 
-# Step 3: PROTON_PATH
-step_header 4 $TOTAL "Proton Path"
+# 4. PROTON_PATH
+step_header $NUM $TOTAL "Proton Path"
 while true; do
-    echo ""
-    echo "  Enter the path to your Proton installation."
-    echo "  Example: /home/user/.steam/steam/steamapps/common/Proton 9.0"
-    echo ""
     input "Enter path to Proton directory" "${PROTON_PATH:-}" P_PATH
     if [[ -z "$P_PATH" ]]; then
         warn "Skipping."
         break
     fi
     bash "$LAYER1_SHARED/edit-config-record" "PROTON_PATH" "$P_PATH"
-    # Verify the path exists
     resolved="${P_PATH/#\~/$HOME}"
     if [[ -d "$resolved" ]]; then
         ok "Proton directory found: ${resolved}"
@@ -94,36 +90,39 @@ while true; do
         confirm "Try again?" "y" || { warn "Skipping."; break; }
     fi
 done
-load_config 2>/dev/null || true
+load_config 2>/dev/null || true; NUM=$((NUM + 1))
 
-# Step 4: Install client
-step_header 5 $TOTAL "Client Installation"
-load_config 2>/dev/null || true
+# ────────────────────────────────────
+# Section: Client Setup
+# ────────────────────────────────────
+echo ""; echo "  ── Client Setup ──"; echo ""
+
+NUM=1; TOTAL=4
+
+# 5. Install client
+step_header $NUM $TOTAL "Client Installation"
 if [[ -z "${MORROWIND_PATH:-}" ]]; then
     err "MORROWIND_PATH is not set."
 elif [[ -z "${TES3MP_DIR:-}" ]]; then
     err "TES3MP_DIR is not set."
 else
-    if confirm "Install / update client now?" "y"; then
-        bash "$LAYER1/install-client" || err "Client installation failed."
-    fi
+    confirm "Install / update client now?" "y" && bash "$LAYER1/install-client" || true
 fi
+NUM=$((NUM + 1))
 
-# Step 5: Install fonts
-step_header 6 $TOTAL "Fonts"
-if confirm "Install fonts?" "y"; then
-    bash "$PROJECT_DIR/layer2/player/interactive-install-fonts"
-fi
+# 6. Install fonts
+step_header $NUM $TOTAL "Fonts"
+confirm "Install fonts?" "y" && bash "$PROJECT_DIR/layer2/player/interactive-install-fonts" || true
+NUM=$((NUM + 1))
 
-# Step 6: Configure UI
-step_header 7 $TOTAL "UI Configuration"
+# 7. Configure UI
+step_header $NUM $TOTAL "UI Configuration"
 bash "$PROJECT_DIR/layer2/player/interactive-configure-ui"
+NUM=$((NUM + 1))
 
-# Step 7: Localization
-step_header 8 $TOTAL "Finish"
-if confirm "Install localization?" "y"; then
-    bash "$PROJECT_DIR/layer2/player/interactive-install-localization"
-fi
+# 8. Localization
+step_header $NUM $TOTAL "Game Localization"
+confirm "Install game localization?" "y" && bash "$PROJECT_DIR/layer2/player/interactive-install-localization" || true
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
