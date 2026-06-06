@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add --no-cache bash tar socat rhash
+RUN apk add --no-cache bash tar socat rhash jq
 
 COPY scripts/package.sh /app/package.sh
 COPY scripts/list-backups.sh /app/list-backups.sh

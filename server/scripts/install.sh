@@ -150,15 +150,15 @@ install_docker() {
 install_utils() {
     case "$PM" in
         pacman)
-            install_packages nano rhash tar zip
+            install_packages nano jq rhash tar zip
             ;;
         apt)
-            info "Updating package lists and installing utilities (nano, rhash, tar, zip)..."
+            info "Updating package lists and installing utilities (nano, jq, rhash, tar, zip)..."
             apt-get update
-            install_packages nano rhash tar zip
+            install_packages nano jq rhash tar zip
             ;;
         dnf)
-            install_packages nano rhash tar zip
+            install_packages nano jq rhash tar zip
             ;;
     esac
     ok "Utilities installed"

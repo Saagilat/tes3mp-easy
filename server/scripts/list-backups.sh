@@ -15,6 +15,7 @@
 # Environment variables:
 #   BACKUPS_DIR — path to backups root (default: /mnt/backups)
 #
+# Dependencies: bash, jq, sha256sum, date, stat
 
 set -euo pipefail
 
@@ -36,33 +37,24 @@ if [ -f "$current_file" ]; then
     current_sha256="$sha256_val"
 fi
 
-# Start JSON output
-printf '{\n'
+# Generate NDJSON (one file object per line), then slurp into final JSON with jq
+{
+    if [ -d "$dir" ]; then
+        for f in $(ls -t "$dir"/*.tar.gz 2>/dev/null); do
+            [ -f "$f" ] || continue
+            name=$(basename "$f")
+            mtime=$(date -u -d "@$(stat -c %Y "$f")" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
+            size=$(stat -c %s "$f" 2>/dev/null || echo 0)
+            sha256=$(sha256sum "$f" 2>/dev/null | cut -d' ' -f1 || echo "")
 
-# Files array
-printf '  "files": [\n'
-first=1
-if [ -d "$dir" ]; then
-    for f in $(ls -t "$dir"/*.tar.gz 2>/dev/null); do
-        [ -f "$f" ] || continue
-        name=$(basename "$f")
-        mtime=$(date -u -d "@$(stat -c %Y "$f")" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "null")
-        size=$(stat -c %s "$f" 2>/dev/null || echo 0)
-        sha256=$(sha256sum "$f" 2>/dev/null | cut -d' ' -f1 || echo "")
-
-        [ "$first" -eq 0 ] && printf ',\n'
-        first=0
-        printf '    {"name":"%s","sha256":"%s","mtime":"%s","size":%s}' \
-            "$name" "$sha256" "$mtime" "$size"
-    done
-fi
-printf '\n  ],\n'
-
-# Current field
-if [ -n "$current_sha256" ]; then
-    printf '  "current": "%s"\n' "$current_sha256"
-else
-    printf '  "current": null\n'
-fi
-
-printf '}\n'
+            jq -n \
+                --arg name "$name" \
+                --arg sha256 "$sha256" \
+                --arg mtime "$mtime" \
+                --argjson size "$size" \
+                '{name: $name, sha256: $sha256, mtime: $mtime, size: $size}'
+        done
+    fi
+} | jq -r -s \
+    --arg current "${current_sha256:-}" \
+    '{files: ., current: (if $current == "" then null else $current end)}'

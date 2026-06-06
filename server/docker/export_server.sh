@@ -52,14 +52,6 @@ source /app/package.sh
 mkdir -p "$CACHE_DIR"
 
 # ─────────────────────────────────────────────
-# Utility: URL decode
-# ─────────────────────────────────────────────
-urldecode() {
-    local str="$1"
-    printf '%b' "${str//%/\\x}"
-}
-
-# ─────────────────────────────────────────────
 # JSON list of backups for a given type
 # Delegates to list-backups.sh
 # ─────────────────────────────────────────────
@@ -325,7 +317,6 @@ handle_request() {
             local rest="${path#/download/}"
             local type="${rest%%/*}"
             local filename="${rest#*/}"
-            filename=$(urldecode "$filename")
 
             case "$type" in
                 mods|players|world)
