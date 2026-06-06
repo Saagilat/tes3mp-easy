@@ -1,34 +1,31 @@
 #!/bin/bash
 #
 # show-backups-players — List player backup archives from TES3MP server
+# Layer 1: outputs filenames one-per-line, no formatting.
+# Usage: show-backups-players
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"
-    err "Run 'edit-config' to set it up."
-    exit 1
-}
+load_config 2>/dev/null || exit 1
 
-SERVER_URL=$(_get_server_url) || {
-    err "Could not determine server URL."
-    err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
-    exit 1
-}
-
-echo ""
-echo "═══════════════════════════════════════════════"
-echo "  Player backup archives on server"
-echo "═══════════════════════════════════════════════"
-echo ""
+SERVER_URL=$(_get_server_url) || exit 1
 
 json=$(curl -sf "$SERVER_URL/list-backups/players" 2>/dev/null || echo "")
-if [[ -z "$json" || "$json" == "[]" ]]; then
-    warn "No player backups available on server."
-    exit 0
-fi
+[[ -z "$json" || "$json" == "[]" ]] && exit 0
 
-echo "$json" | python3 -m json.tool 2>/dev/null || echo "$json"
+# Parse JSON array — split into individual objects, extract "name" field
+json="${json#\[}"
+json="${json%\]}"
+[[ -z "$json" ]] && exit 0
+
+IFS="}" read -ra objects <<< "$json"
+for obj in "${objects[@]}"; do
+    obj="${obj#\{}"
+    obj="${obj#,}"
+    if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
+        echo "${BASH_REMATCH[1]}"
+    fi
+done

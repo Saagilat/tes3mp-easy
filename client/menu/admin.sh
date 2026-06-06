@@ -88,29 +88,6 @@ menu_edit_config() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Helper: list backups via SSH (returns newline-separated names)
-# ────────────────────────────────────────────────────────────
-_list_backups() {
-    local type="$1"
-    require_ssh_host || return 1
-
-    # Read current.txt to find which archive is current (only for mods)
-    local current_name=""
-    if [ "$type" = "mods" ]; then
-        current_name=$(ssh "$SSH_HOST" "cat /tes3mp-easy/backups/$type/current.txt 2>/dev/null | awk '{print \$2}'" 2>/dev/null)
-    fi
-
-    # List archives with names only, and output with (current) marker
-    ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$type/*.tar.gz 2>/dev/null | xargs -n1 basename" 2>/dev/null | while IFS= read -r name; do
-        if [ -n "$current_name" ] && [ "$name" = "$current_name" ]; then
-            echo "$name  (current)"
-        else
-            echo "$name"
-        fi
-    done
-}
-
-# ────────────────────────────────────────────────────────────
 # Helper: require SSH_HOST
 # ────────────────────────────────────────────────────────────
 require_ssh_host() {
@@ -123,22 +100,11 @@ require_ssh_host() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Helper: get current archive name for a type (reads current.txt via SSH)
-# ────────────────────────────────────────────────────────────
-_get_current_ssh() {
-    local type="$1"
-    if [ "$type" = "mods" ]; then
-        ssh "$SSH_HOST" "cat /tes3mp-easy/backups/$type/current.txt 2>/dev/null | awk '{print \$2}'" 2>/dev/null
-    fi
-}
-
-# ────────────────────────────────────────────────────────────
-# Download backup menu — list via SSH, select, download via SCP
+# Download backup menu — use Layer 1 show-backups-*, present menu, call download
 # ────────────────────────────────────────────────────────────
 _download_backup_menu() {
     local type="$1"
     local label="$2"
-    local download_bin="$3"  # path to bin/admin/download-backup-*
 
     require_ssh_host || return 1
 
@@ -148,29 +114,26 @@ _download_backup_menu() {
     echo "═══════════════════════════════════════════════"
     echo ""
 
-    local archives
-    archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$type/*.tar.gz 2>/dev/null | head -10 | xargs -n1 basename" 2>/dev/null)
-    if [[ -z "$archives" ]]; then
+    local names=()
+    local rc=0
+    while IFS= read -r name; do
+        [[ -z "$name" ]] && continue
+        names+=("$name")
+    done < <(bash "$BIN_DIR/show-backups-${type}"); rc=$?
+
+    if [[ $rc -ne 0 ]]; then
+        err "Failed to list backups."
+        return
+    fi
+
+    if [[ ${#names[@]} -eq 0 ]]; then
         warn "No $label backups available on server."
         return
     fi
 
-    local current_name
-    current_name=$(_get_current_ssh "$type")
-
-    # Show numbered list
-    local names=()
-    while IFS= read -r name; do
-        names+=("$name")
-    done <<< "$archives"
-
     local i=1
     for name in "${names[@]}"; do
-        if [[ -n "$current_name" && "$name" == "$current_name" ]]; then
-            echo "  $i) $name  (current)"
-        else
-            echo "  $i) $name"
-        fi
+        echo "  $i) $name"
         ((i++)) || true
     done
     echo ""
@@ -191,7 +154,7 @@ _download_backup_menu() {
 
     echo ""
     info "Downloading $selected..."
-    bash "$download_bin" "$selected" || {
+    bash "$BIN_DIR/download-backup-${type}" "$selected" || {
         err "Download failed."
         return
     }
@@ -269,9 +232,9 @@ menu_deploy_world()   { _deploy_menu "world" "World" "$BIN_DIR/deploy-world"; }
 # ────────────────────────────────────────────────────────────
 # Download wrappers
 # ────────────────────────────────────────────────────────────
-menu_download_mods()    { _download_backup_menu "mods" "Mods" "$BIN_DIR/download-backup-mods"; }
-menu_download_players() { _download_backup_menu "players" "Players" "$BIN_DIR/download-backup-players"; }
-menu_download_world()   { _download_backup_menu "world" "World" "$BIN_DIR/download-backup-world"; }
+menu_download_mods()    { _download_backup_menu "mods" "Mods"; }
+menu_download_players() { _download_backup_menu "players" "Players"; }
+menu_download_world()   { _download_backup_menu "world" "World"; }
 
 # ────────────────────────────────────────────────────────────
 # check_restart_flag — query server via SSH

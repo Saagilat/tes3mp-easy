@@ -20,6 +20,54 @@ Three Docker services on the VPS:
 - **nginx** — serves backup archives via HTTP (port 8085), endpoints: `/list-backups/{type}`, `/download/{type}/{filename}`
 - **export** — periodically packages data into `.tar.gz` archives
 
+## Layer Architecture
+
+The CLI follows a strict two-layer separation:
+
+### Layer 1 — Machine-Readable (`client/bin/`)
+
+Non-interactive scripts that accept arguments and return structured output (filenames line-by-line, JSON, etc.).
+
+Rules:
+- **No TUI** — no prompts, no menus, no `read` from user.
+- **No formatting** — no ANSI colors, no headers, no `[WARN]` / `[OK]` prefixes.
+- **Output** — only data (e.g. filenames one-per-line). Empty output is valid (no results).
+- **Exit code** — zero on success, non-zero on failure (caller handles error messages).
+- **Dependencies** — minimal; prefer curl/ssh over python/jq for portability.
+
+Examples: `show-backups-players`, `download-backup-players`, `install-mods`.
+
+### Layer 2 — Interactive (`client/menu/`)
+
+Interactive menus that call Layer 1 scripts and present their output to the user.
+
+Rules:
+- **No data fetching** — never re-implement HTTP or SSH calls that Layer 1 already handles.
+- **No low-level parsing** — delegate parsing to Layer 1, consume its output.
+- **Adds UI** — headers, colors, numbering, error messages, confirmation prompts.
+
+Examples: `menu_download_backup`, `menu_install_mods` with progress feedback.
+
+### Data Flow
+
+```
+User → Layer 2 (menu) → Layer 1 (bin/) → HTTP / SSH → Server
+                                                    ↓
+User ← Layer 2 (menu) ← Layer 1 (bin/) ← JSON / stdout
+```
+
+### Example: Backup Workflow
+
+```
+User selects "Download player backup"
+  → Layer 2: menu_download_backup("players")
+    → Layer 1: show-backups-players (prints filenames)
+    → Layer 2: parses stdout, shows numbered menu
+    → User picks a file
+    → Layer 1: download-backup-players "file.tar.gz"
+    → Layer 2: prints success message
+```
+
 ## Repository Structure
 
 ```
@@ -27,15 +75,15 @@ Three Docker services on the VPS:
 │   ├── install-admin.sh        # One-line installer (curl | bash)
 │   ├── install-player.sh       # One-line installer (curl | bash)
 │   ├── bin/
-│   │   ├── admin/              # Admin CLI subcommands
-│   │   ├── player/             # Player CLI subcommands
+│   │   ├── admin/              # Admin CLI subcommands (Layer 1)
+│   │   ├── player/             # Player CLI subcommands (Layer 1)
 │   │   └── common/             # Shared subcommands (edit-config)
 │   ├── lib/                    # Shared libraries (sourced, not executed)
 │   │   ├── common              # Colors, logging, utility functions
 │   │   ├── config              # INI config parser and editor
 │   │   ├── menu-nav            # Interactive TUI menu engine
 │   │   └── lang                # Internationalization loader
-│   ├── menu/                   # Interactive menu wrappers
+│   ├── menu/                   # Interactive menu wrappers (Layer 2)
 │   │   ├── admin.sh            # Admin menu (dispatches to bin/admin/)
 │   │   └── player.sh           # Player menu (dispatches to bin/player/)
 │   └── lang/                   # Translation files
@@ -211,13 +259,15 @@ All located at `/tes3mp-easy/scripts/` on the VPS:
 
 ## How to Add a New Command
 
-1. Create script in `client/bin/admin/<command>` or `client/bin/player/<command>`
-2. Register in the menu:
-   - Add wrapper function in `client/menu/admin.sh` or `client/menu/player.sh`
-   - Add dispatch entry in the `case` block
-   - Add menu item to the items array
-3. Add translations in `client/lang/en` and `client/lang/ru`
-4. Add download line in `install-admin.sh` or `install-player.sh`
+1. Create a **Layer 1** script in `client/bin/admin/<command>` or `client/bin/player/<command>`
+   - Accept arguments, print data to stdout, exit 0 on success / non-zero on failure.
+   - No TUI, no colors, no prompts.
+2. Create a **Layer 2** wrapper in `client/menu/admin.sh` or `client/menu/player.sh`
+   - Add wrapper function that calls the Layer 1 script.
+   - Add dispatch entry in the `case` block.
+   - Add menu item to the items array.
+3. Add translations in `client/lang/en` and `client/lang/ru`.
+4. Add download line in `install-admin.sh` or `install-player.sh`.
 
 See the existing scripts for examples.
 

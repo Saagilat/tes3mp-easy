@@ -85,18 +85,11 @@ menu_edit_config() {
 }
 
 # ────────────────────────────────────────────────────────────
-# Download backup menu — get list via HTTP, select, download via bin/
+# Download backup menu — use Layer 1 show-backups-*, present menu, call download
 # ────────────────────────────────────────────────────────────
 menu_download_backup() {
     local type="$1"
     local label="${type^}"
-    local SERVER_URL
-
-    SERVER_URL=$(_get_server_url) || {
-        err "Could not determine server URL."
-        err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
-        return 1
-    }
 
     echo ""
     echo "═══════════════════════════════════════════════"
@@ -104,40 +97,26 @@ menu_download_backup() {
     echo "═══════════════════════════════════════════════"
     echo ""
 
-    local json
-    json=$(curl -sf "$SERVER_URL/list-backups/$type" 2>/dev/null || echo "")
-    if [[ -z "$json" || "$json" == "[]" ]]; then
-        warn "No $label backups available on server."
+    local names=()
+    local rc=0
+    while IFS= read -r name; do
+        [[ -z "$name" ]] && continue
+        names+=("$name")
+    done < <(bash "$BIN_DIR/show-backups-${type}"); rc=$?
+
+    if [[ $rc -ne 0 ]]; then
+        err "Failed to list backups."
         return
     fi
 
-    local names=()
-    local current_flag=()
-    while IFS= read -r line; do
-        if [[ "$line" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
-            names+=("${BASH_REMATCH[1]}")
-            # Check if this entry has "current": true
-            if [[ "$line" =~ \"current\":[[:space:]]*true ]]; then
-                current_flag+=("true")
-            else
-                current_flag+=("false")
-            fi
-        fi
-    done < <(echo "$json")
-
     if [[ ${#names[@]} -eq 0 ]]; then
-        warn "No $label backups found."
+        warn "No $label backups available on server."
         return
     fi
 
     local i=1
     for name in "${names[@]}"; do
-        idx=$((i - 1))
-        if [[ "${current_flag[$idx]}" == "true" ]]; then
-            echo "  $i) $name  (current)"
-        else
-            echo "  $i) $name"
-        fi
+        echo "  $i) $name"
         ((i++)) || true
     done
     echo ""

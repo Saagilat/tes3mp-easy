@@ -1,42 +1,35 @@
 #!/bin/bash
 #
 # show-backups-mods — List mod backup archives from TES3MP server
+# Layer 1: outputs filenames one-per-line, no formatting.
+# Usage: show-backups-mods
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"
-    err "Run 'edit-config' to set it up."
-    exit 1
-}
+load_config 2>/dev/null || exit 1
 
-SERVER_URL=$(_get_server_url) || {
-    err "Could not determine server URL."
-    err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
-    exit 1
-}
-
-echo ""
-echo "═══════════════════════════════════════════════"
-echo "  Mod backup archives on server"
-echo "═══════════════════════════════════════════════"
-echo ""
+SERVER_URL=$(_get_server_url) || exit 1
 
 json=$(curl -sf "$SERVER_URL/list-backups/mods" 2>/dev/null || echo "")
-if [[ -z "$json" || "$json" == "[]" ]]; then
-    warn "No mod backups available on server."
-    exit 0
-fi
+[[ -z "$json" || "$json" == "[]" ]] && exit 0
 
-# Parse JSON and display with (current) marker
-echo "$json" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for entry in data:
-    name = entry.get('name', '?')
-    marker = '  (current)' if entry.get('current') else ''
-    print(f'  {name}{marker}')
-" 2>/dev/null || echo "$json" | python3 -m json.tool 2>/dev/null || echo "$json"
+# Parse JSON array — split into individual objects, extract "name" field
+# JSON format: [{"name":"file1","...":"..."},{"name":"file2",...}]
+json="${json#\[}"  # strip leading [
+json="${json%\]}"  # strip trailing ]
+[[ -z "$json" ]] && exit 0
+
+# Split by "},{" and process each object
+IFS="}" read -ra objects <<< "$json"
+for obj in "${objects[@]}"; do
+    # Strip leading garbage (comma, brace remnants)
+    obj="${obj#\{}"
+    obj="${obj#,}"
+    # Find "name":"<value>"
+    if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then
+        echo "${BASH_REMATCH[1]}"
+    fi
+done

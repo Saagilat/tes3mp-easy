@@ -1,18 +1,17 @@
 #!/bin/bash
 #
-# show-backups-world — List world backup archives on remote VPS
+# show-backups-world — List world backup archives on remote VPS via SSH
+# Layer 1: outputs filenames one-per-line, no formatting.
+# Usage: show-backups-world
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || { err "Config not found"; exit 1; }
-[[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
+load_config 2>/dev/null || exit 1
+[[ -z "${SSH_HOST:-}" ]] && exit 1
 
-echo ""
-echo "═══════════════════════════════════════════════"
-echo "  World backup archives on $SSH_HOST"
-echo "═══════════════════════════════════════════════"
-
-ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/world/*.tar.gz 2>/dev/null" || { err "No world backups found"; exit 1; }
+ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/world/*.tar.gz 2>/dev/null" 2>/dev/null | while IFS= read -r file; do
+    basename "$file"
+done
