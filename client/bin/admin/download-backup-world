@@ -13,7 +13,8 @@ load_config 2>/dev/null || { err "Config not found"; exit 1; }
 
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: admin-backup-world <filename> [destination]"; exit 1; }
-dest="${2:-${BACKUP_DIR:-.}/$filename}"
+base_dir="${BACKUP_DIR:-.}"
+dest="${2:-$base_dir/world/$filename}"
 
 mkdir -p "$(dirname "$dest")"
 scp "$SSH_HOST:/tes3mp-easy/backups/world/$filename" "$dest" || { err "Failed to download $filename"; exit 1; }
