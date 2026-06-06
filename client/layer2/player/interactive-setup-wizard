@@ -1,0 +1,114 @@
+#!/bin/bash
+#
+# interactive-setup-wizard — Player guided setup wizard
+# Layer 2: orchestrates the full setup process step by step
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+CONFIG="$CONFIG_DIR/tes3mp-easy.ini"
+LAYER1="$PROJECT_DIR/layer1/player"
+TOTAL=7
+
+step_header() {
+    local num="$1" total="$2" title="$3"
+    echo ""; echo "  ━━━ [${num}/${total}] ${title} ━━━"; echo ""
+}
+
+echo ""
+echo "  ╔══════════════════════════════════════════════════╗"
+echo "  ║      TES3MP Easy — Player Setup Wizard          ║"
+echo "  ╚══════════════════════════════════════════════════╝"
+echo ""
+info "This wizard will guide you through setting up the client."
+info "Press Ctrl+C at any time to exit."
+echo ""
+
+load_config 2>/dev/null || true
+
+# Step 1: MORROWIND_PATH
+step_header 1 $TOTAL "Morrowind Directory"
+while true; do
+    input "Enter path to Morrowind directory" "${MORROWIND_PATH:-}" MW_PATH
+    if [[ -z "$MW_PATH" ]]; then
+        warn "Skipping."
+        break
+    fi
+    if bash "$LAYER1/set-morrowind-path" "$MW_PATH"; then
+        break
+    else
+        confirm "Try again?" "y" || { warn "Skipping."; break; }
+    fi
+done
+load_config 2>/dev/null || true
+
+# Step 2: TES3MP_DIR
+step_header 2 $TOTAL "TES3MP Directory"
+input "Enter TES3MP directory" "${TES3MP_DIR:-games/tes3mp}" T_DIR
+if [[ -n "$T_DIR" ]]; then
+    bash "$LAYER1/set-tes3mp-dir" "$T_DIR"
+fi
+load_config 2>/dev/null || true
+
+# Step 3: PROTON_PATH
+step_header 3 $TOTAL "Proton Path"
+while true; do
+    echo ""
+    echo "  Enter the path to your Proton installation."
+    echo "  Example: /home/user/.steam/steam/steamapps/common/Proton 9.0"
+    echo ""
+    input "Enter path to Proton directory" "${PROTON_PATH:-}" P_PATH
+    if [[ -z "$P_PATH" ]]; then
+        warn "Skipping."
+        break
+    fi
+    if bash "$LAYER1/set-proton-path" "$P_PATH"; then
+        break
+    else
+        confirm "Try again?" "y" || { warn "Skipping."; break; }
+    fi
+done
+load_config 2>/dev/null || true
+
+# Step 4: Install client
+step_header 4 $TOTAL "Client Installation"
+load_config 2>/dev/null || true
+if [[ -z "${MORROWIND_PATH:-}" ]]; then
+    err "MORROWIND_PATH is not set."
+elif [[ -z "${TES3MP_DIR:-}" ]]; then
+    err "TES3MP_DIR is not set."
+else
+    if confirm "Install / update client now?" "y"; then
+        bash "$LAYER1/install-client" || err "Client installation failed."
+    fi
+fi
+
+# Step 5: Install fonts
+step_header 5 $TOTAL "Fonts"
+if confirm "Install fonts?" "y"; then
+    bash "$PROJECT_DIR/layer2/player/interactive-install-fonts"
+fi
+
+# Step 6: Configure UI
+step_header 6 $TOTAL "UI Configuration"
+bash "$PROJECT_DIR/layer2/player/interactive-configure-ui"
+
+# Step 7: Localization
+step_header 7 $TOTAL "Finish"
+if confirm "Install localization?" "y"; then
+    bash "$PROJECT_DIR/layer2/player/interactive-install-localization"
+fi
+
+echo ""
+echo "  ╔══════════════════════════════════════════════════╗"
+echo "  ║            Setup Wizard Complete!                ║"
+echo "  ╚══════════════════════════════════════════════════╝"
+echo ""
+echo "  Next steps from the menu:"
+echo "    1) Client config — set server IP address"
+echo "    2) Install mods — download and install mods"
+echo "    3) Launch client — run the game"
+echo ""

@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# interactive-edit-config — Edit admin configuration
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+bash "$PROJECT_DIR/layer1/admin/edit-config"

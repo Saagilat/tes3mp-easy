@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# interactive-server-logs — Show TES3MP container logs
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+bash "$PROJECT_DIR/layer1/admin/server-logs"

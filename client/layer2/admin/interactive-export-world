@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# interactive-export-world — Package and upload world data to server
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+bash "$PROJECT_DIR/layer1/admin/export-world"

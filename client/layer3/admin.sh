@@ -2,7 +2,7 @@
 #
 # layer3/admin.sh — Interactive menu for TES3MP server administrators
 #
-# Layer 3: Pure TUI menu. Each menu item is just a call to a layer2 function.
+# Layer 3: Pure TUI menu. Each menu item is just a call to a layer2 file.
 # No business logic here.
 #
 
@@ -14,42 +14,43 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/config"
     source "$LIB_DIR/lang"
     source "$LIB_DIR/menu-nav"
-    source "$LAYER2_DIR/admin.sh"
 fi
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.ini"
 
+LAYER2_ADMIN="$LAYER2_DIR/admin"
+
 # ────────────────────────────────────────────────────────────
 # dispatch — handle direct command line arguments
-# All dispatch entries just call layer2 functions.
+# All dispatch entries just call layer2 files.
 # ────────────────────────────────────────────────────────────
 dispatch_admin() {
     case "${1:-}" in
-        install-server)         interactive_install_server ;;
-        start-server)           interactive_server_start ;;
-        stop-server)            interactive_server_stop ;;
-        restart-server)         interactive_server_restart ;;
-        server-logs)            interactive_server_logs ;;
-        server-status)          interactive_server_status ;;
-        export-mods)            interactive_export_mods ;;
-        export-players)         interactive_export_players ;;
-        export-world)           interactive_export_world ;;
-        setup-wizard)           interactive_setup_wizard ;;
-        generate-required-data) interactive_generate_data ;;
-        deploy-mods)            interactive_deploy_mods ;;
-        deploy-players)         interactive_deploy_players ;;
-        deploy-world)           interactive_deploy_world ;;
-        download-backup-mods)   interactive_download_mods ;;
-        download-backup-players) interactive_download_players ;;
-        download-backup-world)  interactive_download_world ;;
-        show-backups-mods)      interactive_show_backups_mods ;;
-        show-backups-players)   interactive_show_backups_players ;;
-        show-backups-world)     interactive_show_backups_world ;;
-        edit-config)            interactive_edit_config ;;
-        edit-server-cfg)        interactive_edit_server_cfg ;;
-        edit-lua)               interactive_edit_lua ;;
-        edit-banlist)           interactive_edit_banlist ;;
+        install-server)         bash "$LAYER2_ADMIN/interactive-install-server" ;;
+        start-server)           bash "$LAYER2_ADMIN/interactive-server-start" ;;
+        stop-server)            bash "$LAYER2_ADMIN/interactive-server-stop" ;;
+        restart-server)         bash "$LAYER2_ADMIN/interactive-server-restart" ;;
+        server-logs)            bash "$LAYER2_ADMIN/interactive-server-logs" ;;
+        server-status)          bash "$LAYER2_ADMIN/interactive-server-status" ;;
+        export-mods)            bash "$LAYER2_ADMIN/interactive-export-mods" ;;
+        export-players)         bash "$LAYER2_ADMIN/interactive-export-players" ;;
+        export-world)           bash "$LAYER2_ADMIN/interactive-export-world" ;;
+        setup-wizard)           bash "$LAYER2_ADMIN/interactive-setup-wizard" ;;
+        generate-required-data) bash "$LAYER2_ADMIN/interactive-generate-data" ;;
+        deploy-mods)            bash "$LAYER2_ADMIN/interactive-deploy-mods" ;;
+        deploy-players)         bash "$LAYER2_ADMIN/interactive-deploy-players" ;;
+        deploy-world)           bash "$LAYER2_ADMIN/interactive-deploy-world" ;;
+        download-backup-mods)   bash "$LAYER2_ADMIN/interactive-download-mods" ;;
+        download-backup-players) bash "$LAYER2_ADMIN/interactive-download-players" ;;
+        download-backup-world)  bash "$LAYER2_ADMIN/interactive-download-world" ;;
+        show-backups-mods)      bash "$LAYER2_ADMIN/interactive-show-backups-mods" ;;
+        show-backups-players)   bash "$LAYER2_ADMIN/interactive-show-backups-players" ;;
+        show-backups-world)     bash "$LAYER2_ADMIN/interactive-show-backups-world" ;;
+        edit-config)            bash "$LAYER2_ADMIN/interactive-edit-config" ;;
+        edit-server-cfg)        bash "$LAYER2_ADMIN/interactive-edit-server-cfg" ;;
+        edit-lua)               bash "$LAYER2_ADMIN/interactive-edit-lua" ;;
+        edit-banlist)           bash "$LAYER2_ADMIN/interactive-edit-banlist" ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, start-server, stop-server, restart-server,"
             echo "  server-logs, server-status, export-mods, export-players, export-world,"
@@ -62,6 +63,42 @@ dispatch_admin() {
         *) echo "Unknown command: $1"; echo "Run 'layer3/admin.sh help' for available commands."; exit 1 ;;
     esac
 }
+
+# ────────────────────────────────────────────────────────────
+# Function wrappers for run_menu — each just calls a layer2 script
+# ────────────────────────────────────────────────────────────
+interactive_server_start()      { bash "$LAYER2_ADMIN/interactive-server-start"; }
+interactive_server_stop()       { bash "$LAYER2_ADMIN/interactive-server-stop"; }
+interactive_server_restart()    { bash "$LAYER2_ADMIN/interactive-server-restart"; }
+interactive_server_status()     { bash "$LAYER2_ADMIN/interactive-server-status"; }
+interactive_server_logs()       { bash "$LAYER2_ADMIN/interactive-server-logs"; }
+interactive_setup_wizard()      { bash "$LAYER2_ADMIN/interactive-setup-wizard"; }
+interactive_generate_data()     { bash "$LAYER2_ADMIN/interactive-generate-data"; }
+interactive_export_mods()       { bash "$LAYER2_ADMIN/interactive-export-mods"; }
+interactive_export_players()    { bash "$LAYER2_ADMIN/interactive-export-players"; }
+interactive_export_world()      { bash "$LAYER2_ADMIN/interactive-export-world"; }
+interactive_deploy_mods()       { bash "$LAYER2_ADMIN/interactive-deploy-mods"; }
+interactive_deploy_players()    { bash "$LAYER2_ADMIN/interactive-deploy-players"; }
+interactive_deploy_world()      { bash "$LAYER2_ADMIN/interactive-deploy-world"; }
+interactive_show_backups_mods() { bash "$LAYER2_ADMIN/interactive-show-backups-mods"; }
+interactive_show_backups_players() { bash "$LAYER2_ADMIN/interactive-show-backups-players"; }
+interactive_show_backups_world() { bash "$LAYER2_ADMIN/interactive-show-backups-world"; }
+interactive_download_mods()     { bash "$LAYER2_ADMIN/interactive-download-mods"; }
+interactive_download_players()  { bash "$LAYER2_ADMIN/interactive-download-players"; }
+interactive_download_world()    { bash "$LAYER2_ADMIN/interactive-download-world"; }
+interactive_edit_server_cfg()   { bash "$LAYER2_ADMIN/interactive-edit-server-cfg"; }
+interactive_edit_lua()          { bash "$LAYER2_ADMIN/interactive-edit-lua"; }
+interactive_edit_banlist()      { bash "$LAYER2_ADMIN/interactive-edit-banlist"; }
+interactive_edit_config() {
+    bash "$LAYER2_ADMIN/interactive-edit-config"
+    exec bash "$0" menu
+}
+
+# ────────────────────────────────────────────────────────────
+# Status checks for menu display
+# ────────────────────────────────────────────────────────────
+interactive_check_restart_flag() { bash "$LAYER2_ADMIN/interactive-check-restart-flag"; }
+interactive_check_server_status() { bash "$LAYER2_ADMIN/interactive-check-server-status"; }
 
 # ────────────────────────────────────────────────────────────
 # Menu entry point — only defines structure, no logic.

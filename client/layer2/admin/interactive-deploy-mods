@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# interactive-deploy-mods — Deploy mods archive on VPS
+# Layer 2: lists archives via SSH, prompts, calls layer1
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+load_config 2>/dev/null || true
+if [[ -z "${SSH_HOST:-}" ]]; then
+    err "SSH_HOST is not set."
+    exit 1
+fi
+
+TYPE="mods"
+LABEL="Mods"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Deploy $LABEL"
+echo "═══════════════════════════════════════════════"
+echo ""
+echo "  Choose archive to deploy (or press Enter for latest):"
+echo ""
+
+archives=$(ssh "$SSH_HOST" "ls -t /tes3mp-easy/backups/$TYPE/*.tar.gz 2>/dev/null | head -10 | xargs -n1 basename" 2>/dev/null)
+if [[ -z "$archives" ]]; then
+    warn "No archives found on server."
+    exit 1
+fi
+
+names=()
+while IFS= read -r name; do names+=("$name"); done <<< "$archives"
+
+i=1
+for name in "${names[@]}"; do
+    echo "  $i) $name"
+    ((i++)) || true
+done
+echo ""
+
+read -r -p "  Select number (empty = latest): " choice
+
+if [[ -z "$choice" ]]; then
+    archive="${names[0]}"
+else
+    archive="${names[$((choice - 1))]}"
+fi
+
+if [[ -z "$archive" ]]; then
+    err "Invalid selection."
+    exit 1
+fi
+
+info "Deploying: $archive"
+bash "$PROJECT_DIR/layer1/admin/deploy-${TYPE}" "$archive" || { err "Deploy failed."; exit 1; }
+ok "Deploy queued. Use RESTART to apply."

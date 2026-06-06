@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# interactive-show-backups-players — Show player backup list from VPS
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+bash "$PROJECT_DIR/layer1/admin/show-backups-players"

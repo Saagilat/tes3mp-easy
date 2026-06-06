@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# interactive-show-backups-players — Show player backups JSON
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+bash "$PROJECT_DIR/layer1/player/show-backups-players"

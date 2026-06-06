@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# interactive-download-players — Download player backup from server
+# Layer 2: parses JSON from show-backups-players, shows menu, calls download-backup
+#
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$PROJECT_DIR/lib/common"
+source "$PROJECT_DIR/lib/config"
+
+TYPE="players"
+LABEL="Players"
+
+echo ""
+echo "═══════════════════════════════════════════════"
+echo "  Download $LABEL Backup"
+echo "═══════════════════════════════════════════════"
+echo ""
+
+json=$(bash "$PROJECT_DIR/layer1/player/show-backups-${TYPE}")
+if [[ -z "$json" ]]; then
+    warn "No $LABEL backups available on server."
+    exit 1
+fi
+
+current_sha256=$(echo "$json" | grep -o '"current":"[^"]*"' | head -1 | sed 's/"current":"//;s/"//')
+
+names=() sha256s=()
+files_part=$(echo "$json" | grep -o '"files":\[.*\]' | sed 's/"files":\[//;s/\]$//')
+if [[ -z "$files_part" ]]; then
+    warn "No $LABEL backups available on server."
+    exit 1
+fi
+
+IFS="}" read -ra objects <<< "$files_part"
+for obj in "${objects[@]}"; do
+    obj="${obj#\{}"
+    obj="${obj#,}"
+    obj="${obj%,}"
+    obj="${obj%\]}"
+    [[ -z "$obj" ]] && continue
+    name=""; sha256=""
+    if [[ "$obj" =~ \"name\":[[:space:]]*\"([^\"]+)\" ]]; then name="${BASH_REMATCH[1]}"; fi
+    if [[ "$obj" =~ \"sha256\":[[:space:]]*\"([^\"]+)\" ]]; then sha256="${BASH_REMATCH[1]}"; fi
+    [[ -z "$name" ]] && continue
+    names+=("$name")
+    sha256s+=("$sha256")
+done
+
+if [[ ${#names[@]} -eq 0 ]]; then
+    warn "No $LABEL backups available on server."
+    exit 1
+fi
+
+i=1
+for name in "${names[@]}"; do
+    idx=$((i - 1))
+    if [[ -n "$current_sha256" && "${sha256s[$idx]}" == "$current_sha256" ]]; then
+        echo "  $i) $name  (current)"
+    else
+        echo "  $i) $name"
+    fi
+    ((i++)) || true
+done
+echo ""
+
+read -r -p "  Select number (empty = cancel): " choice
+[[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
+
+selected="${names[$((choice - 1))]}"
+[[ -z "$selected" ]] && { err "Invalid selection."; exit 1; }
+
+echo ""
+info "Downloading $selected..."
+bash "$PROJECT_DIR/layer1/player/download-backup-${TYPE}" "$selected" || { err "Download failed."; exit 1; }
+ok "Done."

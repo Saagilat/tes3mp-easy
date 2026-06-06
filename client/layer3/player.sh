@@ -2,7 +2,7 @@
 #
 # layer3/player.sh — Interactive menu for TES3MP player
 #
-# Layer 3: Pure TUI menu. Each menu item is just a call to a layer2 function.
+# Layer 3: Pure TUI menu. Each menu item is just a call to a layer2 file.
 # No business logic here.
 #
 
@@ -14,34 +14,35 @@ if [[ -z "${LIB_DIR:-}" ]]; then
     source "$LIB_DIR/config"
     source "$LIB_DIR/lang"
     source "$LIB_DIR/menu-nav"
-    source "$LAYER2_DIR/player.sh"
 fi
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.ini"
 
+LAYER2_PLAYER="$LAYER2_DIR/player"
+
 # ────────────────────────────────────────────────────────────
 # dispatch — handle direct command line arguments
-# All dispatch entries just call layer2 functions.
+# All dispatch entries just call layer2 files.
 # ────────────────────────────────────────────────────────────
 dispatch_player() {
     case "${1:-}" in
-        install-client)         interactive_install_client ;;
-        install-mods)           interactive_install_mods ;;
-        install-fonts)          interactive_install_fonts ;;
-        configure-ui)           interactive_configure_ui ;;
-        install-localization)   interactive_install_localization ;;
-        setup-wizard)           interactive_setup_wizard ;;
-        download-backup-mods)   interactive_download_mods ;;
-        download-backup-players) interactive_download_players ;;
-        download-backup-world)  interactive_download_world ;;
-        show-backups-mods)      interactive_show_backups_mods ;;
-        show-backups-players)   interactive_show_backups_players ;;
-        show-backups-world)     interactive_show_backups_world ;;
-        run-openmw-cs)          interactive_run_openmw_cs ;;
-        run-client)             interactive_run_client ;;
-        edit-config)            interactive_edit_config ;;
-        edit-client-cfg)        interactive_edit_client_cfg ;;
+        install-client)         bash "$LAYER2_PLAYER/interactive-install-client" ;;
+        install-mods)           bash "$LAYER2_PLAYER/interactive-install-mods" ;;
+        install-fonts)          bash "$LAYER2_PLAYER/interactive-install-fonts" ;;
+        configure-ui)           bash "$LAYER2_PLAYER/interactive-configure-ui" ;;
+        install-localization)   bash "$LAYER2_PLAYER/interactive-install-localization" ;;
+        setup-wizard)           bash "$LAYER2_PLAYER/interactive-setup-wizard" ;;
+        download-backup-mods)   bash "$LAYER2_PLAYER/interactive-download-mods" ;;
+        download-backup-players) bash "$LAYER2_PLAYER/interactive-download-players" ;;
+        download-backup-world)  bash "$LAYER2_PLAYER/interactive-download-world" ;;
+        show-backups-mods)      bash "$LAYER2_PLAYER/interactive-show-backups-mods" ;;
+        show-backups-players)   bash "$LAYER2_PLAYER/interactive-show-backups-players" ;;
+        show-backups-world)     bash "$LAYER2_PLAYER/interactive-show-backups-world" ;;
+        run-openmw-cs)          bash "$LAYER2_PLAYER/interactive-run-openmw-cs" ;;
+        run-client)             bash "$LAYER2_PLAYER/interactive-run-client" ;;
+        edit-config)            bash "$LAYER2_PLAYER/interactive-edit-config" ;;
+        edit-client-cfg)        bash "$LAYER2_PLAYER/interactive-edit-client-cfg" ;;
         uninstall)
             echo ""
             echo "This will remove: $CONFIG_FILE"
@@ -63,6 +64,28 @@ dispatch_player() {
         menu|"") show_player_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'layer3/player.sh help' for available commands."; exit 1 ;;
     esac
+}
+
+# ────────────────────────────────────────────────────────────
+# Function wrappers for run_menu — each just calls a layer2 script
+# ────────────────────────────────────────────────────────────
+interactive_run_client()        { bash "$LAYER2_PLAYER/interactive-run-client"; }
+interactive_run_openmw_cs()     { bash "$LAYER2_PLAYER/interactive-run-openmw-cs"; }
+interactive_setup_wizard()      { bash "$LAYER2_PLAYER/interactive-setup-wizard"; }
+interactive_install_mods()      { bash "$LAYER2_PLAYER/interactive-install-mods"; }
+interactive_install_localization() { bash "$LAYER2_PLAYER/interactive-install-localization"; }
+interactive_install_fonts()     { bash "$LAYER2_PLAYER/interactive-install-fonts"; }
+interactive_configure_ui()      { bash "$LAYER2_PLAYER/interactive-configure-ui"; }
+interactive_show_backups_mods()    { bash "$LAYER2_PLAYER/interactive-show-backups-mods"; }
+interactive_show_backups_players() { bash "$LAYER2_PLAYER/interactive-show-backups-players"; }
+interactive_show_backups_world()   { bash "$LAYER2_PLAYER/interactive-show-backups-world"; }
+interactive_download_mods()     { bash "$LAYER2_PLAYER/interactive-download-mods"; }
+interactive_download_players()  { bash "$LAYER2_PLAYER/interactive-download-players"; }
+interactive_download_world()    { bash "$LAYER2_PLAYER/interactive-download-world"; }
+interactive_edit_client_cfg()   { bash "$LAYER2_PLAYER/interactive-edit-client-cfg"; }
+interactive_edit_config() {
+    bash "$LAYER2_PLAYER/interactive-edit-config"
+    exec bash "$0" menu
 }
 
 # ────────────────────────────────────────────────────────────
