@@ -119,10 +119,17 @@ _resolve_ssh_host_ip() {
 _get_server_url() {
     local cfg addr port tes3mp_dir
 
-    # Read TES3MP_DIR from player config (without relying on export)
-    local config="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy/tes3mp-easy.ini"
-    tes3mp_dir=$(grep "^TES3MP_DIR" "$config" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
-    tes3mp_dir="${tes3mp_dir/#\~/$HOME}"
+    # Try already-loaded variable first (from load_config in config.sh)
+    if [[ -z "${TES3MP_DIR:-}" ]]; then
+        # Read TES3MP_DIR from JSON config using jq
+        local config="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy/tes3mp-easy.json"
+        if command -v jq &>/dev/null && [[ -f "$config" ]]; then
+            tes3mp_dir=$(jq -r '.TES3MP_DIR // empty' "$config" 2>/dev/null)
+            tes3mp_dir="${tes3mp_dir/#\~/$HOME}"
+        fi
+    else
+        tes3mp_dir="$TES3MP_DIR"
+    fi
 
     if [[ -n "$tes3mp_dir" ]] && [[ -f "$tes3mp_dir/tes3mp-client-default.cfg" ]]; then
         cfg="$tes3mp_dir/tes3mp-client-default.cfg"
