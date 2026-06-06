@@ -12,4 +12,4 @@ source "$SCRIPT_DIR/lib/config"
 load_config 2>/dev/null || exit 1
 [[ -z "${SSH_HOST:-}" ]] && exit 1
 
-ssh "$SSH_HOST" "bash /tes3mp-easy/scripts/list-backups.sh mods" 2>/dev/null || echo '{"files":[],"current":null}'
+ssh "$SSH_HOST" "BACKUPS_DIR=/tes3mp-easy/backups bash /tes3mp-easy/scripts/list-backups.sh mods" 2>/dev/null || echo '{"files":[],"current":null}'
