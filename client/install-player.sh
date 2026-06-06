@@ -37,6 +37,7 @@ download() {
 
 echo "  ── lib ──"
 download "client/lib/common"           "$UPDATE_DIR/lib/common"
+download "client/lib/log"              "$UPDATE_DIR/lib/log"
 download "client/lib/config"           "$UPDATE_DIR/lib/config"
 download "client/lib/menu-nav"         "$UPDATE_DIR/lib/menu-nav"
 download "client/lib/lang"             "$UPDATE_DIR/lib/lang"
