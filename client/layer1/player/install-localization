@@ -52,29 +52,66 @@ info "Using install.sh for ${LOCALE}"
 RELEASE_URL="https://github.com/Saagilat/tes3mp-easy/releases/download/${LOCALE}-v1.0"
 LOCALE_TAR="$LOCALE_DIR/${LOCALE}.tar"
 
-if [[ -f "$LOCALE_TAR" ]]; then
-    info "${LOCALE}.tar already cached, skipping."
-else
-    info "Downloading ${LOCALE}.tar (this may take a while)..."
-    curl -# -L -o "$LOCALE_TAR" "$RELEASE_URL/${LOCALE}.tar" 2>&1 || {
-        err "Failed to download ${LOCALE}.tar"
-        exit 1
-    }
-    ok "${LOCALE}.tar downloaded."
-fi
+# Download & verify main archive
+download_archive() {
+    local dest="$1" url="$2" name="$3"
+    local attempt=1 max_attempts=3
 
-# Optional: voices
-VOICES_TAR="$LOCALE_DIR/voices_${LOCALE}.tar"
-if [[ ! -f "$VOICES_TAR" ]]; then
-    if [[ "${DOWNLOAD_VOICES:-}" == "true" ]]; then
-        info "Downloading voices_${LOCALE}.tar (this may take a while)..."
-        curl -# -L -o "$VOICES_TAR" "$RELEASE_URL/voices_${LOCALE}.tar" 2>&1 || {
-            warn "Failed to download voices_${LOCALE}.tar (may be missing)."
-            rm -f "$VOICES_TAR"
-        }
-        if [[ -f "$VOICES_TAR" ]]; then
-            ok "voices_${LOCALE}.tar downloaded."
+    while [[ $attempt -le $max_attempts ]]; do
+        if [[ -f "$dest" ]]; then
+            if verify_archive "$dest"; then
+                if [[ $attempt -eq 1 ]]; then
+                    info "${name} already cached, skipping."
+                fi
+                return 0
+            fi
+            warn "${name} cached archive is corrupted. Re-downloading..."
+            rm -f "$dest"
         fi
+
+        if [[ $attempt -gt 1 ]]; then
+            warn "Retry $attempt/$max_attempts: downloading ${name}..."
+        fi
+        info "Downloading ${name} (this may take a while)..."
+        curl -# -L -o "$dest" "$url" 2>&1 || {
+            rm -f "$dest"
+            if [[ $attempt -lt $max_attempts ]]; then
+                warn "Download failed. Retrying in 3 seconds..."
+                sleep 3
+            fi
+            ((attempt++)) || true
+            continue
+        }
+
+        if verify_archive "$dest"; then
+            ok "${name} downloaded."
+            return 0
+        fi
+
+        warn "${name} downloaded file is corrupted. Retrying..."
+        rm -f "$dest"
+        sleep 3
+        ((attempt++)) || true
+    done
+
+    err "Failed to download ${name} after $max_attempts attempts."
+    return 1
+}
+
+download_archive "$LOCALE_TAR" "$RELEASE_URL/${LOCALE}.tar" "${LOCALE}.tar" || exit 1
+
+# Download & verify voices archive
+VOICES_TAR="$LOCALE_DIR/voices_${LOCALE}.tar"
+if [[ "${DOWNLOAD_VOICES:-}" == "true" ]]; then
+    if [[ -f "$VOICES_TAR" ]]; then
+        if ! verify_archive "$VOICES_TAR"; then
+            warn "voices_${LOCALE}.tar cached archive is corrupted. Re-downloading..."
+            rm -f "$VOICES_TAR"
+        fi
+    fi
+    if [[ ! -f "$VOICES_TAR" ]]; then
+        download_archive "$VOICES_TAR" "$RELEASE_URL/voices_${LOCALE}.tar" "voices_${LOCALE}.tar" || \
+            warn "Failed to download voices_${LOCALE}.tar (may be missing)."
     fi
 fi
 

@@ -177,6 +177,20 @@ is_os() {
 }
 
 # ────────────────────────────────────────────────────────────
+# verify_archive — check if a tar archive is valid
+# Usage: verify_archive <file.tar>
+# Returns: 0 if valid, 1 if corrupted/missing
+# ────────────────────────────────────────────────────────────
+verify_archive() {
+    local file="$1"
+    if [[ ! -f "$file" ]]; then
+        echo "File not found: $file" >&2
+        return 1
+    fi
+    tar -tf "$file" >/dev/null 2>&1
+}
+
+# ────────────────────────────────────────────────────────────
 # retry — execute a command with retries on failure
 # Output: stdout passthrough; stderr for retry messages (no ANSI — Layer 1 compliant)
 # Returns: exit code of the command
