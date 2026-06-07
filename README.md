@@ -28,7 +28,7 @@ See the [Admin Guide](./docs/admin-guide.md) for detailed instructions.
 bash ~/.local/share/tes3mp-easy/layer3/player.sh
 ```
 
-From the menu you can: run the setup wizard → install the client → configure server connection → install mods → run the game.
+From the menu you can: run the setup wizard → install the client → **Install Mods and Play**.
 
 See the [Player Guide](./docs/player-guide.md) for detailed instructions.
 
