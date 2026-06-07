@@ -117,8 +117,9 @@ _extract_required_json() {
         exit 1
     fi
 
+    # Use --wildcards because archive paths may be prefixed with ./
     if ! tar xzf "$archive_path" -C "$stage_dir" \
-        "plugins/requiredDataFiles.json" 2>/dev/null; then
+        --wildcards '*/requiredDataFiles.json' 2>/dev/null; then
         echo "[package.sh] ERROR: requiredDataFiles.json not found in $archive_path" >&2
         exit 1
     fi
