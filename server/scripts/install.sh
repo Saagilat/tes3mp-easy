@@ -323,11 +323,21 @@ main() {
         export BACKUPS_DIR="$dest/backups"
 
         package_init_mods "$dest/backups/mods/init-$(date +%F_%H-%M-%S)-mods.tar.gz" 2>/dev/null || true
+
+        # Write current.txt from the init mods archive so _extract_required_json works
+        local latest_mods init_mods_sha init_mods_name
+        latest_mods=$(ls -t "$dest/backups/mods"/init-*.tar.gz 2>/dev/null | head -1) || true
+        if [ -n "$latest_mods" ]; then
+            init_mods_sha=$(sha256sum "$latest_mods" | cut -d' ' -f1)
+            init_mods_name=$(basename "$latest_mods")
+            echo "$init_mods_sha $init_mods_name" > "$dest/backups/mods/current.txt" 2>/dev/null || true
+        fi
+
+        bash "$dest/scripts/deploy_mods.sh" --latest 2>/dev/null || true
+
         package_init_world "$dest/backups/world/init-$(date +%F_%H-%M-%S)-world.tar.gz" 2>/dev/null || true
         package_init_players "$dest/backups/players/init-$(date +%F_%H-%M-%S)-players.tar.gz" 2>/dev/null || true
 
-        # Deploy init archives so current.txt is set
-        bash "$dest/scripts/deploy_mods.sh" --latest 2>/dev/null || true
         bash "$dest/scripts/deploy_world.sh" --latest 2>/dev/null || true
         bash "$dest/scripts/deploy_players.sh" --latest 2>/dev/null || true
 
