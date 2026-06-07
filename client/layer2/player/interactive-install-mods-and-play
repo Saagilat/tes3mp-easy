@@ -19,33 +19,39 @@ echo "════════════════════════�
 echo ""
 
 # ────────────────────────────────────────────────────
-# Get current server address
+# Get current server address from config
 # ────────────────────────────────────────────────────
-CURRENT_URL=$(_get_server_url 2>/dev/null) || {
-    err "Could not determine server URL from config."
+if [[ -z "${TES3MP_DIR:-}" ]]; then
+    err "TES3MP_DIR is not set in config."
     err "Run setup-wizard first."
     exit 1
-}
+fi
 
-# Extract just the hostname:port part for display
-CURRENT_HOST="${CURRENT_URL#http://}"
-CURRENT_HOST="${CURRENT_HOST%/}"
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+CLIENT_CFG="$TES3MP_DIR/tes3mp-client-default.cfg"
+if [[ ! -f "$CLIENT_CFG" ]]; then
+    err "Client config not found: $CLIENT_CFG"
+    err "Run install-client first."
+    exit 1
+fi
 
-echo "  Current server: $CURRENT_HOST"
+CURRENT_ADDR=$(grep -i "^destinationAddress[[:space:]]*=" "$CLIENT_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
+[[ -z "$CURRENT_ADDR" ]] && CURRENT_ADDR="(not set)"
+
+echo "  Current server: $CURRENT_ADDR"
 echo ""
 
 # ────────────────────────────────────────────────────
 # Interactive countdown with option to change server
 # ────────────────────────────────────────────────────
 TIMEOUT=5
-SERVER_URL="$CURRENT_URL"
+NEW_ADDR="$CURRENT_ADDR"
 
 # Save terminal settings to restore later
 tty_settings=$(stty -g 2>/dev/null || true)
 
 # Read one character with timeout loop (1 second at a time)
 for ((i=TIMEOUT; i>=1; i--)); do
-    # Overwrite the previous line
     echo -ne "\r  Press 'e' to change server address, or press Enter to continue... [$i]   "
     
     if [[ -c /dev/tty ]]; then
@@ -62,37 +68,35 @@ for ((i=TIMEOUT; i>=1; i--)); do
     if [[ -n "$key" ]]; then
         case "$key" in
             e|E)
-                echo -ne "\r  Enter new server address (host:port or just host): "
+                echo -ne "\r  Enter new server address (IP or hostname): "
                 if [[ -c /dev/tty ]]; then
                     read -r NEW_ADDR </dev/tty
                 else
                     read -r NEW_ADDR
                 fi
+                # Strip whitespace
+                NEW_ADDR="${NEW_ADDR#"${NEW_ADDR%%[![:space:]]*}"}"
+                NEW_ADDR="${NEW_ADDR%"${NEW_ADDR##*[![:space:]]}"}"
                 if [[ -n "$NEW_ADDR" ]]; then
-                    # Strip whitespace
-                    NEW_ADDR="${NEW_ADDR#"${NEW_ADDR%%[![:space:]]*}"}"
-                    NEW_ADDR="${NEW_ADDR%"${NEW_ADDR##*[![:space:]]}"}"
-                    
-                    # Build URL from input
-                    if [[ "$NEW_ADDR" =~ ^https?:// ]]; then
-                        SERVER_URL="$NEW_ADDR"
-                    elif [[ "$NEW_ADDR" == *:* ]]; then
-                        SERVER_URL="http://${NEW_ADDR}"
+                    # Write new address to client config
+                    if grep -qi "^destinationAddress[[:space:]]*=" "$CLIENT_CFG" 2>/dev/null; then
+                        sed -i "s/^destinationAddress[[:space:]]*=.*/destinationAddress = $NEW_ADDR/" "$CLIENT_CFG"
                     else
-                        SERVER_URL="http://${NEW_ADDR}:8085"
+                        echo "" >> "$CLIENT_CFG"
+                        echo "destinationAddress = $NEW_ADDR" >> "$CLIENT_CFG"
                     fi
-                    # Strip trailing slash
-                    SERVER_URL="${SERVER_URL%/}"
-                    info "Using server: $SERVER_URL"
+                    ok "Server address set to: $NEW_ADDR"
                 else
-                    info "Keeping current server: $CURRENT_HOST"
+                    NEW_ADDR="$CURRENT_ADDR"
+                    info "Keeping current server: $CURRENT_ADDR"
                 fi
                 break
                 ;;
             *)
                 # Any other key — continue with current server
                 echo ""
-                info "Continuing with current server: $CURRENT_HOST"
+                info "Continuing with current server: $CURRENT_ADDR"
+                NEW_ADDR="$CURRENT_ADDR"
                 break
                 ;;
         esac
@@ -102,7 +106,8 @@ done
 # If we fell through the loop without keypress, timer expired
 if [[ $i -eq 0 ]]; then
     echo ""
-    info "Continuing with current server: $CURRENT_HOST"
+    info "Continuing with current server: $CURRENT_ADDR"
+    NEW_ADDR="$CURRENT_ADDR"
 fi
 
 # Restore terminal settings
@@ -111,9 +116,9 @@ stty "$tty_settings" 2>/dev/null || true
 echo ""
 
 # ────────────────────────────────────────────────────
-# Step 1: install mods with (possibly overridden) SERVER_URL
+# Step 1: install mods with server URL built from address
 # ────────────────────────────────────────────────────
-export SERVER_URL
+export SERVER_URL="http://${NEW_ADDR}:8085"
 
 if bash "$LAYER1/install-mods" 2>/dev/null; then
     ok "Mods installed."
