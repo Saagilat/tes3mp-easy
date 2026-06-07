@@ -4,6 +4,9 @@
 # Layer 1: non-interactive, player.
 # Usage: edit-client-cfg-record <key> <value>
 #
+# Preserves INI section structure — replaces key in-place if found.
+# If key is not found, appends to [General] section (or to end of file).
+#
 # Examples:
 #   edit-client-cfg-record destinationAddress 10.0.0.50
 #   edit-client-cfg-record port 25565
@@ -37,16 +40,27 @@ if [[ ! -f "$cfg" ]]; then
     exit 1
 fi
 
-# Atomically replace or add key=value using grep + temp file
-# This is safer than sed — no special-character escaping issues
-tmp=$(mktemp) || { err "Failed to create temp file."; exit 1; }
+# Escape value for sed: use '|' as delimiter (rare in IPs/paths/passwords)
+escaped_value="${value//|/\\|}"
 
-if grep -vi "^${key}[[:space:]]*=" "$cfg" > "$tmp" 2>/dev/null; then
-    echo "${key} = ${value}" >> "$tmp"
-    mv "$tmp" "$cfg"
-    ok "${key} set to: ${value}"
+if grep -qi "^${key}[[:space:]]*=" "$cfg" 2>/dev/null; then
+    # Key exists — replace in-place, preserving its position in the file
+    sed -i "s|^${key}[[:space:]]*=.*|${key} = ${escaped_value}|I" "$cfg"
 else
-    err "Failed to edit ${key}"
-    rm -f "$tmp"
-    exit 1
+    # Key not found — insert at end of [General] section (case-insensitive)
+    tmp=$(mktemp) || { err "Failed to create temp file."; exit 1; }
+
+    awk -v k="$key" -v v="$value" '
+        BEGIN { found=0 }
+        tolower($0) ~ /^\[general\]/ { print; found=1; next }
+        found && /^\[/ { print k " = " v; found=0 }
+        { print }
+        END { if (found) print k " = " v }
+    ' "$cfg" > "$tmp" && mv "$tmp" "$cfg" || {
+        err "Failed to edit ${key}"
+        rm -f "$tmp"
+        exit 1
+    }
 fi
+
+ok "${key} set to: ${value}"
