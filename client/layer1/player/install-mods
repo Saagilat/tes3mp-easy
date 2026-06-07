@@ -54,7 +54,7 @@ echo ""
 # ────────────────────────────────────────────────────
 # 1. Получаем URL сервера
 # ────────────────────────────────────────────────────
-SERVER_URL=$(_get_server_url) || {
+SERVER_URL="${SERVER_URL:-$(_get_server_url)}" || {
     err "Could not determine server URL."
     err "Set TES3MP_DIR in config or check tes3mp-client-default.cfg."
     exit 1
