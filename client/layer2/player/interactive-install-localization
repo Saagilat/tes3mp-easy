@@ -54,7 +54,7 @@ LOCALE="${LOCALES[$LOCALE_IDX]}"
 
 # Ask about voices if not already cached
 if [[ ! -f "$HOME/.config/tes3mp-easy/localizations/voices_${LOCALE}.tar" ]]; then
-    if confirm "Download voices for ${LOCALE} (~150 MB)?" "y"; then
+    if confirm "Download localization (90 MB) + voices (387 MB)?" "y"; then
         export DOWNLOAD_VOICES="true"
     fi
 fi
