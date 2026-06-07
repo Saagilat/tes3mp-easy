@@ -93,11 +93,8 @@ for ((i=TIMEOUT; i>=1; i--)); do
                     else
                         read -r NEW_PORT
                     fi
-                    NEW_PORT="${NEW_PORT#"${NEW_PORT%%[![:space:]]*}"}"
-                    NEW_PORT="${NEW_PORT%"${NEW_PORT##*[![:space:]]}"}"
-                    if [[ -n "$NEW_PORT" ]]; then
-                        bash "$LAYER1/edit-client-cfg-record" "port" "$NEW_PORT"
-                    fi
+                    NEW_PORT="${NEW_PORT:-25565}"
+                    bash "$LAYER1/edit-client-cfg-record" "port" "$NEW_PORT"
                     
                     # 3. Server password
                     echo -n "  Enter server password (hidden, leave empty = keep current): "
