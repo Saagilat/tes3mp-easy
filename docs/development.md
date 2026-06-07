@@ -128,13 +128,13 @@ User selects "Download player backup"
 ├── client/                     # Client-side scripts (bash)
 │   ├── install.sh              # One-line installer (curl | bash)
 │   ├── layer1/                 # Non-interactive commands
-│   │   ├── admin/              #   Admin CLI (28 files)
+│   │   ├── admin/              #   Admin CLI
 │   │   │   ├── start-server    #     SSH → docker compose up
 │   │   │   ├── show-backups-*  #     JSON via SSH
 │   │   │   ├── deploy-*        #     SSH → deploy script
 │   │   │   ├── check-*         #     Status queries
 │   │   │   └── ...
-│   │   └── player/             #   Player CLI (15 files)
+│   │   └── player/             #   Player CLI
 │   │       ├── run-client      #     Proton launch
 │   │       ├── download-*      #     HTTP download
 │   │       ├── install-*       #     Installers

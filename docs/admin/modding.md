@@ -15,7 +15,7 @@ MWScript is executed by OpenMW on the client and supports functions like `Messag
 
 - All clients must have the same plugins
 - `test_plugin.omwaddon` is an example working plugin that uses MWScript
-- Plugins are distributed via `/get-mods` inside `mods.tar.gz`
+- Plugins are distributed via `mods.tar.gz` (downloaded via nginx at `/download/mods/<filename>`)
 - The server checks their presence and CRC via `requiredDataFiles.json`
 
 ### Server-side Lua scripts
