@@ -28,3 +28,6 @@ tes3mp-easy-import.conf
 .DS_Store
 
 example-client/
+
+# Migration planning (private until published)
+migration/

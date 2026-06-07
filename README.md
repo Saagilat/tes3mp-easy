@@ -34,7 +34,7 @@ See the [Player Guide](./docs/player-guide.md) for detailed instructions.
 
 ## Developer
 
-Interested in the internals? See the [Development Guide](./docs/development.md) for architecture, layer design, how to add new commands, and full command references.
+Interested in the internals? See the [Development Guide](./docs/development/README.md) for architecture, layer design, how to add new commands, and full command references.
 
 ## Acknowledgements
 

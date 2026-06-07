@@ -120,6 +120,6 @@ See [Backup Guide](./backup-guide.md) for details on creating, deploying, and do
 - [Server Settings Reference](./admin/tes3mp_settings.md) — all `config.lua` settings
 - [Player Guide](./player-guide.md)
 
-If you want to extend tes3mp-easy, see the [Development Guide](./development.md) for internals, full command reference, and how to add new features.
+If you want to extend tes3mp-easy, see the [Development Guide](./development/README.md) for internals, full command reference, and how to add new features.
 
 </details>
