@@ -6,6 +6,7 @@
 #
 # Preserves INI section structure — replaces key in-place if found.
 # If key is not found, appends to [General] section (or to end of file).
+# Output: nothing on success, error message on stderr on failure.
 #
 # Examples:
 #   edit-client-cfg-record destinationAddress 10.0.0.50
@@ -14,29 +15,39 @@
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-source "$SCRIPT_DIR/lib/common"
-source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || {
-    err "Config not found. Run setup-wizard first."
-    exit 1
-}
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
+SHARED_CONFIG="$CONFIG_DIR/tes3mp-easy.json"
 
 key="${1:-}"
 value="${2:-}"
 
-[[ -z "$key" ]] && { err "Usage: edit-client-cfg-record <key> <value>"; exit 1; }
+[[ -z "$key" ]] && { echo "Usage: edit-client-cfg-record <key> <value>" >&2; exit 1; }
 
-if [[ -z "${TES3MP_DIR:-}" ]]; then
-    err "TES3MP_DIR is not set in config."
+# Read TES3MP_DIR from JSON config via jq
+if ! command -v jq &>/dev/null; then
+    echo "jq is required but not found." >&2
+    exit 1
+fi
+
+if [[ ! -f "$SHARED_CONFIG" ]]; then
+    echo "Config not found: $SHARED_CONFIG" >&2
+    exit 1
+fi
+
+TES3MP_DIR=$(jq -r '.TES3MP_DIR // empty' "$SHARED_CONFIG" 2>/dev/null)
+
+if [[ -z "$TES3MP_DIR" ]]; then
+    echo "TES3MP_DIR is not set in config." >&2
     exit 1
 fi
 
 TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
 cfg="$TES3MP_DIR/tes3mp-client-default.cfg"
+
 if [[ ! -f "$cfg" ]]; then
-    err "Client config not found: $cfg"
-    err "Run install-client first."
+    echo "Client config not found: $cfg" >&2
+    echo "Run install-client first." >&2
     exit 1
 fi
 
@@ -46,21 +57,22 @@ escaped_value="${value//|/\\|}"
 if grep -qi "^${key}[[:space:]]*=" "$cfg" 2>/dev/null; then
     # Key exists — replace in-place, preserving its position in the file
     sed -i "s|^${key}[[:space:]]*=.*|${key} = ${escaped_value}|I" "$cfg"
-else
-    # Key not found — insert at end of [General] section (case-insensitive)
-    tmp=$(mktemp) || { err "Failed to create temp file."; exit 1; }
-
-    awk -v k="$key" -v v="$value" '
-        BEGIN { found=0 }
-        tolower($0) ~ /^\[general\]/ { print; found=1; next }
-        found && /^\[/ { print k " = " v; found=0 }
-        { print }
-        END { if (found) print k " = " v }
-    ' "$cfg" > "$tmp" && mv "$tmp" "$cfg" || {
-        err "Failed to edit ${key}"
-        rm -f "$tmp"
-        exit 1
-    }
+    exit 0
 fi
 
-ok "${key} set to: ${value}"
+# Key not found — insert at end of [General] section (case-insensitive)
+tmp=$(mktemp) || { echo "Failed to create temp file." >&2; exit 1; }
+
+awk -v k="$key" -v v="$value" '
+    BEGIN { found=0 }
+    tolower($0) ~ /^\[general\]/ { print; found=1; next }
+    found && /^\[/ { print k " = " v; found=0 }
+    { print }
+    END { if (found) print k " = " v }
+' "$cfg" > "$tmp" 2>/dev/null && mv "$tmp" "$cfg" || {
+    echo "Failed to edit ${key}" >&2
+    rm -f "$tmp"
+    exit 1
+}
+
+exit 0
