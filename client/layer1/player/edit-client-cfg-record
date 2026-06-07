@@ -4,8 +4,8 @@
 # Layer 1: non-interactive, player.
 # Usage: edit-client-cfg-record <key> <value>
 #
-# Preserves INI section structure — replaces key in-place if found.
-# If key is not found, appends to [General] section (or to end of file).
+# Removes the key from any INI section, then inserts it into [General].
+# This ensures the settings are always in the section TES3MP expects.
 # Output: nothing on success, error message on stderr on failure.
 #
 # Examples:
@@ -51,17 +51,13 @@ if [[ ! -f "$cfg" ]]; then
     exit 1
 fi
 
-# Escape value for sed: use '|' as delimiter (rare in IPs/paths/passwords)
-escaped_value="${value//|/\\|}"
-
-if grep -qi "^${key}[[:space:]]*=" "$cfg" 2>/dev/null; then
-    # Key exists — replace in-place, preserving its position in the file
-    sed -i "s|^${key}[[:space:]]*=.*|${key} = ${escaped_value}|I" "$cfg"
-    exit 0
-fi
-
-# Key not found — insert at end of [General] section (case-insensitive)
+# Step 1: remove existing key=value from anywhere in the file (case-insensitive)
 tmp=$(mktemp) || { echo "Failed to create temp file." >&2; exit 1; }
+
+grep -vi "^${key}[[:space:]]*=" "$cfg" > "$tmp" 2>/dev/null || true
+
+# Step 2: insert key=value after [General] section (or at end of file)
+tmp2=$(mktemp) || { echo "Failed to create temp file." >&2; rm -f "$tmp"; exit 1; }
 
 awk -v k="$key" -v v="$value" '
     BEGIN { found=0 }
@@ -69,10 +65,11 @@ awk -v k="$key" -v v="$value" '
     found && /^\[/ { print k " = " v; found=0 }
     { print }
     END { if (found) print k " = " v }
-' "$cfg" > "$tmp" 2>/dev/null && mv "$tmp" "$cfg" || {
+' "$tmp" > "$tmp2" 2>/dev/null && mv "$tmp2" "$cfg" || {
     echo "Failed to edit ${key}" >&2
-    rm -f "$tmp"
+    rm -f "$tmp" "$tmp2"
     exit 1
 }
 
+rm -f "$tmp"
 exit 0
