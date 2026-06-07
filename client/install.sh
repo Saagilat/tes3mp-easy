@@ -123,6 +123,7 @@ download "client/layer1/player/configure-ui"    "$UPDATE_DIR/layer1/player/confi
 
 echo "  ── config ──"
 download "client/layer1/player/edit-client-cfg"  "$UPDATE_DIR/layer1/player/edit-client-cfg"
+download "client/layer1/player/edit-client-cfg-record" "$UPDATE_DIR/layer1/player/edit-client-cfg-record"
 download "client/layer1/player/edit-config"      "$UPDATE_DIR/layer1/player/edit-config"
 
 echo "  ── layer2 admin (interactive wrappers) ──"
@@ -143,6 +144,7 @@ download "client/layer2/player/interactive-setup-wizard"     "$UPDATE_DIR/layer2
 download "client/layer2/player/interactive-download-mods"    "$UPDATE_DIR/layer2/player/interactive-download-mods"
 download "client/layer2/player/interactive-download-players" "$UPDATE_DIR/layer2/player/interactive-download-players"
 download "client/layer2/player/interactive-download-world"   "$UPDATE_DIR/layer2/player/interactive-download-world"
+download "client/layer2/player/interactive-install-mods-and-play" "$UPDATE_DIR/layer2/player/interactive-install-mods-and-play"
 
 echo "  ── layer3 (menus) ──"
 download "client/layer3/admin.sh"         "$UPDATE_DIR/layer3/admin.sh"

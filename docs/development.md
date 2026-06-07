@@ -150,6 +150,7 @@ User selects "Download player backup"
 │   │   │   └── interactive-configure-server  # Config.lua editor
 │   │   └── player/             #   Player (7 files)
 │   │       ├── interactive-install-fonts # Font selection → Layer 1
+│   │       ├── interactive-install-mods-and-play # Server prompt → Layer 1
 │   │       ├── interactive-download-*    # Backup selection → Layer 1
 │   │       └── interactive-setup-wizard  # Multi-step setup
 │   ├── layer3/                 # Interactive menu (TUI)
@@ -264,6 +265,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | `install-mods-and-play` | Install mods, then launch TES3MP via Proton |
 | `run-client` | Launch TES3MP via Proton |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |
+| `edit-client-cfg-record` | Set a key=value in `tes3mp-client-default.cfg` (non-interactive) |
 | `install-mods` | Download and unpack latest mods archive |
 | `install-localization <locale>` | Install a specific localization (non-interactive) |
 | `install-fonts <option>` | Install a specific font set (1-12) |
@@ -295,6 +297,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer2/player/<command>`
 | `interactive-install-fonts` | Show font selection menu, install chosen set |
 | `interactive-install-localization` | List available localizations, prompt, install |
 | `interactive-configure-ui` | Read current settings, prompt for new values, apply |
+| `interactive-install-mods-and-play` | Show server address, prompt to change, install mods, launch client |
 | `interactive-setup-wizard` | Guided setup (Morrowind path, TES3MP dir, Proton, install, fonts, UI, localization) |
 | `interactive-download-mods` | List backups via `show-backups`, prompt, download |
 | `interactive-download-players` | List backups via `show-backups`, prompt, download |

@@ -32,9 +32,11 @@ That's it — the client is ready. See [Run the Game with Mods](#2-run-the-game-
 
 ## 2. Run the Game with Mods
 
-1. From the player menu, select **Client config** — set server address and password in `tes3mp-client-default.cfg`
-2. Select **Install Mods** — downloads and unpacks the latest mods archive
-3. Select **Launch Client** — run the game via Proton
+1. From the player menu, select **Install Mods and Play**
+   - The script shows the current server address
+   - Press **Enter** to continue, or press **e** to change server address/port/password
+   - Mods are downloaded and the client launches automatically
+2. To change server settings later, just press **e** when prompted before launch
 
 You can also launch **OpenMW-CS** (Construction Set) from the player menu for modding.
 
@@ -64,8 +66,9 @@ Then simply run `tes3mp` from a terminal.
 4. (Optional) Rename the shortcut to "TES3MP" and assign an icon
 
 The script will:
-1. Download the latest server mods
-2. Launch TES3MP with the correct Proton and prefix
+1. Show current server address (press Enter to continue or **e** to change)
+2. Download the latest server mods
+3. Launch TES3MP with the correct Proton and prefix
 
 ### Option C — Lutris
 
