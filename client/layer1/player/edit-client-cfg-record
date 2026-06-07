@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# edit-client-cfg-record — Set key=value in tes3mp-client-default.cfg
+# Layer 1: non-interactive, player.
+# Usage: edit-client-cfg-record <key> <value>
+#
+# Examples:
+#   edit-client-cfg-record destinationAddress 10.0.0.50
+#   edit-client-cfg-record port 25565
+#   edit-client-cfg-record password mypass
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/lib/common"
+source "$SCRIPT_DIR/lib/config"
+
+load_config 2>/dev/null || {
+    err "Config not found. Run setup-wizard first."
+    exit 1
+}
+
+key="${1:-}"
+value="${2:-}"
+
+[[ -z "$key" ]] && { err "Usage: edit-client-cfg-record <key> <value>"; exit 1; }
+
+if [[ -z "${TES3MP_DIR:-}" ]]; then
+    err "TES3MP_DIR is not set in config."
+    exit 1
+fi
+
+TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
+cfg="$TES3MP_DIR/tes3mp-client-default.cfg"
+if [[ ! -f "$cfg" ]]; then
+    err "Client config not found: $cfg"
+    err "Run install-client first."
+    exit 1
+fi
+
+# Atomically replace or add key=value using grep + temp file
+# This is safer than sed — no special-character escaping issues
+tmp=$(mktemp) || { err "Failed to create temp file."; exit 1; }
+
+if grep -vi "^${key}[[:space:]]*=" "$cfg" > "$tmp" 2>/dev/null; then
+    echo "${key} = ${value}" >> "$tmp"
+    mv "$tmp" "$cfg"
+    ok "${key} set to: ${value}"
+else
+    err "Failed to edit ${key}"
+    rm -f "$tmp"
+    exit 1
+fi

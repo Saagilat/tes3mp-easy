@@ -38,14 +38,16 @@ fi
 CURRENT_ADDR=$(grep -i "^destinationAddress[[:space:]]*=" "$CLIENT_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
 [[ -z "$CURRENT_ADDR" ]] && CURRENT_ADDR="(not set)"
 
-echo "  Current server: $CURRENT_ADDR"
+CURRENT_PORT=$(grep -i "^port[[:space:]]*=" "$CLIENT_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
+[[ -z "$CURRENT_PORT" ]] && CURRENT_PORT="25565"
+
+echo "  Current server: $CURRENT_ADDR:$CURRENT_PORT"
 echo ""
 
 # ────────────────────────────────────────────────────
 # Interactive countdown with option to change server
 # ────────────────────────────────────────────────────
 TIMEOUT=5
-NEW_ADDR="$CURRENT_ADDR"
 
 # Save terminal settings to restore later
 tty_settings=$(stty -g 2>/dev/null || true)
@@ -68,35 +70,57 @@ for ((i=TIMEOUT; i>=1; i--)); do
     if [[ -n "$key" ]]; then
         case "$key" in
             e|E)
-                echo -ne "\r  Enter new server address (IP or hostname): "
+                echo ""
+                echo ""
+                
+                # 1. Server address
+                echo -n "  Enter new server address (IP or hostname): "
                 if [[ -c /dev/tty ]]; then
                     read -r NEW_ADDR </dev/tty
                 else
                     read -r NEW_ADDR
                 fi
-                # Strip whitespace
                 NEW_ADDR="${NEW_ADDR#"${NEW_ADDR%%[![:space:]]*}"}"
                 NEW_ADDR="${NEW_ADDR%"${NEW_ADDR##*[![:space:]]}"}"
+                
                 if [[ -n "$NEW_ADDR" ]]; then
-                    # Write new address to client config
-                    if grep -qi "^destinationAddress[[:space:]]*=" "$CLIENT_CFG" 2>/dev/null; then
-                        sed -i "s/^destinationAddress[[:space:]]*=.*/destinationAddress = $NEW_ADDR/" "$CLIENT_CFG"
+                    bash "$LAYER1/edit-client-cfg-record" "destinationAddress" "$NEW_ADDR"
+                    
+                    # 2. Server port (only if address changed)
+                    echo -n "  Enter server port (default: $CURRENT_PORT): "
+                    if [[ -c /dev/tty ]]; then
+                        read -r NEW_PORT </dev/tty
                     else
-                        echo "" >> "$CLIENT_CFG"
-                        echo "destinationAddress = $NEW_ADDR" >> "$CLIENT_CFG"
+                        read -r NEW_PORT
                     fi
-                    ok "Server address set to: $NEW_ADDR"
+                    NEW_PORT="${NEW_PORT#"${NEW_PORT%%[![:space:]]*}"}"
+                    NEW_PORT="${NEW_PORT%"${NEW_PORT##*[![:space:]]}"}"
+                    if [[ -n "$NEW_PORT" ]]; then
+                        bash "$LAYER1/edit-client-cfg-record" "port" "$NEW_PORT"
+                    fi
+                    
+                    # 3. Server password
+                    echo -n "  Enter server password (hidden, leave empty = keep current): "
+                    if [[ -c /dev/tty ]]; then
+                        read -r -s NEW_PASS </dev/tty
+                    else
+                        read -r -s NEW_PASS
+                    fi
+                    echo ""
+                    if [[ -n "$NEW_PASS" ]]; then
+                        bash "$LAYER1/edit-client-cfg-record" "password" "$NEW_PASS"
+                    fi
+                    
+                    echo ""
+                    info "Server settings updated."
                 else
-                    NEW_ADDR="$CURRENT_ADDR"
                     info "Keeping current server: $CURRENT_ADDR"
                 fi
                 break
                 ;;
             *)
-                # Any other key — continue with current server
                 echo ""
                 info "Continuing with current server: $CURRENT_ADDR"
-                NEW_ADDR="$CURRENT_ADDR"
                 break
                 ;;
         esac
@@ -107,13 +131,15 @@ done
 if [[ $i -eq 0 ]]; then
     echo ""
     info "Continuing with current server: $CURRENT_ADDR"
-    NEW_ADDR="$CURRENT_ADDR"
 fi
 
 # Restore terminal settings
 stty "$tty_settings" 2>/dev/null || true
 
 echo ""
+
+# Reload address from config (may have been changed)
+NEW_ADDR=$(grep -i "^destinationAddress[[:space:]]*=" "$CLIENT_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r')
 
 # ────────────────────────────────────────────────────
 # Step 1: install mods with server URL built from address
