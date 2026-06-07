@@ -79,7 +79,7 @@ remove_case_sensitive_duplicates() {
 }
 
 # 1. Extract localization archive
-echo "[1/4] Looking for localization archive..."
+echo "[1/5] Looking for localization archive..."
 RUSSIFIER_TAR="${2:-$SCRIPT_DIR/russifier.tar}"
 if [ ! -f "$RUSSIFIER_TAR" ]; then
     echo "Error: file '$RUSSIFIER_TAR' not found."
@@ -94,13 +94,13 @@ tar -xvf "$RUSSIFIER_TAR" -C "$MORROWIND_DIR" "Data Files/"
 
 # 2. Copy video files into Data Files (if Video folder exists)
 if [ -d "$MORROWIND_DIR/Video" ]; then
-    echo "[2/4] Copying videos to Data Files/Video..."
+    echo "[2/5] Copying videos to Data Files/Video..."
     cp -r "$MORROWIND_DIR/Video" "$MORROWIND_DIR/Data Files/"
     rm -rf "$MORROWIND_DIR/Video"
 fi
 
 # 3. Create placeholders for missing videos
-echo "[3/4] Creating placeholders for missing videos..."
+echo "[3/5] Creating placeholders for missing videos..."
 VIDEO_DIR="$MORROWIND_DIR/Data Files/Video"
 mkdir -p "$VIDEO_DIR"
 
@@ -116,7 +116,7 @@ for video in \
 done
 
 # 4. Extract Russian voiceover (optional)
-echo "[4/4] Looking for Russian voiceover archive..."
+echo "[4/5] Looking for Russian voiceover archive..."
 VOICES_TAR="${3:-$SCRIPT_DIR/voices_russian.tar}"
 if [ -f "$VOICES_TAR" ]; then
     echo "Removing case-sensitive duplicates from existing files..."
@@ -132,7 +132,7 @@ fi
 # 5. Merge case-sensitive directory duplicates (e.g. Sound/ vs SOUND/)
 # After extraction, some dirs may exist with different case.
 # We merge them into one, preferring the one with more files.
-echo "[5/4] Merging case-sensitive directory duplicates..."
+echo "[5/5] Merging case-sensitive directory duplicates..."
 merge_case_sensitive_dirs() {
     local base="$1/Data Files"
     [[ ! -d "$base" ]] && return 0
