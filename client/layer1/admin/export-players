@@ -2,6 +2,12 @@
 #
 # admin-export-players — Package and upload player data to TES3MP server
 #
+# Layer 1: non-interactive. Creates players.tar.gz from EXPORT_DIR/players/
+# and uploads via SSH to the server.
+#
+# Usage: bash export-players
+#
+# Requires: SSH_HOST, EXPORT_DIR (set in config)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
@@ -25,14 +31,12 @@ echo "[1/4] Packaging..."
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 output_archive="$tmp_dir/players.tar.gz"
-export PLAYER_DIR="$player_dir"
 
-for p in "$SCRIPT_DIR/server/scripts/package.sh" "$SCRIPT_DIR/../server/scripts/package.sh" "$PWD/../server/scripts/package.sh" "$(dirname "$(realpath "$0")")/../../server/scripts/package.sh"; do
-    [[ -f "$p" ]] && { package_script="$p"; break; }
-done
-[[ -z "$package_script" ]] && { err "Could not find server/scripts/package.sh"; exit 1; }
-source "$package_script"
-package_players "$output_archive"
+# Stage: copy files into tmp_dir/players/ then pack
+mkdir -p "$tmp_dir/players"
+cp -r "$player_dir"/* "$tmp_dir/players/" 2>/dev/null || true
+
+tar czf "$output_archive" -C "$tmp_dir" .
 [[ ! -f "$output_archive" ]] && { err "Failed to create archive"; exit 1; }
 ok "Archive created"
 

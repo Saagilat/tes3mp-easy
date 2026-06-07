@@ -12,10 +12,10 @@
 #
 # Functions provided:
 #   package_mods(output_file)                — plugins + scripts + requiredDataFiles.json
-#   package_players(output_file)             — player/ + requiredDataFiles.json + current.txt
+#   package_players(output_file)             — players/ + requiredDataFiles.json + current.txt
 #   package_world(output_file)               — cell/ + world/ + map/ + recordstore/ + custom/ + requiredDataFiles.json + current.txt
 #   package_init_mods(output_file)            — empty plugins/ + empty scripts/ + requiredDataFiles.json
-#   package_init_players(output_file)         — empty player/ + requiredDataFiles.json + current.txt
+#   package_init_players(output_file)         — empty players/ + requiredDataFiles.json + current.txt
 #   package_init_world(output_file)           — empty world subdirs + requiredDataFiles.json + current.txt
 #
 
@@ -83,50 +83,49 @@ _package_stage() {
 
 # ────────────────────────────────────────────────────────────────
 # Internal: Extract requiredDataFiles.json from current mods archive
-#   Sources: BACKUPS_DIR/mods/current.tar.gz → plugins/requiredDataFiles.json
+#   Sources: BACKUPS_DIR/mods/current.txt → real archive → plugins/requiredDataFiles.json
 #   Writes to: <stage_dir>/requiredDataFiles.json
-#   If archive missing or file missing — generates minimal JSON.
+#   If BACKUPS_DIR is not set, skip (no metadata added).
+#   Fails with error if BACKUPS_DIR is set but archive or file is missing.
 # ────────────────────────────────────────────────────────────────
 _extract_required_json() {
     local stage_dir="$1"
 
+    # If BACKUPS_DIR is not set, skip adding metadata (e.g. client-side export)
+    if [ -z "${BACKUPS_DIR:-}" ]; then
+        echo "[package.sh]   requiredDataFiles.json: skipped (BACKUPS_DIR not set)"
+        return
+    fi
+
     # Read current.txt to find the real archive filename
     local current_file="$BACKUPS_DIR/mods/current.txt"
-    local archive_path=""
-    if [ -f "$current_file" ]; then
-        local sha256 name
-        read -r sha256 name < "$current_file" 2>/dev/null
-        if [ -n "$name" ]; then
-            archive_path="$BACKUPS_DIR/mods/$name"
-        fi
+    if [ ! -f "$current_file" ]; then
+        echo "[package.sh] ERROR: $current_file not found — cannot determine current mods archive" >&2
+        exit 1
     fi
 
-    # Fallback: try current.tar.gz symlink if it still exists
-    if [ -z "$archive_path" ] && [ -f "$BACKUPS_DIR/mods/current.tar.gz" ]; then
-        archive_path="$BACKUPS_DIR/mods/current.tar.gz"
+    local sha256 name
+    read -r sha256 name < "$current_file" 2>/dev/null
+    if [ -z "$name" ]; then
+        echo "[package.sh] ERROR: failed to read archive name from $current_file" >&2
+        exit 1
     fi
 
-    if [ -n "$archive_path" ] && [ -f "$archive_path" ]; then
-        if tar xzf "$archive_path" -C "$stage_dir" \
-            "plugins/requiredDataFiles.json" 2>/dev/null; then
-            mv "$stage_dir/plugins/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
-            rmdir "$stage_dir/plugins" 2>/dev/null || true
-            echo "[package.sh]   requiredDataFiles.json: from $(basename "$archive_path")"
-            return
-        fi
+    local archive_path="$BACKUPS_DIR/mods/$name"
+    if [ ! -f "$archive_path" ]; then
+        echo "[package.sh] ERROR: mods archive not found: $archive_path" >&2
+        exit 1
     fi
 
-    # Fallback: generate minimal JSON (only original Morrowind files)
-    local orig_files=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
-    printf "[\n" > "$stage_dir/requiredDataFiles.json"
-    local i=0
-    for orig in "${orig_files[@]}"; do
-        [ "$i" -gt 0 ] && printf ",\n" >> "$stage_dir/requiredDataFiles.json"
-        printf '  {\n    "%s": []\n  }' "$orig" >> "$stage_dir/requiredDataFiles.json"
-        ((i++)) || true
-    done
-    printf "\n]\n" >> "$stage_dir/requiredDataFiles.json"
-    echo "[package.sh]   requiredDataFiles.json: minimal (no current archive available)"
+    if ! tar xzf "$archive_path" -C "$stage_dir" \
+        "plugins/requiredDataFiles.json" 2>/dev/null; then
+        echo "[package.sh] ERROR: requiredDataFiles.json not found in $archive_path" >&2
+        exit 1
+    fi
+
+    mv "$stage_dir/plugins/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
+    rmdir "$stage_dir/plugins" 2>/dev/null || true
+    echo "[package.sh]   requiredDataFiles.json: from $(basename "$archive_path")"
 }
 
 # ────────────────────────────────────────────────────────────────
@@ -278,7 +277,7 @@ package_mods() {
 #   Usage: package_players <output_file> [mods_sha256]
 #   Archive structure:
 #     output.tar.gz
-#     ├── player/
+#     ├── players/
 #     │   └── AccountName1.json
 #     ├── requiredDataFiles.json   (from current mods archive)
 #     └── current.txt               (mods archive sha256)
@@ -298,12 +297,12 @@ package_players() {
     stage_dir=$(mktemp -d)
     trap 'rm -rf "${stage_dir:-}"' RETURN
 
-    mkdir -p "$stage_dir/player"
+    mkdir -p "$stage_dir/players"
     if [ -d "$PLAYER_DIR" ]; then
         local count=0
         for f in "$PLAYER_DIR"/*; do
             [ -e "$f" ] || continue
-            cp -r "$f" "$stage_dir/player/"
+            cp -r "$f" "$stage_dir/players/"
             ((count++)) || true
         done
         echo "[package.sh]   players: $count"
@@ -415,7 +414,7 @@ package_init_mods() {
 }
 
 # ────────────────────────────────────────────────────────────────
-# Package init players archive (empty player/ + metadata)
+# Package init players archive (empty players/ + metadata)
 #   Usage: package_init_players <output_file> [mods_sha256]
 # ────────────────────────────────────────────────────────────────
 package_init_players() {
@@ -431,7 +430,7 @@ package_init_players() {
     stage_dir=$(mktemp -d)
     trap 'rm -rf "${stage_dir:-}"' RETURN
 
-    mkdir -p "$stage_dir/player"
+    mkdir -p "$stage_dir/players"
 
     if [ -n "$mods_sha256" ]; then
         echo "$mods_sha256" > "$stage_dir/current.txt"
@@ -442,7 +441,7 @@ package_init_players() {
 
     _package_stage "$output_file" "$stage_dir"
 
-    echo "[package.sh]   init players archive: empty player/ + metadata"
+    echo "[package.sh]   init players archive: empty players/ + metadata"
 }
 
 # ────────────────────────────────────────────────────────────────

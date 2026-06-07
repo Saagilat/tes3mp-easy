@@ -2,6 +2,20 @@
 #
 # admin-export-mods — Package and upload mods+scripts to TES3MP server
 #
+# Layer 1: non-interactive. Creates mods.tar.gz from EXPORT_DIR/mods/
+# and uploads via SSH to the server.
+#
+# Archive structure:
+#   mods.tar.gz
+#   ├── plugins/
+#   │   ├── mod1.esp
+#   │   └── requiredDataFiles.json
+#   └── scripts/
+#       └── test.lua
+#
+# Usage: bash export-mods
+#
+# Requires: SSH_HOST, EXPORT_DIR (set in config)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
@@ -61,16 +75,35 @@ echo "[3/5] Packaging..."
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 output_archive="$tmp_dir/mods.tar.gz"
-export PLUGINS_DIR="$plugins_dir"
-export SERVER_SCRIPTS_DIR="$scripts_dir"
 
-# Find package.sh
-for p in "$SCRIPT_DIR/server/scripts/package.sh" "$SCRIPT_DIR/../server/scripts/package.sh" "$PWD/../server/scripts/package.sh" "$(dirname "$(realpath "$0")")/../../server/scripts/package.sh"; do
-    [[ -f "$p" ]] && { package_script="$p"; break; }
+# Stage: plugins + requiredDataFiles.json
+mkdir -p "$tmp_dir/plugins"
+for f in "$plugins_dir"/*; do
+    [ -f "$f" ] || continue
+    basename=$(basename "$f")
+    # Skip requiredDataFiles.json — will be copied separately
+    [ "$basename" = "requiredDataFiles.json" ] && continue
+    # Skip original Morrowind files
+    skip=0
+    for orig in "${ORIGINAL_FILES[@]}"; do
+        if [ "${basename,,}" = "${orig,,}" ]; then
+            skip=1
+            break
+        fi
+    done
+    [ "$skip" -eq 1 ] && continue
+    cp "$f" "$tmp_dir/plugins/"
 done
-[[ -z "$package_script" ]] && { err "Could not find server/scripts/package.sh"; exit 1; }
-source "$package_script"
-package_mods "$output_archive"
+cp "$req_json" "$tmp_dir/plugins/requiredDataFiles.json"
+
+# Stage: scripts
+mkdir -p "$tmp_dir/scripts"
+for f in "$scripts_dir"/*; do
+    [ -f "$f" ] || continue
+    cp "$f" "$tmp_dir/scripts/"
+done
+
+tar czf "$output_archive" -C "$tmp_dir" .
 [[ ! -f "$output_archive" ]] && { err "Failed to create archive"; exit 1; }
 ok "Archive created"
 
