@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# run-with-mods — Install mods and launch TES3MP client
+# install-mods-and-play — Install mods and launch TES3MP client
 #
 # Combines install-mods + run-client into one call.
 # If mod installation fails (server unavailable, no mods),
 # warns and still launches the client.
 #
 # Usage:
-#   run-with-mods
+#   install-mods-and-play
 #
 
 set -euo pipefail

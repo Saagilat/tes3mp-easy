@@ -23,6 +23,7 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.json"
 
 LAYER1_PLAYER="$LAYER1_DIR/player"
+LAYER1_SHARED="$LAYER1_DIR/shared"
 LAYER2_PLAYER="$LAYER2_DIR/player"
 
 # ────────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ LAYER2_PLAYER="$LAYER2_DIR/player"
 dispatch_player() {
     case "${1:-}" in
         install-client)         bash "$LAYER1_PLAYER/install-client" ;;
-        run-with-mods)          bash "$LAYER1_PLAYER/run-with-mods" ;;
+        install-mods-and-play)  bash "$LAYER1_PLAYER/install-mods-and-play" ;;
         install-mods)           bash "$LAYER1_PLAYER/install-mods" ;;
         install-fonts)          bash "$LAYER2_PLAYER/interactive-install-fonts" ;;
         configure-ui)           bash "$LAYER2_PLAYER/interactive-configure-ui" ;;
@@ -43,7 +44,7 @@ dispatch_player() {
         show-backups-mods)      bash "$LAYER1_PLAYER/show-backups-mods" ;;
         show-backups-players)   bash "$LAYER1_PLAYER/show-backups-players" ;;
         show-backups-world)     bash "$LAYER1_PLAYER/show-backups-world" ;;
-        run-openmw-cs)          bash "$LAYER1_PLAYER/run-openmw-cs" ;;
+        run-openmw-cs)          bash "$LAYER1_SHARED/run-openmw-cs" ;;
         run-client)             bash "$LAYER1_PLAYER/run-client" ;;
         edit-config)            bash "$LAYER1_PLAYER/edit-config" ;;
         edit-client-cfg)        bash "$LAYER1_PLAYER/edit-client-cfg" ;;
@@ -59,11 +60,11 @@ dispatch_player() {
             fi
             ;;
         help|--help|-h)
-            echo "Player subcommands: install-client, run-client, install-mods, install-fonts,"
-            echo "  configure-ui, install-localization, download-backup-mods,"
-            echo "  download-backup-players, download-backup-world,"
+            echo "Player subcommands: install-client, run-client, install-mods-and-play, install-mods,"
+            echo "  install-fonts, configure-ui, install-localization,"
+            echo "  download-backup-mods, download-backup-players, download-backup-world,"
             echo "  show-backups-mods, show-backups-players, show-backups-world,"
-            echo "  edit-config, edit-client-cfg, setup-wizard, uninstall, menu"
+            echo "  run-openmw-cs, edit-config, edit-client-cfg, setup-wizard, uninstall, menu"
             ;;
         menu|"") show_player_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'layer3/player.sh help' for available commands."; exit 1 ;;
@@ -74,9 +75,9 @@ dispatch_player() {
 # Function wrappers for run_menu
 # ────────────────────────────────────────────────────────────
 # layer1 calls (simple — just run)
-menu_run_with_mods()     { bash "$LAYER1_PLAYER/run-with-mods"; }
+menu_install_mods_and_play()     { bash "$LAYER1_PLAYER/install-mods-and-play"; }
 menu_run_client()        { bash "$LAYER1_PLAYER/run-client"; }
-menu_run_openmw_cs()     { bash "$LAYER1_PLAYER/run-openmw-cs"; }
+menu_run_openmw_cs()     { bash "$LAYER1_SHARED/run-openmw-cs"; }
 menu_install_mods()      { bash "$LAYER1_PLAYER/install-mods"; }
 menu_show_backups_mods()    { bash "$LAYER1_PLAYER/show-backups-mods"; }
 menu_show_backups_players() { bash "$LAYER1_PLAYER/show-backups-players"; }
@@ -104,7 +105,7 @@ show_player_menu() {
 
     local player_menu=(
         "${MENU_PLAYER_SEP_PLAY}|sep|"
-        "${MENU_PLAYER_RUN_WITH_MODS}|fn|menu_run_with_mods"
+        "${MENU_PLAYER_INSTALL_MODS_AND_PLAY}|fn|menu_install_mods_and_play"
         "${MENU_PLAYER_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
         "${MENU_PLAYER_SETUP_WIZARD}|fn|menu_setup_wizard"
         "${MENU_PLAYER_SEP_LOCALIZATION}|sep|"

@@ -5,6 +5,8 @@
 # Usage:
 #   run-openmw-cs
 #
+# Shared between admin and player menus.
+#
 
 set -euo pipefail
 

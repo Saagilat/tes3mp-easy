@@ -41,14 +41,14 @@ You can also launch **OpenMW-CS** (Construction Set) from the player menu for mo
 
 ## 3. Launch via External Launcher (Steam / Lutris)
 
-Instead of opening `player.sh` every time, you can configure a launcher to run the **"Launch client (with mods)"** command directly. This will automatically update mods before each launch.
+Instead of opening `player.sh` every time, you can configure a launcher to run the **"Install mods and play"** command directly. This will automatically update mods before each launch.
 
 ### Option A — CLI Alias
 
 Add to `~/.bashrc` (or `~/.bash_aliases`):
 
 ```bash
-alias tes3mp='bash ~/.local/share/tes3mp-easy/layer3/player.sh run-with-mods'
+alias tes3mp='bash ~/.local/share/tes3mp-easy/layer3/player.sh install-mods-and-play'
 ```
 
 Then simply run `tes3mp` from a terminal.
@@ -59,7 +59,7 @@ Then simply run `tes3mp` from a terminal.
 2. Click **Browse** and select `/bin/bash`
 3. In **Launch Options**, paste:
    ```
-   ~/.local/share/tes3mp-easy/layer3/player.sh run-with-mods
+   ~/.local/share/tes3mp-easy/layer3/player.sh install-mods-and-play
    ```
 4. (Optional) Rename the shortcut to "TES3MP" and assign an icon
 
@@ -74,7 +74,7 @@ The script will:
 3. **Executable**: `/bin/bash`
 4. **Arguments**:
    ```
-   ~/.local/share/tes3mp-easy/layer3/player.sh run-with-mods
+   ~/.local/share/tes3mp-easy/layer3/player.sh install-mods-and-play
    ```
 5. **Wine prefix**: point to `$TES3MP_DIR/prefix` (where TES3MP was installed)
 

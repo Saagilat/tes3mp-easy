@@ -23,6 +23,7 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tes3mp-easy"
 CONFIG_FILE="$CONFIG_DIR/tes3mp-easy.json"
 
 LAYER1_ADMIN="$LAYER1_DIR/admin"
+LAYER1_SHARED="$LAYER1_DIR/shared"
 LAYER2_ADMIN="$LAYER2_DIR/admin"
 
 # ────────────────────────────────────────────────────────────
@@ -56,13 +57,15 @@ dispatch_admin() {
         download-backup-mods)   bash "$LAYER2_ADMIN/interactive-download-mods" ;;
         download-backup-players) bash "$LAYER2_ADMIN/interactive-download-players" ;;
         download-backup-world)  bash "$LAYER2_ADMIN/interactive-download-world" ;;
+        run-openmw-cs)          bash "$LAYER1_SHARED/run-openmw-cs" ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, start-server, stop-server, restart-server,"
             echo "  server-logs, server-status, export-mods, export-players, export-world,"
             echo "  generate-required-data, deploy-mods, deploy-players, deploy-world,"
             echo "  show-backups-mods, show-backups-players, show-backups-world,"
             echo "  download-backup-mods, download-backup-players, download-backup-world,"
-            echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist, setup-wizard, menu"
+            echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist,"
+            echo "  run-openmw-cs, setup-wizard, menu"
             ;;
         menu|"") show_admin_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'layer3/admin.sh help' for available commands."; exit 1 ;;
@@ -95,6 +98,7 @@ menu_show_backups_world()   { bash "$LAYER1_ADMIN/show-backups-world"; }
 menu_edit_server_cfg()   { bash "$LAYER1_ADMIN/edit-server-cfg"; }
 menu_edit_lua()          { bash "$LAYER1_ADMIN/edit-lua"; }
 menu_edit_banlist()      { bash "$LAYER1_ADMIN/edit-banlist"; }
+menu_run_openmw_cs() { bash "$LAYER1_SHARED/run-openmw-cs"; }
 menu_edit_config() {
     bash "$LAYER1_ADMIN/edit-config"
     exec bash "$0" menu
@@ -128,6 +132,7 @@ show_admin_menu() {
         "${MENU_ADMIN_SERVER_STATUS}|fn|menu_server_status"
         "${MENU_ADMIN_SERVER_LOGS}|fn|menu_server_logs"
         "${MENU_ADMIN_SETUP_WIZARD}|fn|menu_setup_wizard"
+        "${MENU_ADMIN_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
 
         "${MENU_ADMIN_SEP_MODDING}|sep|"
         "${MENU_ADMIN_GENERATE_DATA}|fn|menu_generate_data"

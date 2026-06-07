@@ -134,6 +134,9 @@ User selects "Download player backup"
 │   │   │   ├── deploy-*        #     SSH → deploy script
 │   │   │   ├── check-*         #     Status queries
 │   │   │   └── ...
+│   │   ├── shared/             #   Shared CLI (admin + player)
+│   │   │   ├── edit-config-record
+│   │   │   └── run-openmw-cs
 │   │   └── player/             #   Player CLI
 │   │       ├── run-client      #     Proton launch
 │   │       ├── download-*      #     HTTP download
@@ -224,6 +227,14 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/admin/<command> [args]`
 | `read-config-lua` | Output config.lua settings (key=value lines) |
 | `write-config-lua <sed_script>` | Apply sed script to config.lua |
 
+### Shared Layer 1 (Admin + Player)
+
+Call via: `bash ~/.local/share/tes3mp-easy/layer1/shared/<command> [args]`
+
+| Command | Description |
+|---------|-------------|
+| `run-openmw-cs` | Launch OpenMW Construction Set (available in both admin and player menus) |
+
 ### Layer 2 (Interactive)
 
 Call via: `bash ~/.local/share/tes3mp-easy/layer2/admin/<command>`
@@ -250,9 +261,8 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | Command | Description |
 |---------|-------------|
 | `install-client` | Download TES3MP, set up Proton prefix, generate config |
-| `run-with-mods` | Install mods, then launch TES3MP via Proton |
+| `install-mods-and-play` | Install mods, then launch TES3MP via Proton |
 | `run-client` | Launch TES3MP via Proton |
-| `run-openmw-cs` | Launch OpenMW Construction Set |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |
 | `install-mods` | Download and unpack latest mods archive |
 | `install-localization <locale>` | Install a specific localization (non-interactive) |
@@ -265,6 +275,14 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | `show-backups-players` | List player backups (JSON) |
 | `show-backups-world` | List world backups (JSON) |
 | `edit-config` | Edit player config in detected editor |
+
+### Shared Layer 1 (Admin + Player)
+
+Call via: `bash ~/.local/share/tes3mp-easy/layer1/shared/<command> [args]`
+
+| Command | Description |
+|---------|-------------|
+| `run-openmw-cs` | Launch OpenMW Construction Set |
 
 > **Note:** `install-fonts`, `install-localization`, and `configure-ui` have corresponding Layer 1 scripts, but the Layer 3 dispatch routes them through Layer 2 (interactive) wrappers for convenience. To call them non-interactively, invoke the Layer 1 script directly.
 
@@ -380,7 +398,7 @@ Is there user interaction? (selection, prompt, wizard)
 
 ### 2. Create Layer 1 Script
 
-Create a file in `client/layer1/<player|admin>/<command>`:
+Create a file in `client/layer1/<player|admin|shared>/<command>`:
 
 ```bash
 #!/bin/bash

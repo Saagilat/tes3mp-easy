@@ -55,6 +55,7 @@ download "client/lib/settings.cfg.example" "$UPDATE_DIR/lib/settings.cfg.example
 
 echo "  ── shared ──"
 download "client/layer1/shared/edit-config-record" "$UPDATE_DIR/layer1/shared/edit-config-record"
+download "client/layer1/shared/run-openmw-cs"      "$UPDATE_DIR/layer1/shared/run-openmw-cs"
 
 echo "  ── layer1 admin (non-interactive) ──"
 echo "  ── setup wizard ──"
@@ -112,8 +113,7 @@ echo "  ── setup wizard ──"
 echo "  ── install, run, mods ──"
 download "client/layer1/player/install-client"  "$UPDATE_DIR/layer1/player/install-client"
 download "client/layer1/player/run-client"      "$UPDATE_DIR/layer1/player/run-client"
-download "client/layer1/player/run-with-mods"   "$UPDATE_DIR/layer1/player/run-with-mods"
-download "client/layer1/player/run-openmw-cs"   "$UPDATE_DIR/layer1/player/run-openmw-cs"
+download "client/layer1/player/install-mods-and-play" "$UPDATE_DIR/layer1/player/install-mods-and-play"
 download "client/layer1/player/install-mods"    "$UPDATE_DIR/layer1/player/install-mods"
 download "client/layer1/player/install-localization" "$UPDATE_DIR/layer1/player/install-localization"
 

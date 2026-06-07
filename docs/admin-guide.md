@@ -81,6 +81,8 @@ Players can then download the mods from the player menu with **Install Mods**.
 | Show mod backups | Show mod backups | List mod archives stored on VPS |
 | Download mod backup | Download mod backup | Download a mod archive via HTTP |
 
+The admin menu also includes **OpenMW-CS** (Construction Set) under the Server Control section for mod editing.
+
 ### Snapshots (Players & World)
 
 | Action | Menu Entry | Description |
