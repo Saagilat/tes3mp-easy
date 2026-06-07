@@ -113,7 +113,6 @@ echo "  ── setup wizard ──"
 echo "  ── install, run, mods ──"
 download "client/layer1/player/install-client"  "$UPDATE_DIR/layer1/player/install-client"
 download "client/layer1/player/run-client"      "$UPDATE_DIR/layer1/player/run-client"
-download "client/layer1/player/install-mods-and-play" "$UPDATE_DIR/layer1/player/install-mods-and-play"
 download "client/layer1/player/install-mods"    "$UPDATE_DIR/layer1/player/install-mods"
 download "client/layer1/player/install-localization" "$UPDATE_DIR/layer1/player/install-localization"
 

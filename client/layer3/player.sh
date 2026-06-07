@@ -32,7 +32,7 @@ LAYER2_PLAYER="$LAYER2_DIR/player"
 dispatch_player() {
     case "${1:-}" in
         install-client)         bash "$LAYER1_PLAYER/install-client" ;;
-        install-mods-and-play)  bash "$LAYER1_PLAYER/install-mods-and-play" ;;
+        install-mods-and-play)  bash "$LAYER2_PLAYER/interactive-install-mods-and-play" ;;
         install-mods)           bash "$LAYER1_PLAYER/install-mods" ;;
         install-fonts)          bash "$LAYER2_PLAYER/interactive-install-fonts" ;;
         configure-ui)           bash "$LAYER2_PLAYER/interactive-configure-ui" ;;
@@ -75,7 +75,7 @@ dispatch_player() {
 # Function wrappers for run_menu
 # ────────────────────────────────────────────────────────────
 # layer1 calls (simple — just run)
-menu_install_mods_and_play()     { bash "$LAYER1_PLAYER/install-mods-and-play"; }
+menu_install_mods_and_play()     { bash "$LAYER2_PLAYER/interactive-install-mods-and-play"; }
 menu_run_client()        { bash "$LAYER1_PLAYER/run-client"; }
 menu_run_openmw_cs()     { bash "$LAYER1_SHARED/run-openmw-cs"; }
 menu_install_mods()      { bash "$LAYER1_PLAYER/install-mods"; }

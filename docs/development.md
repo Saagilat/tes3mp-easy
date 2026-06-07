@@ -262,7 +262,6 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | Command | Description |
 |---------|-------------|
 | `install-client` | Download TES3MP, set up Proton prefix, generate config |
-| `install-mods-and-play` | Install mods, then launch TES3MP via Proton |
 | `run-client` | Launch TES3MP via Proton |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |
 | `edit-client-cfg-record` | Set a key=value in `tes3mp-client-default.cfg` (non-interactive) |
