@@ -293,6 +293,8 @@ _tes3mp_running() {
 # Only runs when tes3mp container is up.
 # ─────────────────────────────────────────────
 (
+    # Disable errexit for the background loop to prevent crashes
+    set +e
     while true; do
         sleep 300
         if _tes3mp_running; then
@@ -304,6 +306,8 @@ _tes3mp_running() {
 
 echo "Export server listening on port $PORT" >&2
 
+# Disable errexit so socat exit (e.g. on restart) doesn't kill the process
+set +e
 if [ $# -eq 0 ]; then
     socat TCP-LISTEN:"$PORT",reuseaddr,fork EXEC:"bash $0 request"
 else
