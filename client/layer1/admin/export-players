@@ -21,7 +21,7 @@ SERVER_ID=$(_get_server_id "$SSH_HOST")
 [[ -z "$SERVER_ID" ]] && { err "Could not determine server ID from SSH_HOST"; exit 1; }
 
 player_dir="$EXPORT_DIR/$SERVER_ID/players"
-[[ ! -d "$player_dir" ]] && { err "players/ not found in $EXPORT_DIR/$SERVER_ID"; exit 1; }
+mkdir -p "$player_dir"
 
 check_deps tar ssh scp
 

@@ -31,8 +31,7 @@ SERVER_ID=$(_get_server_id "$SSH_HOST")
 
 plugins_dir="$EXPORT_DIR/$SERVER_ID/mods/plugins"
 scripts_dir="$EXPORT_DIR/$SERVER_ID/mods/scripts"
-[[ ! -d "$plugins_dir" ]] && { err "plugins/ not found in $EXPORT_DIR/$SERVER_ID/mods"; exit 1; }
-[[ ! -d "$scripts_dir" ]] && { err "scripts/ not found in $EXPORT_DIR/$SERVER_ID/mods"; exit 1; }
+mkdir -p "$plugins_dir" "$scripts_dir"
 
 check_deps rhash tar ssh scp jq
 

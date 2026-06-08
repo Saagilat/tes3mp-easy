@@ -15,7 +15,7 @@ SERVER_ID=$(_get_server_id "$SSH_HOST")
 [[ -z "$SERVER_ID" ]] && { err "Could not determine server ID from SSH_HOST"; exit 1; }
 
 plugin_dir="${EXPORT_DIR}/${SERVER_ID}/mods/plugins"
-[[ ! -d "$plugin_dir" ]] && { err "Directory not found: $plugin_dir"; exit 1; }
+mkdir -p "$plugin_dir"
 
 check_deps rhash
 

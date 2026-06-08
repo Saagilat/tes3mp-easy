@@ -161,7 +161,8 @@ _get_server_url() {
 _get_server_id() {
     local input="${1:-}"
     [[ -z "$input" ]] && { echo "default"; return 0; }
-    echo "$input" | sed -E 's|^https?://||; s|^[^@]+@||; s|:?[0-9]*/?$||; s|[/:]+|_|g'
+    # Strip protocol, user@, port, trailing slashes, and leading slashes
+    echo "$input" | sed -E 's|^https?://||; s|^[^@]+@||; s|:?[0-9]*/?$||; s|^[/]+||; s|[/:]+|_|g'
 }
 
 # ────────────────────────────────────────────────────────────
