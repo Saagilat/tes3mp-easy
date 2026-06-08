@@ -192,17 +192,33 @@ ADDED_COUNT=0
 
 REQ_JSON="$PLUGINS_SRC/requiredDataFiles.json"
 if [[ -f "$REQ_JSON" ]]; then
-    # Extract filenames from the nested requiredDataFiles object.
-    # JSON format: { "requiredDataFiles": { "file.esp": [...], ... } }
-    while IFS= read -r filename; do
-        [[ -z "$filename" ]] && continue
-        if [[ -f "$DATA_FILES_DIR/$filename" ]]; then
-            echo "content=$filename" >> "$OPENMW_CFG"
-            ((ADDED_COUNT++)) || true
-        else
-            warn "Skipping missing plugin: $filename"
-        fi
-    done < <(jq -r '.requiredDataFiles | to_entries[] | .key' "$REQ_JSON")
+    # Extract filenames: supports both
+    #   { "requiredDataFiles": { "file.esp": [...], ... } }
+    # and
+    #   [ { "file.esp": [...] }, ... ]
+    if jq -e '.requiredDataFiles' "$REQ_JSON" >/dev/null 2>&1; then
+        # Object format
+        while IFS= read -r filename; do
+            [[ -z "$filename" ]] && continue
+            if [[ -f "$DATA_FILES_DIR/$filename" ]]; then
+                echo "content=$filename" >> "$OPENMW_CFG"
+                ((ADDED_COUNT++)) || true
+            else
+                warn "Skipping missing plugin: $filename"
+            fi
+        done < <(jq -r '.requiredDataFiles | to_entries[] | .key' "$REQ_JSON")
+    else
+        # Array format
+        while IFS= read -r filename; do
+            [[ -z "$filename" ]] && continue
+            if [[ -f "$DATA_FILES_DIR/$filename" ]]; then
+                echo "content=$filename" >> "$OPENMW_CFG"
+                ((ADDED_COUNT++)) || true
+            else
+                warn "Skipping missing plugin: $filename"
+            fi
+        done < <(jq -r '.[] | keys[]' "$REQ_JSON")
+    fi
 else
     for plugin in "$PLUGINS_SRC"/*.esp "$PLUGINS_SRC"/*.ESP \
                   "$PLUGINS_SRC"/*.esm "$PLUGINS_SRC"/*.ESM \
