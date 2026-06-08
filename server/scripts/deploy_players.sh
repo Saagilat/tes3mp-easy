@@ -25,9 +25,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE_DIR="$(dirname "$SCRIPT_DIR")"
 
-BACKUPS_DIR="$BASE_DIR/backups/players"
+PLAYER_BACKUPS_DIR="$BASE_DIR/backups/players"
 # Note: current.txt lives in backups/mods/ only.
 # Players use --latest or explicit filename to deploy.
+export BACKUPS_DIR="$BASE_DIR/backups"
 
 # Mount point directories (on host)
 PLAYER_DIR="$BASE_DIR/players"
@@ -72,16 +73,16 @@ resolve_archive() {
         --latest)
             # Find the latest import-* or init-* archive (not backup-*)
             local latest
-            latest=$(ls -t "$BACKUPS_DIR"/import-*.tar.gz "$BACKUPS_DIR"/init-*.tar.gz 2>/dev/null | head -1)
+            latest=$(ls -t "$PLAYER_BACKUPS_DIR"/import-*.tar.gz "$PLAYER_BACKUPS_DIR"/init-*.tar.gz 2>/dev/null | head -1)
             if [ -z "$latest" ]; then
-                err "No import-* or init-* archives found in $BACKUPS_DIR"
+                err "No import-* or init-* archives found in $PLAYER_BACKUPS_DIR"
                 exit 1
             fi
             echo "$latest"
             ;;
         *)
             # Use the filename directly
-            local archive_path="$BACKUPS_DIR/$1"
+            local archive_path="$PLAYER_BACKUPS_DIR/$1"
             if [ ! -f "$archive_path" ]; then
                 err "Archive not found: $archive_path"
                 exit 1
@@ -94,7 +95,7 @@ resolve_archive() {
 # Check free space for backup
 check_backup_space() {
     local available_kb
-    available_kb=$(_get_free_kb "$BACKUPS_DIR")
+    available_kb=$(_get_free_kb "$PLAYER_BACKUPS_DIR")
 
     # Estimate size of current players
     local player_size=0
@@ -151,7 +152,7 @@ check_backup_space
 echo ""
 echo "[2/4] Backing up current players..."
 TIMESTAMP=$(date +%F_%H-%M-%S)
-BACKUP_FILE="$BACKUPS_DIR/backup-${TIMESTAMP}-players.tar.gz"
+BACKUP_FILE="$PLAYER_BACKUPS_DIR/backup-${TIMESTAMP}-players.tar.gz"
 package_players "$BACKUP_FILE"
 ok "Players backup saved: $BACKUP_FILE"
 

@@ -25,9 +25,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE_DIR="$(dirname "$SCRIPT_DIR")"
 
-BACKUPS_DIR="$BASE_DIR/backups/world"
+WORLD_BACKUPS_DIR="$BASE_DIR/backups/world"
 # Note: current.txt lives in backups/mods/ only.
 # World uses --latest or explicit filename to deploy.
+export BACKUPS_DIR="$BASE_DIR/backups"
 
 # Mount point directories (on host)
 WORLD_CELL_DIR="$BASE_DIR/world/cell"
@@ -80,16 +81,16 @@ resolve_archive() {
         --latest)
             # Find the latest import-* or init-* archive (not backup-*)
             local latest
-            latest=$(ls -t "$BACKUPS_DIR"/import-*.tar.gz "$BACKUPS_DIR"/init-*.tar.gz 2>/dev/null | head -1)
+            latest=$(ls -t "$WORLD_BACKUPS_DIR"/import-*.tar.gz "$WORLD_BACKUPS_DIR"/init-*.tar.gz 2>/dev/null | head -1)
             if [ -z "$latest" ]; then
-                err "No import-* or init-* archives found in $BACKUPS_DIR"
+                err "No import-* or init-* archives found in $WORLD_BACKUPS_DIR"
                 exit 1
             fi
             echo "$latest"
             ;;
         *)
             # Use the filename directly
-            local archive_path="$BACKUPS_DIR/$1"
+            local archive_path="$WORLD_BACKUPS_DIR/$1"
             if [ ! -f "$archive_path" ]; then
                 err "Archive not found: $archive_path"
                 exit 1
@@ -103,7 +104,7 @@ resolve_archive() {
 check_backup_space() {
     local archive_path="$1"
     local available_kb
-    available_kb=$(_get_free_kb "$BACKUPS_DIR")
+    available_kb=$(_get_free_kb "$WORLD_BACKUPS_DIR")
 
     # Estimate size of current world
     local world_size=0
@@ -172,7 +173,7 @@ check_backup_space "$ARCHIVE_PATH"
 echo ""
 echo "[2/4] Backing up current world..."
 TIMESTAMP=$(date +%F_%H-%M-%S)
-BACKUP_FILE="$BACKUPS_DIR/backup-${TIMESTAMP}-world.tar.gz"
+BACKUP_FILE="$WORLD_BACKUPS_DIR/backup-${TIMESTAMP}-world.tar.gz"
 package_world "$BACKUP_FILE"
 ok "World backup saved: $BACKUP_FILE"
 
