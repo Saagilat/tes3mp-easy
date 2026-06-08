@@ -22,37 +22,43 @@ echo "  Generating requiredDataFiles.json"
 echo "═══════════════════════════════════════════════"
 
 output_file="$plugin_dir/requiredDataFiles.json"
-cat > "$output_file" << 'EOF'
+
+# Generate array format as expected by TES3MP server
+# e.g. [ { "Morrowind.esm": [] }, { "file.omwaddon": ["0xABCD1234"] } ]
 {
-    "requiredDataFiles":
-    {
-EOF
+    echo "["
+    first=true
 
-first=true
-for orig in "${ORIGINAL_FILES[@]}"; do
-    if [[ "$first" == true ]]; then first=false; else echo "," >> "$output_file"; fi
-    echo -n "        \"$orig\": []" >> "$output_file"
-    echo "  [OK] $orig (no CRC)"
-done
+    for orig in "${ORIGINAL_FILES[@]}"; do
+        skip=0
+        for file in "$plugin_dir"/*; do
+            [ -f "$file" ] || continue
+            base=$(basename "$file")
+            [ "${base,,}" != "${orig,,}" ] && continue
+            skip=1
+            break
+        done
+        if [[ "$first" == true ]]; then first=false; else echo ","; fi
+        echo -n "  { \"$orig\": [] }"
+        echo "  [OK] $orig (no CRC)"
+    done
 
-while IFS= read -r -d '' file; do
-    filename=$(basename "$file")
-    crc32=$(rhash --crc32 --simple "$file" 2>/dev/null | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
-    if [[ "$first" == true ]]; then first=false; else echo "," >> "$output_file"; fi
-    if [[ -n "$crc32" ]]; then
-        echo -n "        \"$filename\": [\"0x$crc32\"]" >> "$output_file"
-        echo "  [OK] $filename → CRC32: 0x$crc32"
-    else
-        echo -n "        \"$filename\": []" >> "$output_file"
-        echo "  [OK] $filename (no CRC)"
-    fi
-done < <(find "$plugin_dir" -maxdepth 1 -type f \( -iname "*.esp" -o -iname "*.esm" -o -iname "*.omwaddon" \) -print0 | sort -z)
+    while IFS= read -r -d '' file; do
+        filename=$(basename "$file")
+        crc32=$(rhash --crc32 --simple "$file" 2>/dev/null | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
+        if [[ "$first" == true ]]; then first=false; else echo ","; fi
+        if [[ -n "$crc32" ]]; then
+            echo -n "  { \"$filename\": [\"0x$crc32\"] }"
+            echo "  [OK] $filename → CRC32: 0x$crc32"
+        else
+            echo -n "  { \"$filename\": [] }"
+            echo "  [OK] $filename (no CRC)"
+        fi
+    done < <(find "$plugin_dir" -maxdepth 1 -type f \( -iname "*.esp" -o -iname "*.esm" -o -iname "*.omwaddon" \) -print0 | sort -z)
 
-cat >> "$output_file" << 'EOF'
-
-    }
-}
-EOF
+    echo ""
+    echo "]"
+} > "$output_file"
 
 echo ""
 ok "requiredDataFiles.json generated at: $output_file"
