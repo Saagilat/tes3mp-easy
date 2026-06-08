@@ -167,7 +167,6 @@ _get_server_id() {
 # ────────────────────────────────────────────────────────────
 # Utility: is_os — check operating system
 # Usage:  is_os "linux"  && echo "Linux detected"
-REPLACE
 #         is_os "windows" && echo "Git Bash / MSYS2 / Cygwin"
 # ────────────────────────────────────────────────────────────
 is_os() {
