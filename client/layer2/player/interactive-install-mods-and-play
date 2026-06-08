@@ -58,16 +58,19 @@ for ((i=TIMEOUT; i>=1; i--)); do
     
     if [[ -c /dev/tty ]]; then
         key=""
-        read -r -t 1 -n 1 key </dev/tty || true
+        read -r -t 1 -n 1 key </dev/tty
+        read_exit=$?
     elif [[ -t 0 ]]; then
         key=""
-        read -r -t 1 -n 1 key || true
+        read -r -t 1 -n 1 key
+        read_exit=$?
     else
         sleep 1
         key=""
+        read_exit=1
     fi
     
-    if [[ -n "$key" ]]; then
+    if [[ $read_exit -eq 0 ]]; then
         case "$key" in
             e|E)
                 echo ""
@@ -116,6 +119,7 @@ for ((i=TIMEOUT; i>=1; i--)); do
                 break
                 ;;
             *)
+                # Enter or any other key — continue immediately
                 echo ""
                 info "Continuing with current server: $CURRENT_ADDR"
                 break
