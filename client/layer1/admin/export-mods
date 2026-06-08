@@ -30,7 +30,7 @@ scripts_dir="$EXPORT_DIR/mods/scripts"
 [[ ! -d "$plugins_dir" ]] && { err "plugins/ not found in $EXPORT_DIR/mods"; exit 1; }
 [[ ! -d "$scripts_dir" ]] && { err "scripts/ not found in $EXPORT_DIR/mods"; exit 1; }
 
-check_deps rhash tar ssh scp
+check_deps rhash tar ssh scp jq
 
 echo ""
 echo "═══════════════════════════════════════════════"
@@ -44,29 +44,36 @@ req_json="$plugins_dir/requiredDataFiles.json"
 [[ ! -f "$req_json" ]] && { err "requiredDataFiles.json not found — run admin-generate-data first"; exit 1; }
 ok "Found requiredDataFiles.json"
 
-# Step 2: CRC32 check
+# Step 2: CRC32 check (supports array format: [{file.esp: [...]}, ...])
 echo "[2/5] Validating CRC32..."
 ORIGINAL_FILES=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
 validation_failed=0
-while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]*\"([^\"]+)\":[[:space:]]*\[(.*)\] ]]; then
-        filename="${BASH_REMATCH[1]}"
-        crc_content="${BASH_REMATCH[2]}"
-        skip=0
-        for orig in "${ORIGINAL_FILES[@]}"; do
-            [[ "${filename,,}" == "${orig,,}" ]] && skip=1
-        done
-        [[ "$skip" -eq 1 ]] && continue
-        filepath="$plugins_dir/$filename"
-        [[ ! -f "$filepath" ]] && { err "Plugin \"$filename\" not found"; validation_failed=1; continue; }
-        if [[ "$crc_content" =~ '"0x([0-9A-Fa-f]+)"' ]]; then
-            expected_crc="${BASH_REMATCH[1]}"
-            actual_crc=$(rhash --crc32 --simple "$filepath" 2>/dev/null | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
-            expected_crc_upper="${expected_crc^^}"
-            [[ "$actual_crc" != "$expected_crc_upper" ]] && { err "CRC32 mismatch for \"$filename\""; validation_failed=1; }
+
+while IFS= read -r filename; do
+    [[ -z "$filename" ]] && continue
+    skip=0
+    for orig in "${ORIGINAL_FILES[@]}"; do
+        [[ "${filename,,}" == "${orig,,}" ]] && { skip=1; break; }
+    done
+    [[ "$skip" -eq 1 ]] && continue
+
+    filepath="$plugins_dir/$filename"
+    [[ ! -f "$filepath" ]] && { err "Plugin \"$filename\" not found"; validation_failed=1; continue; }
+
+    # Get expected CRC from JSON: [{file: ["0x..."]}, ...]
+    expected_crc=$(jq -r --arg f "$filename" '.[] | to_entries[] | select(.key == $f) | .value[0] // empty' "$req_json")
+    expected_crc="${expected_crc#0x}"
+    expected_crc="${expected_crc^^}"
+
+    if [[ -n "$expected_crc" ]]; then
+        actual_crc=$(rhash --crc32 --simple "$filepath" 2>/dev/null | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
+        if [[ "$actual_crc" != "$expected_crc" ]]; then
+            err "CRC32 mismatch for \"$filename\": expected 0x$expected_crc, got 0x$actual_crc"
+            validation_failed=1
         fi
     fi
-done < "$req_json"
+done < <(jq -r '.[] | keys[]' "$req_json")
+
 [[ "$validation_failed" -ne 0 ]] && { err "Validation failed — aborting"; exit 1; }
 ok "All plugins pass CRC32 check"
 
