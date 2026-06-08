@@ -37,6 +37,11 @@ _lua_get() { local key="$1" default="$2"; echo "${_LUA_CONF[$key]:-$default}"; }
 
 _ask_bool() {
     local key="$1" prompt="$2" default="$3"
+    # convert "true"/"false" to "y"/"n" for confirm()
+    case "${default,,}" in
+        true|y|yes) default="y" ;;
+        *)          default="n" ;;
+    esac
     if confirm "$prompt" "$default"; then _lua_set "$key" "true" "bool"
     else _lua_set "$key" "false" "bool"; fi
 }
