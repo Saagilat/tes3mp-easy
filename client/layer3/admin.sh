@@ -49,6 +49,7 @@ dispatch_admin() {
         edit-server-cfg)        bash "$LAYER1_ADMIN/edit-server-cfg" ;;
         edit-lua)               bash "$LAYER1_ADMIN/edit-lua" ;;
         edit-banlist)           bash "$LAYER1_ADMIN/edit-banlist" ;;
+        run-openmw-cs)          bash "$LAYER1_SHARED/run-openmw-cs" ;;
         # layer2 (interactive)
         setup-wizard)           bash "$LAYER2_ADMIN/interactive-setup-wizard" ;;
         deploy-mods)            bash "$LAYER2_ADMIN/interactive-deploy-mods" ;;
@@ -57,15 +58,14 @@ dispatch_admin() {
         download-backup-mods)   bash "$LAYER2_ADMIN/interactive-download-mods" ;;
         download-backup-players) bash "$LAYER2_ADMIN/interactive-download-players" ;;
         download-backup-world)  bash "$LAYER2_ADMIN/interactive-download-world" ;;
-        run-openmw-cs)          bash "$LAYER1_SHARED/run-openmw-cs" ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, start-server, stop-server, restart-server,"
             echo "  server-logs, server-status, export-mods, export-players, export-world,"
-            echo "  generate-required-data, deploy-mods, deploy-players, deploy-world,"
+            echo "  generate-required-data, run-openmw-cs, deploy-mods, deploy-players, deploy-world,"
             echo "  show-backups-mods, show-backups-players, show-backups-world,"
             echo "  download-backup-mods, download-backup-players, download-backup-world,"
             echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist,"
-            echo "  run-openmw-cs, setup-wizard, menu"
+            echo "  setup-wizard, menu"
             ;;
         menu|"") show_admin_menu ;;
         *) echo "Unknown command: $1"; echo "Run 'layer3/admin.sh help' for available commands."; exit 1 ;;
@@ -145,9 +145,9 @@ show_admin_menu() {
         "${MENU_ADMIN_SERVER_STATUS}|fn|menu_server_status"
         "${MENU_ADMIN_SERVER_LOGS}|fn|menu_server_logs"
         "${MENU_ADMIN_SETUP_WIZARD}|fn|menu_setup_wizard"
-        "${MENU_ADMIN_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
 
         "${MENU_ADMIN_SEP_MODDING}|sep|"
+        "${MENU_ADMIN_RUN_OPENMW_CS}|fn|menu_run_openmw_cs"
         "${MENU_ADMIN_GENERATE_DATA}|fn|menu_generate_data"
         "${MENU_ADMIN_EXPORT_MODS}|fn|menu_export_mods"
         "${MENU_ADMIN_DEPLOY_MODS}|fn|menu_deploy_mods"
