@@ -8,8 +8,8 @@
 # Archive structure:
 #   mods.tar.gz
 #   ├── plugins/
-#   │   ├── mod1.esp
-#   │   └── requiredDataFiles.json
+#   │   └── mod1.esp
+#   ├── requiredDataFiles.json
 #   └── scripts/
 #       └── test.lua
 #
@@ -88,8 +88,6 @@ mkdir -p "$tmp_dir/plugins"
 for f in "$plugins_dir"/*; do
     [ -f "$f" ] || continue
     basename=$(basename "$f")
-    # Skip requiredDataFiles.json — will be copied separately
-    [ "$basename" = "requiredDataFiles.json" ] && continue
     # Skip original Morrowind files
     skip=0
     for orig in "${ORIGINAL_FILES[@]}"; do
@@ -101,7 +99,7 @@ for f in "$plugins_dir"/*; do
     [ "$skip" -eq 1 ] && continue
     cp "$f" "$tmp_dir/plugins/"
 done
-cp "$req_json" "$tmp_dir/plugins/requiredDataFiles.json"
+    cp "$req_json" "$tmp_dir/requiredDataFiles.json"
 
 # Stage: scripts
 mkdir -p "$tmp_dir/scripts"
@@ -110,7 +108,7 @@ for f in "$scripts_dir"/*; do
     cp "$f" "$tmp_dir/scripts/"
 done
 
-tar czf "$output_archive" -C "$tmp_dir" .
+    (cd "$tmp_dir" && tar czf "$output_archive" -- * )
 [[ ! -f "$output_archive" ]] && { err "Failed to create archive"; exit 1; }
 ok "Archive created"
 

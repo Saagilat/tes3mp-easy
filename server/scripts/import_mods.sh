@@ -72,12 +72,12 @@ echo "[2/4] Validating requiredDataFiles.json..."
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-tar xzf "$ARCHIVE" -C "$TMP_DIR"
+    tar xzf "$ARCHIVE" -C "$TMP_DIR"
 
-REQ_JSON="$TMP_DIR/plugins/requiredDataFiles.json"
+REQ_JSON="$TMP_DIR/requiredDataFiles.json"
 
 if [ ! -f "$REQ_JSON" ]; then
-    err "requiredDataFiles.json not found in archive (expected at plugins/requiredDataFiles.json)"
+    err "requiredDataFiles.json not found in archive (expected at requiredDataFiles.json)"
     rm -f "$ARCHIVE"
     exit 1
 fi

@@ -36,7 +36,7 @@ output_archive="$tmp_dir/players.tar.gz"
 mkdir -p "$tmp_dir/players"
 cp -r "$player_dir"/* "$tmp_dir/players/" 2>/dev/null || true
 
-tar czf "$output_archive" -C "$tmp_dir" .
+    (cd "$tmp_dir" && tar czf "$output_archive" -- * )
 [[ ! -f "$output_archive" ]] && { err "Failed to create archive"; exit 1; }
 ok "Archive created"
 

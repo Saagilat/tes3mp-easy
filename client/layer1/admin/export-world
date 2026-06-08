@@ -49,7 +49,7 @@ for subdir in cell world map recordstore custom; do
     fi
 done
 
-tar czf "$output_archive" -C "$tmp_dir" .
+    (cd "$tmp_dir" && tar czf "$output_archive" -- * )
 [[ ! -f "$output_archive" ]] && { err "Failed to create archive"; exit 1; }
 ok "Archive created"
 
