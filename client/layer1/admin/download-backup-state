@@ -10,10 +10,15 @@ source "$SCRIPT_DIR/lib/config"
 
 load_config 2>/dev/null || { err "Config not found."; exit 1; }
 [[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
+[[ -z "${BACKUP_DIR:-}" ]] && { err "BACKUP_DIR is not set in config"; exit 1; }
+
+SERVER_ID=$(_get_server_id "$SSH_HOST")
+[[ -z "$SERVER_ID" ]] && { err "Could not determine server ID from SSH_HOST"; exit 1; }
 
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: download-backup-state <filename> [destination]"; exit 1; }
-dest="${2:-./$filename}"
+dest="${2:-$BACKUP_DIR/$SERVER_ID/state/$filename}"
+mkdir -p "$(dirname "$dest")"
 
 echo ""
 echo "═══════════════════════════════════════════════"
