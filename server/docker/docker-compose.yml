@@ -40,6 +40,8 @@ services:
     build:
       context: .
       dockerfile: export.dockerfile
+    environment:
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL:-300}
     volumes:
       - ./players:/mnt/characters:ro
       - ./world/cell:/mnt/world/cell:ro
