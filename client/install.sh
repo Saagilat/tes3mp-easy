@@ -64,6 +64,7 @@ download "client/layer1/admin/check-server-status"   "$UPDATE_DIR/layer1/admin/c
 download "client/layer1/admin/check-server-installed" "$UPDATE_DIR/layer1/admin/check-server-installed"
 download "client/layer1/admin/read-config-lua"  "$UPDATE_DIR/layer1/admin/read-config-lua"
 download "client/layer1/admin/write-config-lua" "$UPDATE_DIR/layer1/admin/write-config-lua"
+download "client/layer1/admin/write-server-cfg" "$UPDATE_DIR/layer1/admin/write-server-cfg"
 
 echo "  ── server control ──"
 download "client/layer1/admin/install-server"    "$UPDATE_DIR/layer1/admin/install-server"

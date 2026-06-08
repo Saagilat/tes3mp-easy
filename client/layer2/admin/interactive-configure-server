@@ -1,8 +1,11 @@
 #!/bin/bash
 #
-# interactive-configure-server — Interactive config.lua editor via SSH
-# Layer 2: prompts user with hardcoded defaults, saves via layer1/write-config-lua
-# All default values match TES3MP 0.8.1 stock config.lua
+# interactive-configure-server — Interactive server configuration editor via SSH
+# Layer 2: prompts user with hardcoded defaults, saves via layer1 scripts.
+#
+# Values for config.lua are saved via write-config-lua.
+# Values for tes3mp-server-default.cfg (serverName, serverPassword)
+# are saved via write-server-cfg.
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -115,28 +118,41 @@ _ask_bool "config.ignoreScriptErrors" "  Ignore script errors?" "$(_lua_get "con
 if [[ ${#_LUA_CHANGED[@]} -gt 0 ]]; then
     ok "Saving server configuration..."
 
-    script_path="/tmp/tes3mp-wizard-$$.sed"
     > /tmp/tes3mp-wizard-local.sed
     for key in "${!_LUA_CHANGED[@]}"; do
         val="${_LUA_CONF[$key]}"
-        escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
-        case "${_LUA_TYPE[$key]}" in
-            bool|number)
-                echo "s/^${escaped_key}[[:space:]]*=.*/${key} = ${val}/" >> /tmp/tes3mp-wizard-local.sed ;;
-            password)
-                escaped_val=$(printf '%s\n' "$val" | sed 's/[\/&"]/\\&/g')
-                echo "s/^${escaped_key}[[:space:]]*=.*/${key} = \"${escaped_val}\"/" >> /tmp/tes3mp-wizard-local.sed ;;
-            string|*)
-                escaped_val=$(printf '%s\n' "$val" | sed 's/[\/&"]/\\&/g')
-                echo "s|^${escaped_key}[[:space:]]*=.*|${key} = \"${escaped_val}\"|" >> /tmp/tes3mp-wizard-local.sed ;;
+        case "$key" in
+            config.serverName|config.serverPassword)
+                # These go into tes3mp-server-default.cfg, not config.lua
+                cfg_key="${key#config.}"
+                bash "$LAYER1/write-server-cfg" "$cfg_key" "$val" || {
+                    err "Failed to set $cfg_key in server config."
+                    exit 1
+                }
+                ;;
+            *)
+                escaped_key=$(printf '%s\n' "$key" | sed 's/[\/&]/\\&/g')
+                case "${_LUA_TYPE[$key]}" in
+                    bool|number)
+                        echo "s/^${escaped_key}[[:space:]]*=.*/${key} = ${val}/" >> /tmp/tes3mp-wizard-local.sed ;;
+                    password)
+                        escaped_val=$(printf '%s\n' "$val" | sed 's/[\/&"]/\\&/g')
+                        echo "s/^${escaped_key}[[:space:]]*=.*/${key} = \"${escaped_val}\"/" >> /tmp/tes3mp-wizard-local.sed ;;
+                    string|*)
+                        escaped_val=$(printf '%s\n' "$val" | sed 's/[\/&"]/\\&/g')
+                        echo "s|^${escaped_key}[[:space:]]*=.*|${key} = \"${escaped_val}\"|" >> /tmp/tes3mp-wizard-local.sed ;;
+                esac
+                ;;
         esac
     done
 
-    bash "$LAYER1/write-config-lua" /tmp/tes3mp-wizard-local.sed || {
-        rm -f /tmp/tes3mp-wizard-local.sed
-        err "Failed to save configuration."
-        exit 1
-    }
+    if [[ -s /tmp/tes3mp-wizard-local.sed ]]; then
+        bash "$LAYER1/write-config-lua" /tmp/tes3mp-wizard-local.sed || {
+            rm -f /tmp/tes3mp-wizard-local.sed
+            err "Failed to save configuration."
+            exit 1
+        }
+    fi
     rm -f /tmp/tes3mp-wizard-local.sed
     # ok message already printed by layer1/write-config-lua
 else
