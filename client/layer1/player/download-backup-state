@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# download-backup-players — Download a player backup archive from TES3MP server
-# Usage: download-backup-players <filename> [destination]
+# download-backup-state — Download a state backup archive from TES3MP server
+# Usage: download-backup-state <filename> [destination]
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -26,18 +26,18 @@ SERVER_ID=$(_get_server_id "$SERVER_URL")
 [[ -z "$SERVER_ID" ]] && SERVER_ID="default"
 
 filename="${1:-}"
-[[ -z "$filename" ]] && { err "Usage: download-backup-players <filename> [destination]"; exit 1; }
-dest="${2:-$BACKUP_DIR/$SERVER_ID/players/$filename}"
+[[ -z "$filename" ]] && { err "Usage: download-backup-state <filename> [destination]"; exit 1; }
+dest="${2:-$BACKUP_DIR/$SERVER_ID/state/$filename}"
 
 mkdir -p "$(dirname "$dest")"
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  Downloading player backup: $filename"
+echo "  Downloading state backup: $filename"
 echo "═══════════════════════════════════════════════"
 echo ""
 
-curl -sfL "$SERVER_URL/download/players/$filename" -o "$dest" || {
+curl -sfL "$SERVER_URL/download/state/$filename" -o "$dest" || {
     err "Download failed."
     exit 1
 }

@@ -23,8 +23,8 @@ BACKUPS_DIR="${BACKUPS_DIR:-/mnt/backups}"
 
 type="${1:-}"
 case "$type" in
-    mods|players|world) ;;
-    *) echo "Usage: $0 <mods|players|world>" >&2; exit 1 ;;
+    mods|state) ;;
+    *) echo "Usage: $0 <mods|state>" >&2; exit 1 ;;
 esac
 
 dir="$BACKUPS_DIR/$type"

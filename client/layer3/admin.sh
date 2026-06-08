@@ -39,12 +39,9 @@ dispatch_admin() {
         server-logs)            bash "$LAYER1_ADMIN/server-logs" ;;
         server-status)          bash "$LAYER1_ADMIN/server-status" ;;
         export-mods)            bash "$LAYER1_ADMIN/export-mods" ;;
-        export-players)         bash "$LAYER1_ADMIN/export-players" ;;
-        export-world)           bash "$LAYER1_ADMIN/export-world" ;;
         generate-required-data) bash "$LAYER1_ADMIN/generate-data" ;;
         show-backups-mods)      bash "$LAYER1_ADMIN/show-backups-mods" ;;
-        show-backups-players)   bash "$LAYER1_ADMIN/show-backups-players" ;;
-        show-backups-world)     bash "$LAYER1_ADMIN/show-backups-world" ;;
+        show-backups-state)     bash "$LAYER1_ADMIN/show-backups-state" ;;
         edit-config)            bash "$LAYER1_ADMIN/edit-config" ;;
         edit-server-cfg)        bash "$LAYER1_ADMIN/edit-server-cfg" ;;
         edit-lua)               bash "$LAYER1_ADMIN/edit-lua" ;;
@@ -54,17 +51,15 @@ dispatch_admin() {
         setup-wizard)           bash "$LAYER2_ADMIN/interactive-setup-wizard" ;;
         set-staff-rank)         bash "$LAYER2_ADMIN/interactive-set-staff-rank" ;;
         deploy-mods)            bash "$LAYER2_ADMIN/interactive-deploy-mods" ;;
-        deploy-players)         bash "$LAYER2_ADMIN/interactive-deploy-players" ;;
-        deploy-world)           bash "$LAYER2_ADMIN/interactive-deploy-world" ;;
+        deploy-state)           bash "$LAYER2_ADMIN/interactive-deploy-state" ;;
         download-backup-mods)   bash "$LAYER2_ADMIN/interactive-download-mods" ;;
-        download-backup-players) bash "$LAYER2_ADMIN/interactive-download-players" ;;
-        download-backup-world)  bash "$LAYER2_ADMIN/interactive-download-world" ;;
+        download-backup-state)  bash "$LAYER2_ADMIN/interactive-download-state" ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, start-server, stop-server, restart-server,"
-            echo "  server-logs, server-status, export-mods, export-players, export-world,"
-            echo "  generate-required-data, run-openmw-cs, deploy-mods, deploy-players, deploy-world,"
-            echo "  show-backups-mods, show-backups-players, show-backups-world,"
-            echo "  download-backup-mods, download-backup-players, download-backup-world,"
+            echo "  server-logs, server-status, export-mods, generate-required-data,"
+            echo "  run-openmw-cs, deploy-mods, deploy-state,"
+            echo "  show-backups-mods, show-backups-state,"
+            echo "  download-backup-mods, download-backup-state,"
             echo "  edit-config, edit-server-cfg, edit-lua, edit-banlist,"
             echo "  setup-wizard, menu"
             ;;
@@ -91,11 +86,8 @@ menu_server_status()     { bash "$LAYER1_ADMIN/server-status"; }
 menu_server_logs()       { bash "$LAYER1_ADMIN/server-logs"; }
 menu_generate_data()     { bash "$LAYER1_ADMIN/generate-data"; }
 menu_export_mods()       { bash "$LAYER1_ADMIN/export-mods"; }
-menu_export_players()    { bash "$LAYER1_ADMIN/export-players"; }
-menu_export_world()      { bash "$LAYER1_ADMIN/export-world"; }
 menu_show_backups_mods()    { bash "$LAYER1_ADMIN/show-backups-mods"; }
-menu_show_backups_players() { bash "$LAYER1_ADMIN/show-backups-players"; }
-menu_show_backups_world()   { bash "$LAYER1_ADMIN/show-backups-world"; }
+menu_show_backups_state()   { bash "$LAYER1_ADMIN/show-backups-state"; }
 menu_edit_server_cfg()   { bash "$LAYER1_ADMIN/edit-server-cfg"; }
 menu_edit_lua()          { bash "$LAYER1_ADMIN/edit-lua"; }
 menu_edit_banlist()      { bash "$LAYER1_ADMIN/edit-banlist"; }
@@ -110,11 +102,9 @@ menu_edit_config() {
 # layer2 calls
 menu_setup_wizard()   { bash "$LAYER2_ADMIN/interactive-setup-wizard"; }
 menu_deploy_mods()    { bash "$LAYER2_ADMIN/interactive-deploy-mods"; }
-menu_deploy_players() { bash "$LAYER2_ADMIN/interactive-deploy-players"; }
-menu_deploy_world()   { bash "$LAYER2_ADMIN/interactive-deploy-world"; }
+menu_deploy_state()   { bash "$LAYER2_ADMIN/interactive-deploy-state"; }
 menu_download_mods()  { bash "$LAYER2_ADMIN/interactive-download-mods"; }
-menu_download_players() { bash "$LAYER2_ADMIN/interactive-download-players"; }
-menu_download_world() { bash "$LAYER2_ADMIN/interactive-download-world"; }
+menu_download_state() { bash "$LAYER2_ADMIN/interactive-download-state"; }
 
 # ────────────────────────────────────────────────────────────
 # Menu entry point — only defines structure, no logic.
@@ -129,9 +119,7 @@ show_admin_menu() {
         if [[ -n "$server_id" ]]; then
             local resolved="${EXPORT_DIR/#\~/$HOME}"
             mkdir -p "$resolved/$server_id/mods/plugins" \
-                     "$resolved/$server_id/mods/scripts" \
-                     "$resolved/$server_id/players" \
-                     "$resolved/$server_id/world"
+                     "$resolved/$server_id/mods/scripts"
         fi
     fi
 
@@ -158,14 +146,9 @@ show_admin_menu() {
         "${MENU_ADMIN_DOWNLOAD_BACKUP_MODS}|fn|menu_download_mods"
 
         "${MENU_ADMIN_SEP_SNAPSHOTS}|sep|"
-        "${MENU_ADMIN_EXPORT_PLAYERS}|fn|menu_export_players"
-        "${MENU_ADMIN_EXPORT_WORLD}|fn|menu_export_world"
-        "${MENU_ADMIN_DEPLOY_PLAYERS}|fn|menu_deploy_players"
-        "${MENU_ADMIN_DEPLOY_WORLD}|fn|menu_deploy_world"
-        "${MENU_ADMIN_SHOW_BACKUPS_PLAYERS}|fn|menu_show_backups_players"
-        "${MENU_ADMIN_SHOW_BACKUPS_WORLD}|fn|menu_show_backups_world"
-        "${MENU_ADMIN_DOWNLOAD_BACKUP_PLAYERS}|fn|menu_download_players"
-        "${MENU_ADMIN_DOWNLOAD_BACKUP_WORLD}|fn|menu_download_world"
+        "${MENU_ADMIN_DEPLOY_STATE}|fn|menu_deploy_state"
+        "${MENU_ADMIN_SHOW_BACKUPS_STATE}|fn|menu_show_backups_state"
+        "${MENU_ADMIN_DOWNLOAD_BACKUP_STATE}|fn|menu_download_state"
 
         "${MENU_ADMIN_SEP_CONFIGS}|sep|"
         "${MENU_ADMIN_EDIT_SERVER_CFG}|fn|menu_edit_server_cfg"

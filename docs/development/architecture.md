@@ -8,22 +8,22 @@ Local Machine                         VPS (Docker)
 Admin Menu (bash) ───[SSH]──► ┌─────────────────────┐
   ├─ Install Server           │  tes3mp (:25565/udp) │
   ├─ Start/Stop/Restart       │  nginx (:8085)        │
-  ├─ Export Mods/Players      │  export (backup cron) │
-  ├─ Deploy backups           └─────────────────────┘
+  ├─ Export Mods              │  export (auto state)  │
+  ├─ Deploy mods/state        └─────────────────────┘
   └─ Edit configs
 
 Player Menu (bash) ──[HTTP]─►
   ├─ Install Client (GitHub)
   ├─ Launch TES3MP
   ├─ Install Mods / Fonts
-  ├─ Download backups
+  ├─ Download mods/state backups
   └─ Configure UI / Localization
 ```
 
 Three Docker services on the VPS:
 - **tes3mp** — game server (UDP 25565)
-- **nginx** — serves backup archives via HTTP (port 8085), endpoints: `/list-backups/{type}`, `/download/{type}/{filename}`
-- **export** — periodically packages data into `.tar.gz` archives
+- **nginx** — proxies backup requests to export container (port 8085), endpoints: `/list-backups/{type}`, `/download/{type}/{filename}`
+- **export** — automatically creates combined state (players + world) backups every 5 minutes, cleans up backups older than 30 days
 
 ## Data Flow
 
@@ -58,7 +58,7 @@ scp "$tmpfile" "$SSH_HOST:$remote_path"
 ### Player → Server: HTTP
 
 Player operations use HTTP to the nginx server (port 8085). No SSH required.
-Access is deliberately unauthenticated — players can download mod, world, and player
+Access is deliberately unauthenticated — players can download mod and state
 backups at any time to run their own server. This is by design: data portability is
 a core principle of the project.
 
@@ -89,13 +89,13 @@ echo "http://${server_addr}:8085"
 ## Example: Backup Workflow
 
 ```
-User selects "Download player backup"
-  → Layer 3: menu → menu_download_players()
-    → Layer 2: interactive-download-players
-      → Layer 1: show-backups-players (returns JSON via HTTP for player)
+User selects "Download state backup"
+  → Layer 3: menu → menu_download_state()
+    → Layer 2: interactive-download-state
+      → Layer 1: show-backups-state (returns JSON via HTTP for player)
       → Layer 2: parses JSON, shows numbered menu
       → User picks a file
-      → Layer 1: download-backup-players "file.tar.gz" (download via HTTP)
+      → Layer 1: download-backup-state "file.tar.gz" (download via HTTP)
       → Layer 2: prints success message
     → Layer 3: returns to menu
 ```
@@ -124,12 +124,12 @@ Admins use SSH/SCP; players use HTTP. Layer 2 delegates without caring about the
 │   │       ├── install-*       #     Installers
 │   │       └── ...
 │   ├── layer2/                 # Interactive wrappers
-│   │   ├── admin/              #   Admin (8 files)
+│   │   ├── admin/              #   Admin
 │   │   │   ├── interactive-deploy-*      # Archive selection → Layer 1
 │   │   │   ├── interactive-download-*    # Backup selection → Layer 1
 │   │   │   ├── interactive-setup-wizard  # Multi-step setup
 │   │   │   └── interactive-configure-server  # Config.lua editor
-│   │   └── player/             #   Player (7 files)
+│   │   └── player/             #   Player
 │   │       ├── interactive-install-fonts # Font selection → Layer 1
 │   │       ├── interactive-install-mods-and-play # Server prompt → Layer 1
 │   │       ├── interactive-download-*    # Backup selection → Layer 1
@@ -151,10 +151,11 @@ Admins use SSH/SCP; players use HTTP. Layer 2 delegates without caring about the
 │   ├── scripts/                # VPS-hosted utilities
 │   │   ├── install.sh          #   Server installer (curl | sudo bash)
 │   │   ├── package.sh          #   Archive packer (sourced by export service)
-│   │   ├── deploy_*.sh         #   Deploy archives into active directories
-│   │   ├── import_*.sh         #   Import data into server directories
-│   │   ├── export_*.sh         #   Export scripts for export service
-│   │   └── list-backups.sh     #   List backup archives for nginx endpoint
+│   │   ├── deploy_mods.sh      #   Deploy mods archive
+│   │   ├── deploy_state.sh     #   Deploy state archive (players + world)
+│   │   ├── import_mods.sh      #   Import mods archive
+│   │   ├── list-backups.sh     #   List backup archives
+│   │   └── set-staff-rank.sh   #   Set staff rank
 │   ├── docker/                 # Docker Compose, Dockerfiles, nginx config
 │   └── common                  # Server-side shared library
 └── docs/
@@ -165,9 +166,9 @@ Admins use SSH/SCP; players use HTTP. Layer 2 delegates without caring about the
 - `docker-compose.yml` — defines `tes3mp`, `nginx`, `export` services
 - `tes3mp.dockerfile` — builds the game server image
 - `export.dockerfile` — builds the backup export service
-- `nginx.conf` — serves `/list-backups/` and `/download/` endpoints
+- `nginx.conf` — proxies `/list-backups/` and `/download/` to export container
 - `entrypoint.sh` — container startup script
-- `export_server.sh` — backup cron logic
+- `export_server.sh` — backup HTTP server with background export loop (every 5 min) and cleanup (>30 days)
 
 ## Configuration System
 

@@ -86,18 +86,15 @@ Players can then download the mods from the player menu with **Install Mods**.
 
 The admin menu also includes **OpenMW-CS** (Construction Set) under the Server Control section for mod editing.
 
-### Snapshots (Players & World)
+### Snapshots (State — Players & World combined)
+
+State backups are created automatically every 5 minutes. Backups older than 30 days are deleted automatically.
 
 | Action | Menu Entry | Description |
 |--------|-----------|-------------|
-| Export players | Export players | Package player data and upload to VPS |
-| Export world | Export world | Package world data and upload to VPS |
-| Deploy players | Deploy players | Apply a player archive to the server |
-| Deploy world | Deploy world | Apply a world archive to the server |
-| Show player backups | Show player backups | List player archives on VPS |
-| Show world backups | Show world backups | List world archives on VPS |
-| Download player backup | Download player backup | Download a player archive via HTTP |
-| Download world backup | Download world backup | Download a world archive via HTTP |
+| Deploy state | Deploy state | Apply a state archive (players + world) to the server |
+| Show state backups | Show state backups | List state archives on VPS |
+| Download state backup | Download state backup | Download a state archive via HTTP |
 
 ### Config Editing
 

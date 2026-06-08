@@ -214,20 +214,16 @@ echo ""
 echo "[1/6] Checking backup space..."
 check_backup_space
 
-# Step 2: Backup world and players (current state)
+# Step 2: Backup state (players + world combined)
 echo ""
-echo "[2/6] Backing up world and players..."
+echo "[2/6] Backing up state (players + world)..."
 TIMESTAMP=$(date +%F_%H-%M-%S)
 
 MODS_SHA256=$(sha256sum "$ARCHIVE_PATH" | cut -d' ' -f1)
 
-WORLD_BACKUP_FILE="$BACKUPS_DIR/world/backup-${TIMESTAMP}-world.tar.gz"
-package_world "$WORLD_BACKUP_FILE" "$MODS_SHA256"
-ok "World backup saved: $WORLD_BACKUP_FILE"
-
-PLAYERS_BACKUP_FILE="$BACKUPS_DIR/players/backup-${TIMESTAMP}-players.tar.gz"
-package_players "$PLAYERS_BACKUP_FILE" "$MODS_SHA256"
-ok "Players backup saved: $PLAYERS_BACKUP_FILE"
+STATE_BACKUP_FILE="$BACKUPS_DIR/state/backup-${TIMESTAMP}-state.tar.gz"
+package_state "$STATE_BACKUP_FILE" "$MODS_SHA256"
+ok "State backup saved: $STATE_BACKUP_FILE"
 
 # Step 3: Check extract space
 echo ""

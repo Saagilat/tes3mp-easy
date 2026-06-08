@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# interactive-deploy-players — Deploy players archive on VPS
+# interactive-download-state — Download state backup from VPS
+# Layer 2: checks SSH, parses JSON from show-backups, prompts, calls download
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -13,15 +14,13 @@ if [[ -z "${SSH_HOST:-}" ]]; then
     exit 1
 fi
 
-TYPE="players"
-LABEL="Players"
+TYPE="state"
+LABEL="State"
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  Deploy $LABEL"
+echo "  Download $LABEL Backup"
 echo "═══════════════════════════════════════════════"
-echo ""
-echo "  Choose archive to deploy (or press Enter for latest):"
 echo ""
 
 check_deps jq
@@ -33,14 +32,18 @@ if [[ $rc -ne 0 ]]; then
     exit 1
 fi
 if [[ -z "$json" ]]; then
-    warn "No archives found on server."
+    warn "No $LABEL backups available on server."
     exit 1
 fi
 
-mapfile -t names < <(echo "$json" | jq -r '.files[].name' 2>/dev/null)
+names=()
+while IFS=$'\t' read -r name sha256; do
+    [[ -z "$name" ]] && continue
+    names+=("$name")
+done < <(echo "$json" | jq -r '.files[] | [.name, .sha256] | @tsv' 2>/dev/null)
 
 if [[ ${#names[@]} -eq 0 ]]; then
-    warn "No archives found on server."
+    warn "No $LABEL backups available on server."
     exit 1
 fi
 
@@ -51,18 +54,13 @@ for name in "${names[@]}"; do
 done
 echo ""
 
-read -r -p "  Select number (empty = latest): " choice
-if [[ -z "$choice" ]]; then
-    archive="${names[0]}"
-else
-    archive="${names[$((choice - 1))]}"
-fi
+read -r -p "  Select number (empty = cancel): " choice
+[[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
 
-if [[ -z "$archive" ]]; then
-    err "Invalid selection."
-    exit 1
-fi
+selected="${names[$((choice - 1))]}"
+[[ -z "$selected" ]] && { err "Invalid selection."; exit 1; }
 
-info "Deploying: $archive"
-bash "$PROJECT_DIR/layer1/admin/deploy-${TYPE}" "$archive" || { err "Deploy failed."; exit 1; }
-ok "Deploy queued. Use RESTART to apply."
+echo ""
+info "Downloading $selected..."
+bash "$PROJECT_DIR/layer1/admin/download-backup-${TYPE}" "$selected" || { err "Download failed."; exit 1; }
+ok "Done."

@@ -175,8 +175,8 @@ setup_files() {
              "$dest/world/cell" "$dest/world/world" "$dest/world/map" "$dest/world/recordstore" "$dest/world/custom" \
              "$dest/mods/plugins" "$dest/mods/scripts" \
              "$dest/configs" \
-             "$dest/backups/mods" "$dest/backups/players" "$dest/backups/world" \
-             "$dest/import-mods" "$dest/import-players" "$dest/import-world" \
+             "$dest/backups/mods" "$dest/backups/state" \
+             "$dest/import-mods" \
              "$dest/scripts"
     chown -R root:root "$dest"
 
@@ -196,8 +196,8 @@ setup_files() {
         exit 1
     }
 
-    for f in package.sh import_mods.sh import_players.sh import_world.sh \
-             deploy_mods.sh deploy_players.sh deploy_world.sh list-backups.sh \
+    for f in package.sh import_mods.sh \
+             deploy_mods.sh deploy_state.sh list-backups.sh \
              set-staff-rank.sh; do
         wget -q --show-progress "https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/server/scripts/$f" -O "$dest/scripts/$f" || {
             err "Failed to download $f"
@@ -334,11 +334,12 @@ main() {
 
         bash "$dest/scripts/deploy_mods.sh" --latest
 
-        package_init_world "$dest/backups/world/init-$(date +%F_%H-%M-%S)-world.tar.gz"
-        package_init_players "$dest/backups/players/init-$(date +%F_%H-%M-%S)-players.tar.gz"
+        package_init_world "$dest/backups/state/init-$(date +%F_%H-%M-%S)-state.tar.gz"
+        # No separate init for players — they are empty from start
 
-        bash "$dest/scripts/deploy_world.sh" --latest
-        bash "$dest/scripts/deploy_players.sh" --latest
+        # For state deploy we don't have a combined init archive yet, skip for now
+        # The state will be created automatically by the export service
+        # Just ensure current mods are deployed
 
         ok "Initial backup archives created"
     fi

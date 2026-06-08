@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# interactive-download-world — Download world backup from server
+# interactive-deploy-state — Deploy state backup to VPS
+# Layer 2: checks SSH, parses JSON from show-backups, prompts, deploys
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -8,19 +9,23 @@ source "$PROJECT_DIR/lib/common"
 source "$PROJECT_DIR/lib/config"
 
 load_config 2>/dev/null || true
+if [[ -z "${SSH_HOST:-}" ]]; then
+    err "SSH_HOST is not set."
+    exit 1
+fi
 
-TYPE="world"
-LABEL="World"
+TYPE="state"
+LABEL="State"
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  Download $LABEL Backup"
+echo "  Deploy $LABEL Backup"
 echo "═══════════════════════════════════════════════"
 echo ""
 
 check_deps jq
 
-json=$(bash "$PROJECT_DIR/layer1/player/show-backups-${TYPE}")
+json=$(bash "$PROJECT_DIR/layer1/admin/show-backups-${TYPE}")
 rc=$?
 if [[ $rc -ne 0 ]]; then
     err "Failed to connect to server. Check your connection and try again."
@@ -31,14 +36,14 @@ if [[ -z "$json" ]]; then
     exit 1
 fi
 
-current_sha256=$(echo "$json" | jq -r '.current // empty' 2>/dev/null)
+# Add --latest option
+echo "  0) Use latest backup (--latest)"
+echo ""
 
 names=()
-sha256s=()
 while IFS=$'\t' read -r name sha256; do
     [[ -z "$name" ]] && continue
     names+=("$name")
-    sha256s+=("$sha256")
 done < <(echo "$json" | jq -r '.files[] | [.name, .sha256] | @tsv' 2>/dev/null)
 
 if [[ ${#names[@]} -eq 0 ]]; then
@@ -48,12 +53,7 @@ fi
 
 i=1
 for name in "${names[@]}"; do
-    idx=$((i - 1))
-    if [[ -n "$current_sha256" && "${sha256s[$idx]}" == "$current_sha256" ]]; then
-        echo "  $i) $name  (current)"
-    else
-        echo "  $i) $name"
-    fi
+    echo "  $i) $name"
     ((i++)) || true
 done
 echo ""
@@ -61,10 +61,20 @@ echo ""
 read -r -p "  Select number (empty = cancel): " choice
 [[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
 
-selected="${names[$((choice - 1))]}"
-[[ -z "$selected" ]] && { err "Invalid selection."; exit 1; }
+if [[ "$choice" == "0" ]]; then
+    archive_arg="--latest"
+else
+    selected="${names[$((choice - 1))]}"
+    [[ -z "$selected" ]] && { err "Invalid selection."; exit 1; }
+    archive_arg="$selected"
+fi
+
+if ! confirm "Deploy $LABEL backup? This will overwrite current data."; then
+    info "Cancelled."
+    exit 0
+fi
 
 echo ""
-info "Downloading $selected..."
-bash "$PROJECT_DIR/layer1/player/download-backup-${TYPE}" "$selected" || { err "Download failed."; exit 1; }
+info "Deploying $archive_arg..."
+retry ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_state.sh $archive_arg" || { err "Deploy failed."; exit 1; }
 ok "Done."

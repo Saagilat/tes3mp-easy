@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# interactive-download-players — Download player backup from server
+# interactive-download-state — Download state backup from server
+# Layer 2: fetches JSON via HTTP, shows menu, calls Layer 1 download
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -9,8 +10,8 @@ source "$PROJECT_DIR/lib/config"
 
 load_config 2>/dev/null || true
 
-TYPE="players"
-LABEL="Players"
+TYPE="state"
+LABEL="State"
 
 echo ""
 echo "═══════════════════════════════════════════════"
@@ -23,7 +24,7 @@ check_deps jq
 json=$(bash "$PROJECT_DIR/layer1/player/show-backups-${TYPE}")
 rc=$?
 if [[ $rc -ne 0 ]]; then
-    err "Failed to connect to server. Check your connection and try again."
+    err "Failed to reach server at $SERVER_URL."
     exit 1
 fi
 if [[ -z "$json" ]]; then
@@ -31,14 +32,10 @@ if [[ -z "$json" ]]; then
     exit 1
 fi
 
-current_sha256=$(echo "$json" | jq -r '.current // empty' 2>/dev/null)
-
 names=()
-sha256s=()
 while IFS=$'\t' read -r name sha256; do
     [[ -z "$name" ]] && continue
     names+=("$name")
-    sha256s+=("$sha256")
 done < <(echo "$json" | jq -r '.files[] | [.name, .sha256] | @tsv' 2>/dev/null)
 
 if [[ ${#names[@]} -eq 0 ]]; then
@@ -48,12 +45,7 @@ fi
 
 i=1
 for name in "${names[@]}"; do
-    idx=$((i - 1))
-    if [[ -n "$current_sha256" && "${sha256s[$idx]}" == "$current_sha256" ]]; then
-        echo "  $i) $name  (current)"
-    else
-        echo "  $i) $name"
-    fi
+    echo "  $i) $name"
     ((i++)) || true
 done
 echo ""

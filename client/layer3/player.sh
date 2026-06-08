@@ -39,11 +39,9 @@ dispatch_player() {
         install-localization)   bash "$LAYER2_PLAYER/interactive-install-localization" ;;
         setup-wizard)           bash "$LAYER2_PLAYER/interactive-setup-wizard" ;;
         download-backup-mods)   bash "$LAYER2_PLAYER/interactive-download-mods" ;;
-        download-backup-players) bash "$LAYER2_PLAYER/interactive-download-players" ;;
-        download-backup-world)  bash "$LAYER2_PLAYER/interactive-download-world" ;;
+        download-backup-state)  bash "$LAYER2_PLAYER/interactive-download-state" ;;
         show-backups-mods)      bash "$LAYER1_PLAYER/show-backups-mods" ;;
-        show-backups-players)   bash "$LAYER1_PLAYER/show-backups-players" ;;
-        show-backups-world)     bash "$LAYER1_PLAYER/show-backups-world" ;;
+        show-backups-state)     bash "$LAYER1_PLAYER/show-backups-state" ;;
         run-openmw-cs)          bash "$LAYER1_SHARED/run-openmw-cs" ;;
         run-client)             bash "$LAYER1_PLAYER/run-client" ;;
         edit-config)            bash "$LAYER1_PLAYER/edit-config" ;;
@@ -62,8 +60,8 @@ dispatch_player() {
         help|--help|-h)
             echo "Player subcommands: install-client, run-client, install-mods-and-play, install-mods,"
             echo "  install-fonts, configure-ui, install-localization,"
-            echo "  download-backup-mods, download-backup-players, download-backup-world,"
-            echo "  show-backups-mods, show-backups-players, show-backups-world,"
+            echo "  download-backup-mods, download-backup-state,"
+            echo "  show-backups-mods, show-backups-state,"
             echo "  run-openmw-cs, edit-config, edit-client-cfg, setup-wizard, uninstall, menu"
             ;;
         menu|"") show_player_menu ;;
@@ -80,8 +78,7 @@ menu_run_client()        { bash "$LAYER1_PLAYER/run-client"; }
 menu_run_openmw_cs()     { bash "$LAYER1_SHARED/run-openmw-cs"; }
 menu_install_mods()      { bash "$LAYER1_PLAYER/install-mods"; }
 menu_show_backups_mods()    { bash "$LAYER1_PLAYER/show-backups-mods"; }
-menu_show_backups_players() { bash "$LAYER1_PLAYER/show-backups-players"; }
-menu_show_backups_world()   { bash "$LAYER1_PLAYER/show-backups-world"; }
+menu_show_backups_state()   { bash "$LAYER1_PLAYER/show-backups-state"; }
 menu_edit_client_cfg()   { bash "$LAYER1_PLAYER/edit-client-cfg"; }
 menu_edit_config() {
     bash "$LAYER1_PLAYER/edit-config"
@@ -94,8 +91,7 @@ menu_install_localization()   { bash "$LAYER2_PLAYER/interactive-install-localiz
 menu_configure_ui()           { bash "$LAYER2_PLAYER/interactive-configure-ui"; }
 menu_setup_wizard()           { bash "$LAYER2_PLAYER/interactive-setup-wizard"; }
 menu_download_mods()          { bash "$LAYER2_PLAYER/interactive-download-mods"; }
-menu_download_players()       { bash "$LAYER2_PLAYER/interactive-download-players"; }
-menu_download_world()         { bash "$LAYER2_PLAYER/interactive-download-world"; }
+menu_download_state()         { bash "$LAYER2_PLAYER/interactive-download-state"; }
 
 # ────────────────────────────────────────────────────────────
 # Menu entry point — only defines structure, no logic.
@@ -115,11 +111,9 @@ show_player_menu() {
 
         "${MENU_PLAYER_SEP_BACKUPS}|sep|"
         "${MENU_PLAYER_SHOW_BACKUPS_MODS}|fn|menu_show_backups_mods"
-        "${MENU_PLAYER_SHOW_BACKUPS_PLAYERS}|fn|menu_show_backups_players"
-        "${MENU_PLAYER_SHOW_BACKUPS_WORLD}|fn|menu_show_backups_world"
+        "${MENU_PLAYER_SHOW_BACKUPS_STATE}|fn|menu_show_backups_state"
         "${MENU_PLAYER_DOWNLOAD_BACKUP_MODS}|fn|menu_download_mods"
-        "${MENU_PLAYER_DOWNLOAD_BACKUP_PLAYERS}|fn|menu_download_players"
-        "${MENU_PLAYER_DOWNLOAD_BACKUP_WORLD}|fn|menu_download_world"
+        "${MENU_PLAYER_DOWNLOAD_BACKUP_STATE}|fn|menu_download_state"
 
         "${MENU_PLAYER_SEP_CONFIGS}|sep|"
         "${MENU_PLAYER_EDIT_CLIENT_CFG}|fn|menu_edit_client_cfg"

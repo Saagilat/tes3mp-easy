@@ -9,11 +9,14 @@
 #   package_players() — PLAYER_DIR, BACKUPS_DIR (for requiredDataFiles.json from current mods archive)
 #   package_world()   — WORLD_CELL_DIR, WORLD_WORLD_DIR, WORLD_MAP_DIR,
 #                       WORLD_RECORDSTORE_DIR, WORLD_CUSTOM_DIR, BACKUPS_DIR (same reason)
+#   package_state()   — PLAYER_DIR, WORLD_CELL_DIR, WORLD_WORLD_DIR, WORLD_MAP_DIR,
+#                       WORLD_RECORDSTORE_DIR, WORLD_CUSTOM_DIR, BACKUPS_DIR
 #
 # Functions provided:
 #   package_mods(output_file)                — plugins/ + scripts/ + requiredDataFiles.json
 #   package_players(output_file)             — players/ + requiredDataFiles.json + current.txt
 #   package_world(output_file)               — cell/ + world/ + map/ + recordstore/ + custom/ + requiredDataFiles.json + current.txt
+#   package_state(output_file)               — players/ + cell/ + world/ + map/ + recordstore/ + custom/ + requiredDataFiles.json + current.txt
 #   package_init_mods(output_file)            — empty plugins/ + empty scripts/ + requiredDataFiles.json
 #   package_init_players(output_file)         — empty players/ + requiredDataFiles.json + current.txt
 #   package_init_world(output_file)           — empty world subdirs + requiredDataFiles.json + current.txt
@@ -376,6 +379,89 @@ package_world() {
     _copy_world_subdir "${WORLD_CUSTOM_DIR:-}" "custom"
 
     echo "[package.sh]   world entries: $count"
+
+    if [ -n "$mods_sha256" ]; then
+        echo "$mods_sha256" > "$stage_dir/current.txt"
+    fi
+
+    # Extract requiredDataFiles.json from current mods archive
+    _extract_required_json "$stage_dir"
+
+    _package_stage "$output_file" "$stage_dir"
+}
+
+# ────────────────────────────────────────────────────────────────
+# Package state (players + world combined) into a tar.gz archive
+#   Usage: package_state <output_file> [mods_sha256]
+#   Archive structure:
+#     output.tar.gz
+#     ├── players/
+#     │   └── AccountName1.json
+#     ├── cell/
+#     ├── world/
+#     ├── map/
+#     ├── recordstore/
+#     ├── custom/
+#     ├── requiredDataFiles.json   (from current mods archive)
+#     └── current.txt               (mods archive sha256)
+# ────────────────────────────────────────────────────────────────
+package_state() {
+    local output_file="$1"
+    local mods_sha256="${2:-}"
+
+    if [ -z "$output_file" ]; then
+        echo "[package.sh] ERROR: package_state requires an output file path" >&2
+        return 1
+    fi
+
+    _check_disk_space "$output_file" \
+        "${PLAYER_DIR:-}" \
+        "${WORLD_CELL_DIR:-}" \
+        "${WORLD_WORLD_DIR:-}" \
+        "${WORLD_MAP_DIR:-}" \
+        "${WORLD_RECORDSTORE_DIR:-}" \
+        "${WORLD_CUSTOM_DIR:-}"
+
+    local stage_dir
+    stage_dir=$(mktemp -d)
+    trap 'rm -rf "${stage_dir:-}"' RETURN
+
+    local total_count=0
+
+    # Copy players
+    mkdir -p "$stage_dir/players"
+    local player_count=0
+    if [ -d "${PLAYER_DIR:-}" ]; then
+        for f in "$PLAYER_DIR"/*; do
+            [ -e "$f" ] || continue
+            cp -r "$f" "$stage_dir/players/"
+            ((player_count++)) || true
+        done
+    fi
+    total_count=$((total_count + player_count))
+    echo "[package.sh]   players: $player_count"
+
+    # Copy world subdirectories
+    _copy_state_world_subdir() {
+        local src="$1"
+        local dest_subdir="$2"
+        if [ -d "$src" ]; then
+            mkdir -p "$stage_dir/$dest_subdir"
+            for f in "$src"/*; do
+                [ -e "$f" ] || continue
+                cp -r "$f" "$stage_dir/$dest_subdir/"
+                ((total_count++)) || true
+            done
+        fi
+    }
+
+    _copy_state_world_subdir "${WORLD_CELL_DIR:-}" "cell"
+    _copy_state_world_subdir "${WORLD_WORLD_DIR:-}" "world"
+    _copy_state_world_subdir "${WORLD_MAP_DIR:-}" "map"
+    _copy_state_world_subdir "${WORLD_RECORDSTORE_DIR:-}" "recordstore"
+    _copy_state_world_subdir "${WORLD_CUSTOM_DIR:-}" "custom"
+
+    echo "[package.sh]   world entries: $((total_count - player_count))"
 
     if [ -n "$mods_sha256" ]; then
         echo "$mods_sha256" > "$stage_dir/current.txt"

@@ -16,14 +16,10 @@ Server-side scripts run on the VPS at `/tes3mp-easy/scripts/`. They are called f
 │   ├── install.sh
 │   ├── package.sh
 │   ├── deploy_mods.sh
-│   ├── deploy_players.sh
-│   ├── deploy_world.sh
+│   ├── deploy_state.sh
 │   ├── import_mods.sh
-│   ├── import_players.sh
-│   ├── import_world.sh
-│   ├── export_players.sh
-│   ├── export_world.sh
-│   └── list-backups.sh
+│   ├── list-backups.sh
+│   └── set-staff-rank.sh
 ├── mods/
 │   ├── plugins/
 │   └── scripts/
@@ -37,11 +33,8 @@ Server-side scripts run on the VPS at `/tes3mp-easy/scripts/`. They are called f
 ├── backups/
 │   ├── mods/
 │   │   └── current.txt
-│   ├── players/
-│   └── world/
+│   └── state/
 ├── import-mods/
-├── import-players/
-├── import-world/
 └── needs_restart.flag
 ```
 
@@ -69,59 +62,74 @@ Server-side scripts run on the VPS at `/tes3mp-easy/scripts/`. They are called f
 
 | Script | Action |
 |--------|--------|
-| `deploy_mods.sh <archive>` | Backup world → backup players → extract mods → generate scripts → write current → touch restart flag |
-| `deploy_players.sh <archive>` | Backup players → extract → write current → touch restart flag |
-| `deploy_world.sh <archive>` | Backup world → extract → write current → touch restart flag |
+| `deploy_mods.sh <archive>` | Backup state → extract mods → generate scripts → write current → restart |
+| `deploy_state.sh <archive>` | Stop TES3MP → extract players/ + world subdirs → start TES3MP |
 
 ### Import (move archives from staging into backups)
 
 | Script | Action |
 |--------|--------|
 | `import_mods.sh` | Move archive from `import-mods/` → `backups/mods/import-<ts>-mods.tar.gz` |
-| `import_players.sh` | Move archive from `import-players/` → `backups/players/import-<ts>-players.tar.gz` |
-| `import_world.sh` | Move archive from `import-world/` → `backups/world/import-<ts>-world.tar.gz` |
 
 ### Export (for export Docker service)
 
 | Script | Action |
 |--------|--------|
-| `export_players.sh` | Create backup archive of current player data |
-| `export_world.sh` | Create backup archive of current world data |
+| (handled by `export_server.sh` background loop) | Creates `backups/state/export-<ts>-state.tar.gz` every 5 minutes |
 
 ### Library
 
 | Script | Action |
 |--------|--------|
-| `package.sh` | Shared packaging library (sourced, not executed). Provides `package_world()` and `package_players()` functions. |
+| `package.sh` | Shared packaging library (sourced, not executed). Provides `package_mods()`, `package_players()`, `package_world()`, `package_state()` functions. |
 
 ### List
 
 | Script | Action |
 |--------|--------|
-| `list-backups.sh <type>` | Output JSON list of backups for nginx endpoint |
+| `list-backups.sh <type>` | Output JSON list of backups. Supported types: `mods`, `state` |
 
 ## Example: `deploy_mods` Sequence
 
 ```
 deploy_mods.sh <archive>:
   1. Resolve archive path (current.txt, --latest, or explicit filename)
-  2. Check free space for backup (world + players, 2x margin)
-  3. Backup current world → backups/world/backup-<ts>-world.tar.gz
-  4. Backup current players → backups/players/backup-<ts>-players.tar.gz
-  5. Check free space for extraction
-  6. Stop TES3MP
-  7. Extract archive → plugins/ and scripts/ directly into mods/
-  8. Generate customScripts.lua
-  9. Write current.txt (sha256 filename)
-  10. Start TES3MP
-  11. Touch needs_restart.flag
+  2. Check free space for backup (state, 2x margin)
+  3. Backup current state → backups/state/backup-<ts>-state.tar.gz
+  4. Check free space for extraction
+  5. Stop TES3MP
+  6. Extract archive → plugins/ and scripts/ directly into mods/
+  7. Generate customScripts.lua
+  8. Write current.txt (sha256 filename)
+  9. Start TES3MP
+  10. Touch needs_restart.flag
 ```
 
 If any step fails, `set -euo pipefail` stops the sequence. The admin recovers manually:
 
-- Current mods are gone (step 7 ran before failure) — but old mods have a backup in `backups/mods/`
-- Fresh world and player backups exist (steps 3-4 succeeded)
-- Admin calls `deploy-mods <old-archive-from-current.txt>` and redeploys world/players from the fresh backups
+- Current mods are gone (step 6 ran before failure) — but old mods have a backup in `backups/mods/`
+- Fresh state backup exists (step 3 succeeded)
+- Admin calls `deploy-mods <old-archive-from-current.txt>` and redeploys mods; state can be restored from the backup
+
+## Export Server
+
+The `export` container runs `export_server.sh` — a lightweight HTTP server using `socat`. It:
+
+- **Serves backup files** via HTTP on port 5000 (exposed via nginx on port 8085)
+- **Creates state backups every 5 minutes** in `backups/state/export-<ts>-state.tar.gz`
+- **Cleans up backups older than 30 days**
+- **Supports `?latest` query parameter** to force an immediate export
+
+Endpoints:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /list-backups/mods` | JSON list of mod backups |
+| `GET /list-backups/state` | JSON list of state backups |
+| `GET /download/mods` | Latest mod backup |
+| `GET /download/state` | Latest state backup |
+| `GET /download/state?latest` | Force new state backup and download it |
+| `GET /download/<type>/<file>` | Specific backup file |
 
 ## Logging
 

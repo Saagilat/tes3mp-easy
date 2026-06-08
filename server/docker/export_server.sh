@@ -1,11 +1,14 @@
 #!/bin/bash
 #
-# export_server.sh — lightweight HTTP server for TES3MP player/world exports
+# export_server.sh — lightweight HTTP server for TES3MP state exports
 #
 # Endpoints:
-#   GET /list-backups/<type>       — JSON list of backup files (mods/players/world)
-#   GET /download/<type>           — latest backup (players/world: auto-export if stale)
+#   GET /list-backups/<type>       — JSON list of backup files (mods/state)
+#   GET /download/<type>           — latest backup
+#   GET /download/<type>?latest    — force new backup and return it
 #   GET /download/<type>/<file>    — specific backup file
+#
+# Background: creates state backups every 5 minutes, cleans up >30 days old.
 #
 # Environment variables:
 #   CHARACTERS_DIR     — path to players directory          (default: /mnt/characters)
@@ -15,7 +18,6 @@
 #   WORLD_RECORDSTORE_DIR — path to world/recordstore dir   (default: /mnt/world/recordstore)
 #   WORLD_CUSTOM_DIR   — path to world/custom directory     (default: /mnt/world/custom)
 #   CACHE_DIR          — cache directory                    (default: /tmp/export_cache)
-#   CACHE_MINUTES      — cache TTL                          (default: 5)
 #   PORT               — listen port                        (default: 5000)
 #   BACKUPS_DIR        — path to backups dir                (default: /mnt/backups)
 #
@@ -30,13 +32,8 @@ WORLD_MAP_DIR="${WORLD_MAP_DIR:-/mnt/world/map}"
 WORLD_RECORDSTORE_DIR="${WORLD_RECORDSTORE_DIR:-/mnt/world/recordstore}"
 WORLD_CUSTOM_DIR="${WORLD_CUSTOM_DIR:-/mnt/world/custom}"
 CACHE_DIR="${CACHE_DIR:-/tmp/export_cache}"
-CACHE_MINUTES="${CACHE_MINUTES:-5}"
 PORT="${PORT:-5000}"
 BACKUPS_DIR="${BACKUPS_DIR:-/mnt/backups}"
-CACHE_TTL=$((CACHE_MINUTES * 60))
-
-# Freshness threshold: 10 minutes
-FRESHNESS_SECONDS=600
 
 # Set up variables for package.sh
 export PLAYER_DIR="$CHARACTERS_DIR"
@@ -72,22 +69,7 @@ get_newest_backup() {
 }
 
 # ─────────────────────────────────────────────
-# Get age of a file in seconds
-# ─────────────────────────────────────────────
-get_file_age() {
-    local file="$1"
-    if [ ! -f "$file" ]; then
-        echo "999999"
-        return
-    fi
-    local now mtime
-    now=$(date +%s)
-    mtime=$(stat -c %Y "$file" 2>/dev/null || echo 0)
-    echo $((now - mtime))
-}
-
-# ─────────────────────────────────────────────
-# Run export for a type (players or world)
+# Run export for a type (state only)
 # ─────────────────────────────────────────────
 run_export() {
     local type="$1"
@@ -97,14 +79,9 @@ run_export() {
     mkdir -p "$dest_dir"
 
     case "$type" in
-        players)
-            local archive_path="$dest_dir/export-${timestamp}-players.tar.gz"
-            package_players "$archive_path" 2>/dev/null
-            echo "$archive_path"
-            ;;
-        world)
-            local archive_path="$dest_dir/export-${timestamp}-world.tar.gz"
-            package_world "$archive_path" 2>/dev/null
+        state)
+            local archive_path="$dest_dir/export-${timestamp}-state.tar.gz"
+            package_state "$archive_path" 2>/dev/null
             echo "$archive_path"
             ;;
         *)
@@ -114,67 +91,26 @@ run_export() {
 }
 
 # ─────────────────────────────────────────────
-# Ensure a fresh backup exists; returns path to it
-# For players/world: if newest >10min old, run export
-# For mods: just return current.tar.gz or newest
+# Clean up backups older than N days
 # ─────────────────────────────────────────────
-ensure_fresh_backup() {
+cleanup_old_backups() {
     local type="$1"
-
-    # For mods: read current.txt and return the real archive path
-    if [ "$type" = "mods" ]; then
-        local current_json current_name
-        current_json=$(list_backups_json "mods" 2>/dev/null || echo "")
-        current_name=$(echo "$current_json" | grep -o '"current":"[^"]*"' | head -1 | sed 's/"current":"//;s/"//')
-        if [ -n "$current_name" ]; then
-            # Find the file by matching sha256 in the files list
-            local match_file
-            match_file=$(echo "$current_json" | grep -o '"name":"[^"]*","sha256":"'"$current_name"'"' | head -1 | sed 's/"name":"//;s/","sha256":.*//')
-            if [ -n "$match_file" ]; then
-                local real_path="$BACKUPS_DIR/mods/$match_file"
-                if [ -f "$real_path" ]; then
-                    echo "$real_path"
-                    return
-                fi
-            fi
-        fi
-        get_newest_backup "mods"
-        return
-    fi
-
-    # For players/world: check freshness
-    local newest
-    newest=$(get_newest_backup "$type")
-
-    if [ -z "$newest" ]; then
-        # No backup at all — run export
-        run_export "$type"
-    else
-        local age
-        age=$(get_file_age "$newest")
-        if [ "$age" -ge "$FRESHNESS_SECONDS" ]; then
-            run_export "$type"
-        else
-            echo "$newest"
-        fi
-    fi
+    local max_days="${2:-30}"
+    local dir="$BACKUPS_DIR/$type"
+    [ -d "$dir" ] || return
+    find "$dir" -maxdepth 1 -name "export-*.tar.gz" -mtime +"$max_days" -delete 2>/dev/null || true
 }
 
 # ─────────────────────────────────────────────
 # Serve a file via HTTP
 # ─────────────────────────────────────────────
-# Resolve symlinks to the real file path (portable approach)
 _resolve_real_path() {
     local path="$1"
     local real
 
-    # Try realpath first (GNU/coreutils)
     real=$(realpath "$path" 2>/dev/null) && { echo "$real"; return; }
-
-    # Fallback: readlink -f (busybox)
     real=$(readlink -f "$path" 2>/dev/null) && { echo "$real"; return; }
 
-    # Manual symlink resolution
     if [ -L "$path" ]; then
         local link_target
         link_target=$(readlink "$path")
@@ -193,7 +129,6 @@ _resolve_real_path() {
 serve_file() {
     local file_path="$1"
 
-    # Resolve symlinks so the real filename is used in Content-Disposition
     file_path=$(_resolve_real_path "$file_path")
 
     local filename
@@ -267,6 +202,12 @@ handle_request() {
         return
     fi
 
+    # Extract query parameter(s)
+    local latest_flag=""
+    case "$path" in
+        *\?latest*) latest_flag="1" ;;
+    esac
+
     # Remove query string
     path="${path%%\?*}"
 
@@ -274,7 +215,7 @@ handle_request() {
         /list-backups/*)
             local type="${path#/list-backups/}"
             case "$type" in
-                mods|players|world)
+                mods|state)
                     serve_json "$(list_backups_json "$type")"
                     ;;
                 *)
@@ -283,29 +224,23 @@ handle_request() {
             esac
             ;;
         /download/mods)
-            # Mods without filename: serve current.tar.gz or newest
+            # Mods without filename: serve latest
             local file
-            file=$(ensure_fresh_backup "mods")
+            file=$(get_newest_backup "mods")
             if [ -n "$file" ]; then
                 serve_file "$file"
             else
                 serve_404
             fi
             ;;
-        /download/players)
-            # Players without filename: ensure fresh, serve newest
+        /download/state)
+            # State without filename: serve latest, or force new with ?latest
             local file
-            file=$(ensure_fresh_backup "players")
-            if [ -n "$file" ]; then
-                serve_file "$file"
+            if [ -n "$latest_flag" ]; then
+                file=$(run_export "state")
             else
-                serve_404
+                file=$(get_newest_backup "state")
             fi
-            ;;
-        /download/world)
-            # World without filename: ensure fresh, serve newest
-            local file
-            file=$(ensure_fresh_backup "world")
             if [ -n "$file" ]; then
                 serve_file "$file"
             else
@@ -319,10 +254,8 @@ handle_request() {
             local filename="${rest#*/}"
 
             case "$type" in
-                mods|players|world)
+                mods|state)
                     local file_path="$BACKUPS_DIR/$type/$filename"
-                    # Security: prevent path traversal
-                    # Resolve to real path and check it's under BACKUPS_DIR/$type/
                     local real_path
                     real_path=$(realpath "$file_path" 2>/dev/null || echo "")
                     local allowed_prefix
@@ -346,6 +279,17 @@ handle_request() {
             ;;
     esac
 }
+
+# ─────────────────────────────────────────────
+# Background: periodic state backups every 5 minutes
+# ─────────────────────────────────────────────
+(
+    while true; do
+        sleep 300
+        run_export "state" >/dev/null 2>&1 || true
+        cleanup_old_backups "state" 30
+    done
+) &
 
 echo "Export server listening on port $PORT" >&2
 

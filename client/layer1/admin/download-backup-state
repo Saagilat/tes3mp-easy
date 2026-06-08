@@ -1,27 +1,25 @@
 #!/bin/bash
 #
-# admin-deploy-world — Deploy world archive on remote VPS
-# Usage: admin-deploy-world [--latest | <filename>]
+# download-backup-state — Download a state backup archive from VPS via SCP
+# Usage: download-backup-state <filename> [destination]
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
-load_config 2>/dev/null || { err "Config not found"; exit 1; }
+load_config 2>/dev/null || { err "Config not found."; exit 1; }
 [[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
 
-arg="${1:-}"
+filename="${1:-}"
+[[ -z "$filename" ]] && { err "Usage: download-backup-state <filename> [destination]"; exit 1; }
+dest="${2:-./$filename}"
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  Deploy world"
+echo "  Downloading state backup: $filename"
 echo "═══════════════════════════════════════════════"
 echo ""
 
-ssh "$SSH_HOST" "cd /tes3mp-easy && bash scripts/deploy_world.sh '$arg'" || {
-    err "Deploy failed."
-    exit 1
-}
-ssh "$SSH_HOST" "touch /tes3mp-easy/needs_restart.flag" 2>/dev/null || true
-ok "Deploy queued. Use admin-restart to apply."
+scp "$SSH_HOST:/tes3mp-easy/backups/state/$filename" "$dest" || { err "Download failed."; exit 1; }
+ok "Saved to: $dest"

@@ -96,18 +96,13 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/admin/<command> [args]`
 | `server-status` | Show running state |
 | `server-logs` | Tail TES3MP logs |
 | `export-mods` | Create `mods.tar.gz` from local `EXPORT_DIR/<server_id>/mods/` and upload via SCP |
-| `export-players` | Create `players.tar.gz` from local `EXPORT_DIR/<server_id>/players/` and upload via SCP |
-| `export-world` | Create `world.tar.gz` from local `EXPORT_DIR/<server_id>/world/` and upload via SCP |
 | `generate-data` | Generate `requiredDataFiles.json` for mod verification |
 | `deploy-mods <archive>` | Extract a specific archive into `mods/` (SSH) |
-| `deploy-players <archive>` | Extract a specific archive into `players/` (SSH) |
-| `deploy-world <archive>` | Extract a specific archive into `world/` (SSH) |
+| `deploy-state <archive>` | Extract a specific state archive into `players/` and `world/` (SSH) |
 | `show-backups-mods` | List mod backup archives (JSON) |
-| `show-backups-players` | List player backup archives (JSON) |
-| `show-backups-world` | List world backup archives (JSON) |
+| `show-backups-state` | List state backup archives (JSON) |
 | `download-backup-mods <file>` | Download a specific mod backup via SCP |
-| `download-backup-players <file>` | Download a specific player backup via SCP |
-| `download-backup-world <file>` | Download a specific world backup via SCP |
+| `download-backup-state <file>` | Download a specific state backup via SCP |
 | `edit-server-cfg` | Edit `tes3mp-server-default.cfg` on VPS (SCP + local editor) |
 | `edit-lua` | Edit `customScripts.lua` on VPS (SCP + local editor) |
 | `edit-banlist` | Edit `banlist.json` on VPS (SCP + local editor) |
@@ -125,11 +120,9 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer2/admin/<command>`
 | Command | Description |
 |---------|-------------|
 | `interactive-deploy-mods` | List archives via `show-backups`, prompt, deploy |
-| `interactive-deploy-players` | List archives via `show-backups`, prompt, deploy |
-| `interactive-deploy-world` | List archives via `show-backups`, prompt, deploy |
+| `interactive-deploy-state` | List archives via `show-backups`, prompt, deploy |
 | `interactive-download-mods` | List backups via `show-backups`, prompt, download |
-| `interactive-download-players` | List backups via `show-backups`, prompt, download |
-| `interactive-download-world` | List backups via `show-backups`, prompt, download |
+| `interactive-download-state` | List backups via `show-backups`, prompt, download |
 | `interactive-setup-wizard` | Guided setup (SSH, export dir, install, configure, start) |
 | `interactive-configure-server` | Interactive config.lua editor (38 settings) |
 
@@ -152,11 +145,9 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | `install-fonts <option>` | Install a specific font set (1-12) |
 | `configure-ui <ttf_res> <font_size> <scale>` | Set OpenMW UI settings |
 | `download-backup-mods <file>` | Download a specific mod backup via HTTP |
-| `download-backup-players <file>` | Download a specific player backup via HTTP |
-| `download-backup-world <file>` | Download a specific world backup via HTTP |
+| `download-backup-state <file>` | Download a specific state backup via HTTP |
 | `show-backups-mods` | List mod backups (JSON via HTTP) |
-| `show-backups-players` | List player backups (JSON via HTTP) |
-| `show-backups-world` | List world backups (JSON via HTTP) |
+| `show-backups-state` | List state backups (JSON via HTTP) |
 | `edit-config` | Edit player config in detected editor |
 
 > **Note:** `install-fonts`, `install-localization`, and `configure-ui` have corresponding Layer 1 scripts, but the Layer 3 dispatch routes them through Layer 2 (interactive) wrappers for convenience. To call them non-interactively, invoke the Layer 1 script directly.
@@ -173,8 +164,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer2/player/<command>`
 | `interactive-install-mods-and-play` | Show server address, prompt to change, install mods, launch client |
 | `interactive-setup-wizard` | Guided setup (Morrowind path, TES3MP dir, Proton, install, fonts, UI, localization) |
 | `interactive-download-mods` | List backups via `show-backups`, prompt, download |
-| `interactive-download-players` | List backups via `show-backups`, prompt, download |
-| `interactive-download-world` | List backups via `show-backups`, prompt, download |
+| `interactive-download-state` | List backups via `show-backups`, prompt, download |
 
 ## Shared Commands (Admin + Player)
 
