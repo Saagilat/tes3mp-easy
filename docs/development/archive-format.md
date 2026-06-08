@@ -11,7 +11,7 @@ All three archive types use a consistent format:
 plugins/
   AllBuildings.esp
   BeautifulMorrowind.esm
-requiredDataFiles.json
+  requiredDataFiles.json
 scripts/
   custom.lua
 ```
@@ -49,7 +49,9 @@ current.txt
 
 ## Metadata Files
 
-- `requiredDataFiles.json` — lists all plugins with CRC32 hashes (from mods archive)
+- `requiredDataFiles.json` — lists all plugins with CRC32 hashes
+  - In **mods** archive: inside `plugins/` (TES3MP entrypoint expects it there)
+  - In **players** and **world** archives: at root (copied from mods archive for reference)
 - `current.txt` — contains `<sha256> <filename>` of the corresponding mods archive
 
 Both files are for reference/validation only. Deploy scripts ignore them.

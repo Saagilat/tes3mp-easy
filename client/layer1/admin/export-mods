@@ -100,7 +100,7 @@ for f in "$plugins_dir"/*; do
     [ "$skip" -eq 1 ] && continue
     cp "$f" "$tmp_dir/plugins/"
 done
-    cp "$req_json" "$tmp_dir/requiredDataFiles.json"
+    cp "$req_json" "$tmp_dir/plugins/requiredDataFiles.json"
 
 # Stage: scripts
 mkdir -p "$tmp_dir/scripts"

@@ -118,10 +118,13 @@ _extract_required_json() {
     fi
 
     if ! tar xzf "$archive_path" -C "$stage_dir" \
-        requiredDataFiles.json 2>/dev/null; then
+        --wildcards '*/requiredDataFiles.json' 2>/dev/null; then
         echo "[package.sh] ERROR: requiredDataFiles.json not found in $archive_path" >&2
         exit 1
     fi
+
+    mv "$stage_dir/plugins/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
+    rmdir "$stage_dir/plugins" 2>/dev/null || true
     echo "[package.sh]   requiredDataFiles.json: from $(basename "$archive_path")"
 }
 
@@ -253,7 +256,7 @@ package_mods() {
         done
     fi
 
-    _generate_required_json "$PLUGINS_DIR" "${ORIGINAL_FILES[@]}" > "$stage_dir/requiredDataFiles.json"
+    _generate_required_json "$PLUGINS_DIR" "${ORIGINAL_FILES[@]}" > "$plugins_stage/requiredDataFiles.json"
 
     local script_copied=0
     if [ -d "$SERVER_SCRIPTS_DIR" ]; then
@@ -403,7 +406,7 @@ package_init_mods() {
     mkdir -p "$stage_dir/plugins" "$stage_dir/scripts"
 
     local orig_files=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
-    _generate_required_json "/dev/null" "${orig_files[@]}" > "$stage_dir/requiredDataFiles.json"
+    _generate_required_json "/dev/null" "${orig_files[@]}" > "$stage_dir/plugins/requiredDataFiles.json"
 
     _package_stage "$output_file" "$stage_dir"
 
