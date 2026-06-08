@@ -6,12 +6,16 @@
 # then launches TES3MP.
 #
 
-shopt -s nullglob
+shopt -s nullglob nocaseglob
 
 # Create symlinks for plugins from /tes3mp/data-plugins/ to /tes3mp/server/data/
 if [ -d /tes3mp/data-plugins ]; then
-  ln -sf /tes3mp/data-plugins/*.esp /tes3mp/server/data/ 2>/dev/null
-  ln -sf /tes3mp/data-plugins/*.omwaddon /tes3mp/server/data/ 2>/dev/null
+  for ext in esp esm omwaddon omwscripts omwgame; do
+    for f in /tes3mp/data-plugins/*."$ext"; do
+      ln -sf "$f" /tes3mp/server/data/
+    done
+  done
+  # requiredDataFiles.json is not a plugin — link it separately
   if [ -f /tes3mp/data-plugins/requiredDataFiles.json ]; then
     ln -sf /tes3mp/data-plugins/requiredDataFiles.json /tes3mp/server/data/requiredDataFiles.json
   fi

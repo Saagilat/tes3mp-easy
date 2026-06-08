@@ -138,13 +138,38 @@ mv "${OPENMW_CFG}.tmp" "$OPENMW_CFG"
 ok "All content entries removed (will be re-added from server order)."
 
 # ────────────────────────────────────────────────────
-# 6. Copy plugins to Data Files
+# 6. Clean and copy plugins to Data Files
 # ────────────────────────────────────────────────────
 echo ""
-info "Copying plugin files..."
+info "Cleaning Data Files from all plugins..."
 
 DATA_FILES_DIR="$MORROWIND_PATH/Data Files"
 mkdir -p "$DATA_FILES_DIR"
+
+# Keep only base game ESM files, remove everything else
+REMOVED_COUNT=0
+for plugin in "$DATA_FILES_DIR"/*.esp "$DATA_FILES_DIR"/*.ESP \
+              "$DATA_FILES_DIR"/*.esm "$DATA_FILES_DIR"/*.ESM \
+              "$DATA_FILES_DIR"/*.omwaddon "$DATA_FILES_DIR"/*.OMWADDON; do
+    [[ -f "$plugin" ]] || continue
+    basename="$(basename "$plugin")"
+    # Keep base game files
+    if [[ "${basename,,}" = "morrowind.esm" || \
+          "${basename,,}" = "tribunal.esm" || \
+          "${basename,,}" = "bloodmoon.esm" ]]; then
+        continue
+    fi
+    rm -f "$plugin"
+    warn "Removed plugin: $basename"
+    ((REMOVED_COUNT++)) || true
+done
+
+if [[ "$REMOVED_COUNT" -gt 0 ]]; then
+    info "Removed $REMOVED_COUNT plugin(s) from Data Files"
+fi
+
+echo ""
+info "Copying server plugins to Data Files..."
 
 PLUGIN_COUNT=0
 for plugin in "$PLUGINS_SRC"/*.esp "$PLUGINS_SRC"/*.ESP \
@@ -177,7 +202,7 @@ if [[ -f "$REQ_JSON" ]]; then
         else
             warn "Skipping missing plugin: $filename"
         fi
-    done < <(jq -r '.requiredDataFiles | keys[]' "$REQ_JSON" | sort -f)
+    done < <(jq -r '.requiredDataFiles | to_entries[] | .key' "$REQ_JSON")
 else
     for plugin in "$PLUGINS_SRC"/*.esp "$PLUGINS_SRC"/*.ESP \
                   "$PLUGINS_SRC"/*.esm "$PLUGINS_SRC"/*.ESM \
