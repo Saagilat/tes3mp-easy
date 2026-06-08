@@ -88,6 +88,8 @@ mkdir -p "$tmp_dir/plugins"
 for f in "$plugins_dir"/*; do
     [ -f "$f" ] || continue
     basename=$(basename "$f")
+    # Skip requiredDataFiles.json — placed separately
+    [ "$basename" = "requiredDataFiles.json" ] && continue
     # Skip original Morrowind files
     skip=0
     for orig in "${ORIGINAL_FILES[@]}"; do
