@@ -20,6 +20,7 @@
 #   CACHE_DIR          — cache directory                    (default: /tmp/export_cache)
 #   PORT               — listen port                        (default: 5000)
 #   BACKUPS_DIR        — path to backups dir                (default: /mnt/backups)
+#   BACKUP_INTERVAL    — seconds between backups            (default: 300)
 #
 # Dependencies: bash, tar, socat, jq
 
@@ -34,6 +35,7 @@ WORLD_CUSTOM_DIR="${WORLD_CUSTOM_DIR:-/mnt/world/custom}"
 CACHE_DIR="${CACHE_DIR:-/tmp/export_cache}"
 PORT="${PORT:-5000}"
 BACKUPS_DIR="${BACKUPS_DIR:-/mnt/backups}"
+BACKUP_INTERVAL="${BACKUP_INTERVAL:-300}"
 
 # Set up variables for package.sh
 export PLAYER_DIR="$CHARACTERS_DIR"
@@ -296,7 +298,7 @@ _tes3mp_running() {
     # Disable errexit for the background loop to prevent crashes
     set +e
     while true; do
-        sleep 300
+        sleep $BACKUP_INTERVAL
         if _tes3mp_running; then
             run_export "state" >/dev/null 2>&1 || true
             cleanup_old_backups "state" 30
