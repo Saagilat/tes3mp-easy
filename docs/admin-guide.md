@@ -42,11 +42,14 @@ See the [Player Guide](./player-guide.md) for connecting to the server.
 
 ## 2. Installing Mods
 
-1. Prepare your mods locally in `EXPORT_DIR`:
+1. Prepare your mods locally in `EXPORT_DIR/<server_id>`:
    ```
-   $EXPORT_DIR/mods/plugins/    ← .esp/.esm/.omwaddon files
-   $EXPORT_DIR/mods/scripts/    ← Lua scripts
+   $EXPORT_DIR/<server_id>/mods/plugins/    ← .esp/.esm/.omwaddon files
+   $EXPORT_DIR/<server_id>/mods/scripts/    ← Lua scripts
    ```
+
+   The `server_id` is derived from `SSH_HOST` (e.g., `my-server` becomes `my-server`).
+   These directories are created automatically when you open the admin menu.
 
 2. From the admin menu, select **Generate requiredDataFiles** — creates `requiredDataFiles.json` that the server uses to verify all players have the same mods installed
 

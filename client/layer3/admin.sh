@@ -119,6 +119,19 @@ menu_download_world() { bash "$LAYER2_ADMIN/interactive-download-world"; }
 show_admin_menu() {
     load_config 2>/dev/null || true
 
+    # Ensure server-specific export directories exist
+    if [[ -n "${SSH_HOST:-}" && -n "${EXPORT_DIR:-}" ]]; then
+        local server_id
+        server_id=$(_get_server_id "$SSH_HOST")
+        if [[ -n "$server_id" ]]; then
+            local resolved="${EXPORT_DIR/#\~/$HOME}"
+            mkdir -p "$resolved/$server_id/mods/plugins" \
+                     "$resolved/$server_id/mods/scripts" \
+                     "$resolved/$server_id/players" \
+                     "$resolved/$server_id/world"
+        fi
+    fi
+
     local restart_flag
     restart_flag=$(check_restart_flag)
     local server_status

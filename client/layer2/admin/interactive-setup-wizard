@@ -69,15 +69,6 @@ if [[ -n "$EXPORT_DIR_VAL" ]]; then
     if [[ ! -d "$resolved" ]]; then
         mkdir -p "$resolved" 2>/dev/null && ok "Created export directory: ${resolved}" || warn "Could not create: ${resolved}"
     fi
-    # Create mod subdirectories for local export structure
-    mod_plugins="$resolved/mods/plugins"
-    mod_scripts="$resolved/mods/scripts"
-    if [[ -d "$mod_plugins" ]] && [[ -d "$mod_scripts" ]]; then
-        ok "Mod directories already exist."
-    else
-        mkdir -p "$mod_plugins" "$mod_scripts"
-        ok "Created mod directories (plugins + scripts)."
-    fi
 fi
 load_config 2>/dev/null || true; NUM=$((NUM + 1))
 

@@ -95,9 +95,9 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/admin/<command> [args]`
 | `restart-server` | Restart all Docker services |
 | `server-status` | Show running state |
 | `server-logs` | Tail TES3MP logs |
-| `export-mods` | Create `mods.tar.gz` from local `EXPORT_DIR/mods/` and upload via SCP |
-| `export-players` | Create `players.tar.gz` from local `EXPORT_DIR/players/` and upload via SCP |
-| `export-world` | Create `world.tar.gz` from local `EXPORT_DIR/world/` and upload via SCP |
+| `export-mods` | Create `mods.tar.gz` from local `EXPORT_DIR/<server_id>/mods/` and upload via SCP |
+| `export-players` | Create `players.tar.gz` from local `EXPORT_DIR/<server_id>/players/` and upload via SCP |
+| `export-world` | Create `world.tar.gz` from local `EXPORT_DIR/<server_id>/world/` and upload via SCP |
 | `generate-data` | Generate `requiredDataFiles.json` for mod verification |
 | `deploy-mods <archive>` | Extract a specific archive into `mods/` (SSH) |
 | `deploy-players <archive>` | Extract a specific archive into `players/` (SSH) |
