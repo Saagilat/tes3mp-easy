@@ -116,11 +116,28 @@ If any step fails, `set -euo pipefail` stops the sequence. The admin recovers ma
 The `export` container runs `export_server.sh` — a lightweight HTTP server using `socat`. It:
 
 - **Serves backup files** via HTTP on port 5000 (exposed via nginx on port 8085)
-- **Creates state backups every 5 minutes** in `backups/state/export-<ts>-state.tar.gz`
+- **Creates state backups** every `BACKUP_INTERVAL` seconds in `backups/state/export-<ts>-state.tar.gz`
 - **Only creates backups while TES3MP is running** — checks via Docker socket (`_tes3mp_running()`)
 - **Cleans up backups older than 30 days**
 - **Supports `?latest` query parameter** to force an immediate export
 - **Uses Docker socket** (`/var/run/docker.sock`) to check TES3MP container status
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BACKUP_INTERVAL` | 300 | Seconds between automatic backups |
+| `PORT` | 5000 | Internal HTTP port |
+| `BACKUPS_DIR` | `/mnt/backups` | Backup storage directory |
+| `CACHE_DIR` | `/tmp/export_cache` | Temporary cache directory |
+
+Set via `docker-compose.yml`:
+```yaml
+services:
+  export:
+    environment:
+      - BACKUP_INTERVAL=300   # 5 minutes
+```
 
 ### Health watch (entrypoint.sh)
 
