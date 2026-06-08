@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y \
     libluajit-5.1-2 \
     libcurl4 \
     libssl1.1 \
+    curl \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
