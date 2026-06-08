@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/lib/common"
 source "$SCRIPT_DIR/lib/config"
 
 load_config 2>/dev/null || {
-    err "Config not found at ~/.tes3mp-easy-player.ini"
+    err "Config not found."
     err "Run 'edit-config' to set it up."
     exit 1
 }
@@ -22,9 +22,12 @@ SERVER_URL=$(_get_server_url) || {
     exit 1
 }
 
+SERVER_ID=$(_get_server_id "$SERVER_URL")
+[[ -z "$SERVER_ID" ]] && SERVER_ID="default"
+
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: download-backup-players <filename> [destination]"; exit 1; }
-dest="${2:-$BACKUP_DIR/players/$filename}"
+dest="${2:-$BACKUP_DIR/$SERVER_ID/players/$filename}"
 
 mkdir -p "$(dirname "$dest")"
 

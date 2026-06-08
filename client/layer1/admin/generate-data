@@ -9,8 +9,12 @@ source "$SCRIPT_DIR/lib/config"
 
 load_config 2>/dev/null || { err "Config not found"; exit 1; }
 [[ -z "${EXPORT_DIR:-}" ]] && { err "EXPORT_DIR is not set"; exit 1; }
+[[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
 
-plugin_dir="${EXPORT_DIR}/mods/plugins"
+SERVER_ID=$(_get_server_id "$SSH_HOST")
+[[ -z "$SERVER_ID" ]] && { err "Could not determine server ID from SSH_HOST"; exit 1; }
+
+plugin_dir="${EXPORT_DIR}/${SERVER_ID}/mods/plugins"
 [[ ! -d "$plugin_dir" ]] && { err "Directory not found: $plugin_dir"; exit 1; }
 
 check_deps rhash

@@ -54,7 +54,7 @@ SERVER_URL="${SERVER_URL:-$(_get_server_url)}" || {
 info "Server: $SERVER_URL"
 
 # Strip protocol and port to get a clean server id (hostname)
-SERVER_ID=$(echo "$SERVER_URL" | sed -E 's|^https?://||; s|:?[0-9]*/?$||; s|[/:]+|_|g')
+SERVER_ID=$(_get_server_id "$SERVER_URL")
 [[ -z "$SERVER_ID" ]] && SERVER_ID="default"
 
 info "Server ID: $SERVER_ID"

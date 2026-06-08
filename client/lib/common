@@ -152,8 +152,22 @@ _get_server_url() {
 }
 
 # ────────────────────────────────────────────────────────────
+# _get_server_id — extract server ID from a URL or hostname
+# Strips protocol, port, and special chars to get a clean folder name.
+# Usage: id=$(_get_server_id "$URL")   # from http://host:8085 → host
+#        id=$(_get_server_id "$HOST")  # from user@host → host
+# Returns: clean server id string (e.g. "myserver.com")
+# ────────────────────────────────────────────────────────────
+_get_server_id() {
+    local input="${1:-}"
+    [[ -z "$input" ]] && { echo "default"; return 0; }
+    echo "$input" | sed -E 's|^https?://||; s|^[^@]+@||; s|:?[0-9]*/?$||; s|[/:]+|_|g'
+}
+
+# ────────────────────────────────────────────────────────────
 # Utility: is_os — check operating system
 # Usage:  is_os "linux"  && echo "Linux detected"
+REPLACE
 #         is_os "windows" && echo "Git Bash / MSYS2 / Cygwin"
 # ────────────────────────────────────────────────────────────
 is_os() {

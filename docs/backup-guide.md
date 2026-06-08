@@ -19,13 +19,18 @@ nginx service on the VPS makes backups available via HTTP
 
 ### Exporting Data
 
-1. Place your mods, players, or world data in `EXPORT_DIR`:
+Exports are organized per server. Each server identified by its SSH host gets its own subdirectory.
+
+1. Place your mods, players, or world data in `EXPORT_DIR/<server_id>/`:
    ```
-   $EXPORT_DIR/mods/plugins/       ← .esp/.esm/.omwaddon
-   $EXPORT_DIR/mods/scripts/       ← Lua scripts
-   $EXPORT_DIR/players/player/     ← player JSON files
-   $EXPORT_DIR/world/{cell,world,map,recordstore,custom}/
+   $EXPORT_DIR/<server_id>/mods/plugins/       ← .esp/.esm/.omwaddon
+   $EXPORT_DIR/<server_id>/mods/scripts/       ← Lua scripts
+   $EXPORT_DIR/<server_id>/players/player/     ← player JSON files
+   $EXPORT_DIR/<server_id>/world/{cell,world,map,recordstore,custom}/
    ```
+
+   The `server_id` is derived from `SSH_HOST` in your config (e.g., `myserver.com` or `192.168.1.1`).
+   To manage multiple servers, just change `SSH_HOST` in the config — the export scripts will automatically use the correct subdirectory.
 
 2. From the admin menu, select **Export Mods**, **Export Players**, or **Export World**
 
@@ -46,7 +51,10 @@ Select **Download Mod / Player / World Backup** — lists archives via HTTP (por
 ## Player Operations
 
 - **Install Mods** — downloads and unpacks the latest mods archive automatically
-- **Download Mod / Player / World Backup** — downloads a specific archive to `~/Downloads/`
+- **Download Mod / Player / World Backup** — downloads a specific archive to `BACKUP_DIR/<server_id>/`
+
+  The `server_id` is derived from the server address in `tes3mp-client-default.cfg`.
+  Each server's backups are stored in its own subdirectory.
 
 ## Restore Procedure
 

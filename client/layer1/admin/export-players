@@ -17,8 +17,11 @@ load_config 2>/dev/null || { err "Config not found"; exit 1; }
 [[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
 [[ -z "${EXPORT_DIR:-}" || ! -d "${EXPORT_DIR:-}" ]] && { err "EXPORT_DIR is not set or does not exist"; exit 1; }
 
-player_dir="$EXPORT_DIR/players"
-[[ ! -d "$player_dir" ]] && { err "players/ not found in $EXPORT_DIR"; exit 1; }
+SERVER_ID=$(_get_server_id "$SSH_HOST")
+[[ -z "$SERVER_ID" ]] && { err "Could not determine server ID from SSH_HOST"; exit 1; }
+
+player_dir="$EXPORT_DIR/$SERVER_ID/players"
+[[ ! -d "$player_dir" ]] && { err "players/ not found in $EXPORT_DIR/$SERVER_ID"; exit 1; }
 
 check_deps tar ssh scp
 

@@ -12,9 +12,12 @@ load_config 2>/dev/null || { err "Config not found"; exit 1; }
 [[ -z "${SSH_HOST:-}" ]] && { err "SSH_HOST is not set"; exit 1; }
 [[ -z "${BACKUP_DIR:-}" ]] && { err "BACKUP_DIR is not set in config"; exit 1; }
 
+SERVER_ID=$(_get_server_id "$SSH_HOST")
+[[ -z "$SERVER_ID" ]] && SERVER_ID="default"
+
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: admin-backup-mods <filename> [destination]"; exit 1; }
-dest="${2:-$BACKUP_DIR/mods/$filename}"
+dest="${2:-$BACKUP_DIR/$SERVER_ID/mods/$filename}"
 
 mkdir -p "$(dirname "$dest")"
 scp "$SSH_HOST:/tes3mp-easy/backups/mods/$filename" "$dest" || {
