@@ -2,6 +2,7 @@
 #
 # interactive-download-state — Download state backup from VPS
 # Layer 2: checks SSH, parses JSON from show-backups, prompts, calls download
+# Empty input or option 0 creates a fresh backup.
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -31,10 +32,9 @@ if [[ $rc -ne 0 ]]; then
     err "Failed to connect to server. Check your connection and try again."
     exit 1
 fi
-if [[ -z "$json" ]]; then
-    warn "No $LABEL backups available on server."
-    exit 1
-fi
+
+echo "  0) Create fresh backup and download"
+echo ""
 
 names=()
 while IFS=$'\t' read -r name sha256; do
@@ -42,25 +42,31 @@ while IFS=$'\t' read -r name sha256; do
     names+=("$name")
 done < <(echo "$json" | jq -r '.files[] | [.name, .sha256] | @tsv' 2>/dev/null)
 
-if [[ ${#names[@]} -eq 0 ]]; then
-    warn "No $LABEL backups available on server."
-    exit 1
+if [[ ${#names[@]} -gt 0 ]]; then
+    i=1
+    for name in "${names[@]}"; do
+        echo "  $i) $name"
+        ((i++)) || true
+    done
+else
+    warn "No existing $LABEL backups, but you can create a fresh one (option 0)."
 fi
-
-i=1
-for name in "${names[@]}"; do
-    echo "  $i) $name"
-    ((i++)) || true
-done
 echo ""
 
 read -r -p "  Select number (empty = cancel): " choice
 [[ -z "$choice" ]] && { info "Cancelled."; exit 0; }
 
-selected="${names[$((choice - 1))]}"
-[[ -z "$selected" ]] && { err "Invalid selection."; exit 1; }
+if [[ "$choice" == "0" ]]; then
+    echo ""
+    info "Creating and downloading fresh backup..."
+    bash "$PROJECT_DIR/layer1/admin/download-backup-${TYPE}" || { err "Failed."; exit 1; }
+else
+    selected="${names[$((choice - 1))]}"
+    [[ -z "$selected" ]] && { err "Invalid selection."; exit 1; }
 
-echo ""
-info "Downloading $selected..."
-bash "$PROJECT_DIR/layer1/admin/download-backup-${TYPE}" "$selected" || { err "Download failed."; exit 1; }
+    echo ""
+    info "Downloading $selected..."
+    bash "$PROJECT_DIR/layer1/admin/download-backup-${TYPE}" "$selected" || { err "Download failed."; exit 1; }
+fi
+
 ok "Done."
