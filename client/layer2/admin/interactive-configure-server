@@ -1,7 +1,8 @@
 #!/bin/bash
 #
 # interactive-configure-server — Interactive config.lua editor via SSH
-# Layer 2: loads config via layer1/read-config-lua, prompts, saves via layer1/write-config-lua
+# Layer 2: prompts user with hardcoded defaults, saves via layer1/write-config-lua
+# All default values match TES3MP 0.8.1 stock config.lua
 #
 
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -17,15 +18,10 @@ if [[ -z "${SSH_HOST:-}" ]]; then
 fi
 
 echo ""
-info "Loading current config from server..."
 
+# Default values are hardcoded below (matching TES3MP 0.8.1 stock config.lua)
+# so the wizard always shows correct defaults regardless of server state.
 declare -g -A _LUA_CONF=()
-while IFS='=' read -r key val; do
-    key="${key%% }"; key="${key## }"
-    [[ -z "$key" || "$key" == '--'* ]] && continue
-    val="${val# \"}"; val="${val%\"}"; val="${val# }"; val="${val% }"
-    _LUA_CONF["$key"]="$val"
-done < <(bash "$LAYER1/read-config-lua" 2>/dev/null || true)
 
 declare -g -A _LUA_CHANGED=()
 declare -g -A _LUA_TYPE=()
