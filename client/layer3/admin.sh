@@ -52,6 +52,7 @@ dispatch_admin() {
         run-openmw-cs)          bash "$LAYER1_SHARED/run-openmw-cs" ;;
         # layer2 (interactive)
         setup-wizard)           bash "$LAYER2_ADMIN/interactive-setup-wizard" ;;
+        set-staff-rank)         bash "$LAYER2_ADMIN/interactive-set-staff-rank" ;;
         deploy-mods)            bash "$LAYER2_ADMIN/interactive-deploy-mods" ;;
         deploy-players)         bash "$LAYER2_ADMIN/interactive-deploy-players" ;;
         deploy-world)           bash "$LAYER2_ADMIN/interactive-deploy-world" ;;
@@ -99,6 +100,8 @@ menu_edit_server_cfg()   { bash "$LAYER1_ADMIN/edit-server-cfg"; }
 menu_edit_lua()          { bash "$LAYER1_ADMIN/edit-lua"; }
 menu_edit_banlist()      { bash "$LAYER1_ADMIN/edit-banlist"; }
 menu_run_openmw_cs() { bash "$LAYER1_SHARED/run-openmw-cs"; }
+menu_set_staff_rank() { bash "$LAYER2_ADMIN/interactive-set-staff-rank"; }
+
 menu_edit_config() {
     bash "$LAYER1_ADMIN/edit-config"
     exec bash "$0" menu
@@ -168,6 +171,9 @@ show_admin_menu() {
         "${MENU_ADMIN_EDIT_SERVER_CFG}|fn|menu_edit_server_cfg"
         "${MENU_ADMIN_EDIT_LUA}|fn|menu_edit_lua"
         "${MENU_ADMIN_EDIT_BANLIST}|fn|menu_edit_banlist"
+
+        "${MENU_ADMIN_SEP_STAFF}|sep|"
+        "${MENU_ADMIN_SET_STAFF_RANK}|fn|menu_set_staff_rank"
 
         "${MENU_ADMIN_SEP_SYSTEM}|sep|"
         "${MENU_ADMIN_EDIT_CONFIG}|fn|menu_edit_config"

@@ -92,6 +92,9 @@ download "client/layer1/admin/show-backups-mods" "$UPDATE_DIR/layer1/admin/show-
 download "client/layer1/admin/show-backups-players" "$UPDATE_DIR/layer1/admin/show-backups-players"
 download "client/layer1/admin/show-backups-world" "$UPDATE_DIR/layer1/admin/show-backups-world"
 
+echo "  ── staff ──"
+download "client/layer1/admin/set-staff-rank"    "$UPDATE_DIR/layer1/admin/set-staff-rank"
+
 echo "  ── config edit ──"
 download "client/layer1/admin/edit-server-cfg"   "$UPDATE_DIR/layer1/admin/edit-server-cfg"
 download "client/layer1/admin/edit-lua"          "$UPDATE_DIR/layer1/admin/edit-lua"
@@ -134,6 +137,7 @@ download "client/layer2/admin/interactive-download-players"    "$UPDATE_DIR/laye
 download "client/layer2/admin/interactive-download-world"      "$UPDATE_DIR/layer2/admin/interactive-download-world"
 download "client/layer2/admin/interactive-setup-wizard"        "$UPDATE_DIR/layer2/admin/interactive-setup-wizard"
 download "client/layer2/admin/interactive-configure-server"    "$UPDATE_DIR/layer2/admin/interactive-configure-server"
+download "client/layer2/admin/interactive-set-staff-rank"      "$UPDATE_DIR/layer2/admin/interactive-set-staff-rank"
 
 echo "  ── layer2 player (interactive wrappers) ──"
 download "client/layer2/player/interactive-install-fonts"    "$UPDATE_DIR/layer2/player/interactive-install-fonts"
@@ -151,6 +155,7 @@ download "client/layer3/player.sh"        "$UPDATE_DIR/layer3/player.sh"
 
 echo "  ── extras ──"
 download "server/scripts/package.sh"    "$UPDATE_DIR/server/scripts/package.sh"
+download "server/scripts/set-staff-rank.sh"    "$UPDATE_DIR/server/scripts/set-staff-rank.sh"
 
 echo "  ── localization ──"
 download "client/lib/localization/russian/install.sh"  "$UPDATE_DIR/lib/localization/russian/install.sh"
