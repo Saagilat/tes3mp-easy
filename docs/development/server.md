@@ -51,9 +51,11 @@ Server-side scripts run on the VPS at `/tes3mp-easy/scripts/`. They are called f
 2. **Machine-readable output (or none)** — no colors, no `[OK]`/`[WARN]`, no formatting. Use exit codes.
 3. **Exit code** — 0 on success, non-zero on failure.
 4. **Minimum logic** — don't do what the OS does for you (e.g. checking disk space — `tar` will fail on its own).
-5. **Leave the system consistent** — use `tmp` folder + atomic move for destructive operations (extract → tmp → mv). Use `set -euo pipefail`.
+5. **Leave the system consistent** — use `set -euo pipefail`. Clean directories before extraction. No fallback branches — fail fast on unexpected input.
 6. **No automatic rollback** — if the operation fails, the admin recovers manually using the available commands. Auto-rollback introduces its own failure modes and complexity.
 7. **Every deployed mod already has a backup** — `backups/mods/current.txt` + the archive itself.
+8. **Archive format** — all archives are created by `package.sh` `_package_stage()` with `-- *` (no `./` prefix). Deploy scripts extract specific subdirectories directly (e.g. `plugins/ scripts/`), no `--wildcards`, no fallback.
+9. **Fail fast** — no `||` fallback branches in deploy scripts. If extraction fails, `set -e` stops immediately with a clear error. The admin recovers manually from backups.
 
 ## Scripts Reference
 
@@ -108,7 +110,7 @@ deploy_mods.sh <archive>:
   4. Backup current players → backups/players/backup-<ts>-players.tar.gz
   5. Check free space for extraction
   6. Stop TES3MP
-  7. Extract archive → tmp → mv to mods/plugins/ and mods/scripts/
+  7. Extract archive → plugins/ and scripts/ directly into mods/
   8. Generate customScripts.lua
   9. Write current.txt (sha256 filename)
   10. Start TES3MP

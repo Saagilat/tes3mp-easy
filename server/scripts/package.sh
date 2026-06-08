@@ -11,7 +11,7 @@
 #                       WORLD_RECORDSTORE_DIR, WORLD_CUSTOM_DIR, BACKUPS_DIR (same reason)
 #
 # Functions provided:
-#   package_mods(output_file)                — plugins + scripts + requiredDataFiles.json
+#   package_mods(output_file)                — plugins/ + scripts/ + requiredDataFiles.json
 #   package_players(output_file)             — players/ + requiredDataFiles.json + current.txt
 #   package_world(output_file)               — cell/ + world/ + map/ + recordstore/ + custom/ + requiredDataFiles.json + current.txt
 #   package_init_mods(output_file)            — empty plugins/ + empty scripts/ + requiredDataFiles.json
@@ -77,7 +77,7 @@ _package_stage() {
     parent_dir="$(dirname "$output_file")"
     mkdir -p "$parent_dir"
 
-    tar czf "$output_file" -C "$stage_dir" .
+    (cd "$stage_dir" && tar czf "$output_file" -- * )
     echo "[package.sh] Created: $output_file"
 }
 
@@ -117,15 +117,11 @@ _extract_required_json() {
         exit 1
     fi
 
-    # Use --wildcards because archive paths may be prefixed with ./
     if ! tar xzf "$archive_path" -C "$stage_dir" \
-        --wildcards '*/requiredDataFiles.json' 2>/dev/null; then
+        requiredDataFiles.json 2>/dev/null; then
         echo "[package.sh] ERROR: requiredDataFiles.json not found in $archive_path" >&2
         exit 1
     fi
-
-    mv "$stage_dir/plugins/requiredDataFiles.json" "$stage_dir/requiredDataFiles.json"
-    rmdir "$stage_dir/plugins" 2>/dev/null || true
     echo "[package.sh]   requiredDataFiles.json: from $(basename "$archive_path")"
 }
 
@@ -207,8 +203,8 @@ _generate_required_json() {
 #     output.tar.gz
 #     ├── plugins/
 #     │   ├── mod1.esp
-#     │   ├── mod2.esm
-#     │   └── requiredDataFiles.json
+#     │   └── mod2.esm
+#     ├── requiredDataFiles.json
 #     └── scripts/
 #         └── test.lua
 # ────────────────────────────────────────────────────────────────
@@ -257,7 +253,7 @@ package_mods() {
         done
     fi
 
-    _generate_required_json "$PLUGINS_DIR" "${ORIGINAL_FILES[@]}" > "$plugins_stage/requiredDataFiles.json"
+    _generate_required_json "$PLUGINS_DIR" "${ORIGINAL_FILES[@]}" > "$stage_dir/requiredDataFiles.json"
 
     local script_copied=0
     if [ -d "$SERVER_SCRIPTS_DIR" ]; then
@@ -407,7 +403,7 @@ package_init_mods() {
     mkdir -p "$stage_dir/plugins" "$stage_dir/scripts"
 
     local orig_files=("Morrowind.esm" "Tribunal.esm" "Bloodmoon.esm")
-    _generate_required_json "/dev/null" "${orig_files[@]}" > "$stage_dir/plugins/requiredDataFiles.json"
+    _generate_required_json "/dev/null" "${orig_files[@]}" > "$stage_dir/requiredDataFiles.json"
 
     _package_stage "$output_file" "$stage_dir"
 

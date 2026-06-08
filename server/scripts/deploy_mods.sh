@@ -245,16 +245,7 @@ if [ -d "$MODS_SCRIPTS_DIR" ]; then
 fi
 mkdir -p "$MODS_PLUGINS_DIR" "$MODS_SCRIPTS_DIR"
 
-TMP_EXTRACT=$(mktemp -d)
-tar xzf "$ARCHIVE_PATH" -C "$TMP_EXTRACT"
-
-if [ -d "$TMP_EXTRACT/plugins" ]; then
-    cp -r "$TMP_EXTRACT/plugins"/. "$MODS_PLUGINS_DIR/"
-fi
-if [ -d "$TMP_EXTRACT/scripts" ]; then
-    cp -r "$TMP_EXTRACT/scripts"/. "$MODS_SCRIPTS_DIR/"
-fi
-rm -rf "$TMP_EXTRACT"
+tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR/mods" plugins/ scripts/
 ok "Mods extracted from archive"
 
 # Step 5: Generate customScripts.lua

@@ -169,9 +169,7 @@ if [ -d "$PLAYER_DIR" ]; then
 fi
 mkdir -p "$PLAYER_DIR"
 
-    # Extract only players/ subdirectory (skip metadata: requiredDataFiles.json, current.txt)
-    tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR" \
-        --wildcards 'players/' 'players/*'
+    tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR" players/
 
 ok "Players extracted from archive"
 

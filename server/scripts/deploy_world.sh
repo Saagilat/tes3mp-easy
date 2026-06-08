@@ -187,19 +187,8 @@ echo ""
 echo "[4/4] Cleaning world directories and extracting..."
 clean_world_dirs
 
-# Extract only world subdirectories (cell/, world/, map/, recordstore/, custom/)
-# Skip requiredDataFiles.json and current.txt (metadata)
 tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR/world" \
-    --wildcards 'cell/' 'cell/*' \
-    'world/' 'world/*' \
-    'map/' 'map/*' \
-    'recordstore/' 'recordstore/*' \
-    'custom/' 'custom/*' \
-    2>/dev/null || {
-        # If --wildcards not supported, extract and then remove metadata
-        tar xzf "$ARCHIVE_PATH" -C "$BASE_DIR/world"
-        rm -f "$BASE_DIR/world/requiredDataFiles.json" "$BASE_DIR/world/current.txt"
-    }
+    cell/ world/ map/ recordstore/ custom/
 
 ok "World extracted from archive"
 
