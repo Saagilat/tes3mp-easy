@@ -98,10 +98,15 @@ else
 fi
 
 # ────────────────────────────────────────────────────
-# 3. Create prefix
+# 3. Create prefix and server directories
 # ────────────────────────────────────────────────────
 PREFIX_DIR="$TES3MP_DIR/prefix"
 mkdir -p "$PREFIX_DIR"
+
+# Create servers directory for isolated server mod folders
+SERVERS_DIR="$TES3MP_DIR/servers"
+mkdir -p "$SERVERS_DIR"
+info "Servers directory created: $SERVERS_DIR"
 
 # ────────────────────────────────────────────────────
 # 4. Create Data Files symlink for Proton/Wine

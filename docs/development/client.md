@@ -147,7 +147,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/player/<command> [args]`
 | `run-client` | Launch TES3MP via Proton |
 | `edit-client-cfg` | Edit `tes3mp-client-default.cfg` |
 | `edit-client-cfg-record <key> <value>` | Set a key=value in `tes3mp-client-default.cfg` (non-interactive) |
-| `install-mods` | Download and unpack latest mods archive |
+| `install-mods` | Download mods archive, extract to `TES3MP_DIR/servers/<address>/data/Data Files/`, generate per-server `openmw.cfg` |
 | `install-localization <locale>` | Install a specific localization (non-interactive) |
 | `install-fonts <option>` | Install a specific font set (1-12) |
 | `configure-ui <ttf_res> <font_size> <scale>` | Set OpenMW UI settings |

@@ -40,6 +40,33 @@ That's it — the client is ready. See [Run the Game with Mods](#2-run-the-game-
 
 You can also launch **OpenMW-CS** (Construction Set) from the player menu for modding.
 
+### How mods are stored
+
+Server mods are now kept **separately** from your Morrowind installation. Each server gets its own folder:
+
+```
+TES3MP_DIR/
+├── servers/
+│   ├── myserver.com/
+│   │   ├── data/Data Files/     ← mod plugins for this server
+│   │   └── openmw.cfg           ← generated config (data= + content=)
+│   └── anotherserver.net/
+│       ├── data/Data Files/
+│       └── openmw.cfg
+├── prefix/                      ← Proton prefix (shared)
+└── tes3mp.exe                   ← client (shared)
+```
+
+When you connect to a new server, the **Install Mods and Play** script:
+1. Reads the server address (from `destinationAddress` in `tes3mp-client-default.cfg`)
+2. Creates a folder for that server inside `TES3MP_DIR/servers/<address>/`
+3. Downloads mods into `data/Data Files/` inside that folder
+4. Generates an `openmw.cfg` pointing to both your Morrowind installation and the server's mod folder
+5. Replaces the config in the Proton prefix
+
+Your original Morrowind directory remains **untouched** — no plugins are copied there. This makes switching between servers clean and fast: just change the server address and run **Install Mods and Play** again.
+
+---
 
 ## 3. Launch via External Launcher (Steam / Lutris)
 
@@ -67,7 +94,7 @@ Then simply run `tes3mp` from a terminal.
 
 The script will:
 1. Show current server address (press Enter to continue or **e** to change)
-2. Download the latest server mods
+2. Download the latest server mods into an isolated folder
 3. Launch TES3MP with the correct Proton and prefix
 
 ### Option C — Lutris
