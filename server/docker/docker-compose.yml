@@ -48,4 +48,5 @@ services:
       - ./world/recordstore:/mnt/world/recordstore:ro
       - ./world/custom:/mnt/world/custom:ro
       - ./backups:/mnt/backups:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped

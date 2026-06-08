@@ -281,13 +281,24 @@ handle_request() {
 }
 
 # ─────────────────────────────────────────────
+# Check if tes3mp container is running via Docker socket
+# ─────────────────────────────────────────────
+_tes3mp_running() {
+    # Use docker CLI with the mounted socket
+    docker ps --filter "name=tes3mp" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -q tes3mp
+}
+
+# ─────────────────────────────────────────────
 # Background: periodic state backups every 5 minutes
+# Only runs when tes3mp container is up.
 # ─────────────────────────────────────────────
 (
     while true; do
         sleep 300
-        run_export "state" >/dev/null 2>&1 || true
-        cleanup_old_backups "state" 30
+        if _tes3mp_running; then
+            run_export "state" >/dev/null 2>&1 || true
+            cleanup_old_backups "state" 30
+        fi
     done
 ) &
 
