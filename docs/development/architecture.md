@@ -164,11 +164,18 @@ Admins use SSH/SCP; players use HTTP. Layer 2 delegates without caring about the
 ## Docker Infrastructure
 
 - `docker-compose.yml` — defines `tes3mp`, `nginx`, `export` services
-- `tes3mp.dockerfile` — builds the game server image
-- `export.dockerfile` — builds the backup export service
+- `tes3mp.dockerfile` — builds the game server image (includes `curl` for health checks)
+- `export.dockerfile` — builds the backup export service (includes `docker` CLI for status checks)
 - `nginx.conf` — proxies `/list-backups/` and `/download/` to export container
-- `entrypoint.sh` — container startup script
-- `export_server.sh` — backup HTTP server with background export loop (every 5 min) and cleanup (>30 days)
+- `entrypoint.sh` — container startup script with export health watcher:
+  - Waits for export to become reachable before launching TES3MP
+  - Monitors export every 30 seconds via HTTP (`export:5000/list-backups/state`)
+  - Shuts down TES3MP if export becomes unreachable
+- `export_server.sh` — backup HTTP server with:
+  - Background export loop (every 5 min, only when TES3MP runs)
+  - Cleanup of backups older than 30 days
+  - `?latest` query parameter for on-demand export
+  - Docker socket (`/var/run/docker.sock`) mounted for container status checks
 
 ## Configuration System
 

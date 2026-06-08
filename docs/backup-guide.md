@@ -9,13 +9,21 @@ Export service on the VPS (Docker)
     ──► automatically creates state backups every 5 minutes
     ──► stores in /tes3mp-easy/backups/state/
     ──► old backups (>30 days) are automatically cleaned up
+    ──► backups only run when TES3MP is running
 ```
+
+## Safety: Export Health Watcher
+
+Inside the TES3MP container, a background process monitors the export service every 30 seconds.
+If export becomes unreachable (crashed, removed, not responding), TES3MP automatically shuts down.
+This prevents playing without backups.
 
 ## Automatic State Backups
 
 The export service (`export-server`) runs inside a Docker container and:
 
 - **Creates a combined state backup** (players + world) every 5 minutes
+- **Only runs when TES3MP is up** — checks via Docker socket
 - **Deletes backups older than 30 days** to save disk space
 - **Serves backups via HTTP** on port 8085
 
@@ -39,12 +47,18 @@ The export service (`export-server`) runs inside a Docker container and:
 ### Downloading Backups
 
 - **Download mod backup** — download a specific mods archive
-- **Download state backup** — download a specific state archive (players + world)
+- **Download state backup** — select an existing backup or create a fresh one
+  - Pick a file from the list, or select **0** to create a fresh backup and download it
+
+### Creating a Fresh State Backup On-Demand
+
+- From the admin menu: **Download state backup** → select option **0**
+- From CLI: `bash download-backup-state` (no filename = create fresh)
 
 ## Player Operations
 
 - **Install Mods** — downloads and unpacks the latest mods archive automatically
-- **Download mod / state backup** — downloads a specific archive
+- **Download state backup** — downloads a specific archive
 
 ## API Endpoints (HTTP :8085)
 

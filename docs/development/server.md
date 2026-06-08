@@ -117,10 +117,22 @@ The `export` container runs `export_server.sh` — a lightweight HTTP server usi
 
 - **Serves backup files** via HTTP on port 5000 (exposed via nginx on port 8085)
 - **Creates state backups every 5 minutes** in `backups/state/export-<ts>-state.tar.gz`
+- **Only creates backups while TES3MP is running** — checks via Docker socket (`_tes3mp_running()`)
 - **Cleans up backups older than 30 days**
 - **Supports `?latest` query parameter** to force an immediate export
+- **Uses Docker socket** (`/var/run/docker.sock`) to check TES3MP container status
 
-Endpoints:
+### Health watch (entrypoint.sh)
+
+Inside the `tes3mp` container, a background watcher monitors the export service:
+
+1. On startup, waits up to 40 seconds for export to become reachable
+2. Every 30 seconds, pings `http://export:5000/list-backups/state`
+3. If export is unreachable, writes to stderr and kills TES3MP with SIGTERM
+
+This prevents running the server without backup infrastructure.
+
+### Endpoints
 
 | Endpoint | Description |
 |----------|-------------|

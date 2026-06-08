@@ -102,6 +102,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer1/admin/<command> [args]`
 | `show-backups-mods` | List mod backup archives (JSON) |
 | `show-backups-state` | List state backup archives (JSON) |
 | `download-backup-mods <file>` | Download a specific mod backup via SCP |
+| `download-backup-state` | Create fresh state backup on server and download via SCP |
 | `download-backup-state <file>` | Download a specific state backup via SCP |
 | `edit-server-cfg` | Edit `tes3mp-server-default.cfg` on VPS (SCP + local editor) |
 | `edit-lua` | Edit `customScripts.lua` on VPS (SCP + local editor) |
@@ -122,7 +123,7 @@ Call via: `bash ~/.local/share/tes3mp-easy/layer2/admin/<command>`
 | `interactive-deploy-mods` | List archives via `show-backups`, prompt, deploy |
 | `interactive-deploy-state` | List archives via `show-backups`, prompt, deploy |
 | `interactive-download-mods` | List backups via `show-backups`, prompt, download |
-| `interactive-download-state` | List backups via `show-backups`, prompt, download |
+| `interactive-download-state` | List backups via `show-backups`, prompt, download. Option 0 creates a fresh backup. |
 | `interactive-setup-wizard` | Guided setup (SSH, export dir, install, configure, start) |
 | `interactive-configure-server` | Interactive config.lua editor (38 settings) |
 
