@@ -83,7 +83,7 @@ _package_stage() {
 
 # ────────────────────────────────────────────────────────────────
 # Internal: Extract requiredDataFiles.json from current mods archive
-#   Sources: BACKUPS_DIR/mods/current.txt → real archive → plugins/requiredDataFiles.json
+#   Sources: BACKUPS_DIR/mods/current.txt → real archive → requiredDataFiles.json
 #   Writes to: <stage_dir>/requiredDataFiles.json
 #   If BACKUPS_DIR is not set, skip (no metadata added).
 #   Fails with error if BACKUPS_DIR is set but archive or file is missing.

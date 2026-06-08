@@ -190,7 +190,7 @@ info "Updating openmw.cfg..."
 
 ADDED_COUNT=0
 
-REQ_JSON="$PLUGINS_SRC/requiredDataFiles.json"
+REQ_JSON="$EXTRACT_DIR/requiredDataFiles.json"
 if [[ -f "$REQ_JSON" ]]; then
     # Extract filenames from requiredDataFiles.json
     # JSON format (array): [ { "file.esp": [...], ... }, ... ]

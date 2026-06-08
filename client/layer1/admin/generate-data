@@ -20,7 +20,7 @@ echo "════════════════════════�
 echo "  Generating requiredDataFiles.json"
 echo "═══════════════════════════════════════════════"
 
-output_file="$plugin_dir/requiredDataFiles.json"
+output_file="$EXPORT_DIR/mods/requiredDataFiles.json"
 
 # Generate array format as expected by TES3MP server
 # e.g. [ { "Morrowind.esm": [] }, { "file.omwaddon": ["0xABCD1234"] } ]
