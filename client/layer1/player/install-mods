@@ -65,7 +65,8 @@ info "Server ID: $SERVER_ID"
 PREFIX_DIR="$TES3MP_DIR/prefix"
 OPENMW_CFG="$PREFIX_DIR/pfx/drive_c/users/steamuser/Documents/My Games/OpenMW/openmw.cfg"
 
-SERVER_DIR="$TES3MP_DIR/servers/$SERVER_ID"
+# Server data stored inside Wine prefix so OpenMW can access it as C:\servers\<id>\data\Data Files
+SERVER_DIR="$PREFIX_DIR/pfx/drive_c/servers/$SERVER_ID"
 SERVER_DATA_DIR="$SERVER_DIR/data/Data Files"
 SERVER_CFG="$SERVER_DIR/openmw.cfg"
 
@@ -199,8 +200,8 @@ cat >> "$SERVER_CFG_TMP" << CFGDATA
 # Original Morrowind data files
 data="C:\\${DATA_BASENAME}\\Data Files"
 
-# Server-specific mods
-data="C:\\TES3MP\\servers\\${SERVER_ID}\\data\\Data Files"
+# Server-specific mods (inside Wine prefix)
+data="C:\\servers\\${SERVER_ID}\\data\\Data Files"
 CFGDATA
 
 # Add base game content

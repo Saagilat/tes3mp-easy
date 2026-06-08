@@ -46,16 +46,20 @@ Server mods are now kept **separately** from your Morrowind installation. Each s
 
 ```
 TES3MP_DIR/
-├── servers/
-│   ├── myserver.com/
-│   │   ├── data/Data Files/     ← mod plugins for this server
-│   │   └── openmw.cfg           ← generated config (data= + content=)
-│   └── anotherserver.net/
-│       ├── data/Data Files/
-│       └── openmw.cfg
-├── prefix/                      ← Proton prefix (shared)
+├── prefix/pfx/drive_c/
+│   ├── Morrowind/Data Files/    ← symlink to original Morrowind (read-only)
+│   ├── servers/
+│   │   ├── myserver.com/
+│   │   │   ├── data/Data Files/ ← mod plugins for this server
+│   │   │   └── openmw.cfg       ← generated config (data= + content=)
+│   │   └── anotherserver.net/
+│   │       ├── data/Data Files/
+│   │       └── openmw.cfg
+│   └── users/steamuser/.../OpenMW/openmw.cfg  ← user config (symlink target)
+├── prefix/                      ← Proton prefix
 └── tes3mp.exe                   ← client (shared)
 ```
+Server data is stored **inside the Wine prefix** so OpenMW can access it directly via paths like `C:\servers\myserver.com\data\Data Files` — no additional symlinks needed.
 
 When you connect to a new server, the **Install Mods and Play** script:
 1. Reads the server address (from `destinationAddress` in `tes3mp-client-default.cfg`)
