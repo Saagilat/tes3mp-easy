@@ -55,7 +55,8 @@ _check_disk_space() {
     local needed_kb=$((needed / 1024))
 
     local free_kb
-    free_kb=$(df --output=avail "$backup_dir" 2>/dev/null | tail -1)
+    # busybox-compatible: df -k outputs "Filesystem 1K-blocks Used Available Use% Mounted on"
+    free_kb=$(df -k "$backup_dir" 2>/dev/null | tail -1 | awk '{print $4}')
 
     if [ -z "$free_kb" ] || [ "$free_kb" -lt "$needed_kb" ]; then
         echo "[package.sh] ERROR: Not enough disk space for backup." >&2
