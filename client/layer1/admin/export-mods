@@ -40,8 +40,7 @@ echo ""
 
 # Step 1: Check requiredDataFiles.json
 echo "[1/5] Checking requiredDataFiles.json..."
-mods_dir="$EXPORT_DIR/mods"
-req_json="$mods_dir/requiredDataFiles.json"
+req_json="$plugins_dir/requiredDataFiles.json"
 [[ ! -f "$req_json" ]] && { err "requiredDataFiles.json not found — run admin-generate-data first"; exit 1; }
 ok "Found requiredDataFiles.json"
 
