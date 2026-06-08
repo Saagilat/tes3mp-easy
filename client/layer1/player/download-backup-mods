@@ -23,7 +23,7 @@ SERVER_URL=$(_get_server_url) || {
 }
 
 SERVER_ID=$(_get_server_id "$SERVER_URL")
-[[ -z "$SERVER_ID" ]] && SERVER_ID="default"
+[[ -z "$SERVER_ID" ]] && { err "Could not determine server ID from SERVER_URL"; exit 1; }
 
 filename="${1:-}"
 [[ -z "$filename" ]] && { err "Usage: download-backup-mods <filename> [destination]"; exit 1; }
