@@ -139,15 +139,6 @@ services:
       - BACKUP_INTERVAL=300   # 5 minutes
 ```
 
-### Health watch (entrypoint.sh)
-
-Inside the `tes3mp` container, a background watcher monitors the export service:
-
-1. On startup, waits up to 40 seconds for export to become reachable
-2. Every 30 seconds, pings `http://export:5000/list-backups/state`
-3. If export is unreachable, writes to stderr and kills TES3MP with SIGTERM
-
-This prevents running the server without backup infrastructure.
 
 ### Endpoints
 
