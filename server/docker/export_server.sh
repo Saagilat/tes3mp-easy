@@ -290,27 +290,22 @@ _tes3mp_running() {
     docker ps --filter "name=tes3mp" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -q tes3mp
 }
 
-# ─────────────────────────────────────────────
-# Background: periodic state backups every 5 minutes
-# Only runs when tes3mp container is up.
-# ─────────────────────────────────────────────
-(
-    # Disable errexit for the background loop to prevent crashes
-    set +e
-    while true; do
-        sleep $BACKUP_INTERVAL
-        if _tes3mp_running; then
-            run_export "state" >/dev/null 2>&1 || true
-            cleanup_old_backups "state" 30
-        fi
-    done
-) &
-
 echo "Export server listening on port $PORT" >&2
 
 # Disable errexit so socat exit (e.g. on restart) doesn't kill the process
 set +e
 if [ $# -eq 0 ]; then
+    # Background loop — only runs in main process (PID 1), not in forked HTTP handlers
+    (
+        set +e
+        while true; do
+            sleep $BACKUP_INTERVAL
+            if _tes3mp_running; then
+                run_export "state" >/dev/null 2>&1 || true
+                cleanup_old_backups "state" 30
+            fi
+        done
+    ) &
     socat TCP-LISTEN:"$PORT",reuseaddr,fork EXEC:"bash $0 request"
 else
     handle_request

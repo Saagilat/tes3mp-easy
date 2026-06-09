@@ -54,6 +54,7 @@ dispatch_admin() {
         deploy-state)           bash "$LAYER2_ADMIN/interactive-deploy-state" ;;
         download-backup-mods)   bash "$LAYER2_ADMIN/interactive-download-mods" ;;
         download-backup-state)  bash "$LAYER2_ADMIN/interactive-download-state" ;;
+        set-backup-interval)    bash "$LAYER2_ADMIN/interactive-set-backup-interval" ;;
         help|--help|-h)
             echo "Admin subcommands: install-server, start-server, stop-server, restart-server,"
             echo "  server-logs, server-status, export-mods, generate-required-data,"
@@ -93,6 +94,7 @@ menu_edit_lua()          { bash "$LAYER1_ADMIN/edit-lua"; }
 menu_edit_banlist()      { bash "$LAYER1_ADMIN/edit-banlist"; }
 menu_run_openmw_cs() { bash "$LAYER1_SHARED/run-openmw-cs"; }
 menu_set_staff_rank() { bash "$LAYER2_ADMIN/interactive-set-staff-rank"; }
+menu_set_backup_interval() { bash "$LAYER2_ADMIN/interactive-set-backup-interval"; }
 
 menu_edit_config() {
     bash "$LAYER1_ADMIN/edit-config"
@@ -159,6 +161,7 @@ show_admin_menu() {
         "${MENU_ADMIN_SET_STAFF_RANK}|fn|menu_set_staff_rank"
 
         "${MENU_ADMIN_SEP_SYSTEM}|sep|"
+        "${MENU_ADMIN_SET_BACKUP_INTERVAL}|fn|menu_set_backup_interval"
         "${MENU_ADMIN_EDIT_CONFIG}|fn|menu_edit_config"
     )
 

@@ -86,6 +86,7 @@ download "client/layer1/admin/download-backup-mods"       "$UPDATE_DIR/layer1/ad
 download "client/layer1/admin/download-backup-state"      "$UPDATE_DIR/layer1/admin/download-backup-state"
 download "client/layer1/admin/show-backups-mods" "$UPDATE_DIR/layer1/admin/show-backups-mods"
 download "client/layer1/admin/show-backups-state" "$UPDATE_DIR/layer1/admin/show-backups-state"
+download "client/layer1/admin/set-backup-interval"    "$UPDATE_DIR/layer1/admin/set-backup-interval"
 
 echo "  ── staff ──"
 download "client/layer1/admin/set-staff-rank"    "$UPDATE_DIR/layer1/admin/set-staff-rank"
@@ -129,6 +130,7 @@ download "client/layer2/admin/interactive-download-state"      "$UPDATE_DIR/laye
 download "client/layer2/admin/interactive-setup-wizard"        "$UPDATE_DIR/layer2/admin/interactive-setup-wizard"
 download "client/layer2/admin/interactive-configure-server"    "$UPDATE_DIR/layer2/admin/interactive-configure-server"
 download "client/layer2/admin/interactive-set-staff-rank"      "$UPDATE_DIR/layer2/admin/interactive-set-staff-rank"
+download "client/layer2/admin/interactive-set-backup-interval" "$UPDATE_DIR/layer2/admin/interactive-set-backup-interval"
 
 echo "  ── layer2 player (interactive wrappers) ──"
 download "client/layer2/player/interactive-install-fonts"    "$UPDATE_DIR/layer2/player/interactive-install-fonts"
