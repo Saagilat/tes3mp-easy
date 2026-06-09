@@ -38,20 +38,17 @@ CURRENT_SCALE=$(grep "^scaling factor" "$SETTINGS_CFG" 2>/dev/null | head -1 | s
 
 # ── Read current Video values ──────────────────────────
 CURRENT_FPS_LIMIT=$(grep "^framerate limit" "$SETTINGS_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r') || CURRENT_FPS_LIMIT=""
-CURRENT_FPS_COUNTER=$(grep "^display framerate counter" "$SETTINGS_CFG" 2>/dev/null | head -1 | sed 's/.*=[[:space:]]*//' | tr -d '\r') || CURRENT_FPS_COUNTER=""
 
 echo "  Current settings:"
-echo "    ttf resolution          = ${CURRENT_TTF:-not set}"
-echo "    font size               = ${CURRENT_FONT:-not set}"
-echo "    scaling factor          = ${CURRENT_SCALE:-not set}"
-echo "    framerate limit         = ${CURRENT_FPS_LIMIT:-not set}"
-echo "    display framerate cntr  = ${CURRENT_FPS_COUNTER:-not set}"
+echo "    ttf resolution    = ${CURRENT_TTF:-not set}"
+echo "    font size         = ${CURRENT_FONT:-not set}"
+echo "    scaling factor    = ${CURRENT_SCALE:-not set}"
+echo "    framerate limit   = ${CURRENT_FPS_LIMIT:-not set}"
 echo ""
 
 input "ttf resolution" "${CURRENT_TTF:-96}" TTF_RES
 input "font size" "${CURRENT_FONT:-16}" FONT_SIZE
 input "scaling factor" "${CURRENT_SCALE:-1.0}" SCALING
 input "framerate limit (0=unlimited)" "${CURRENT_FPS_LIMIT:-120}" FPS_LIMIT
-input "display framerate counter (true/false)" "${CURRENT_FPS_COUNTER:-true}" FPS_COUNTER
 
-bash "$PROJECT_DIR/layer1/player/configure-ui" "$TTF_RES" "$FONT_SIZE" "$SCALING" "$FPS_LIMIT" "$FPS_COUNTER"
+bash "$PROJECT_DIR/layer1/player/configure-ui" "$TTF_RES" "$FONT_SIZE" "$SCALING" "$FPS_LIMIT"
