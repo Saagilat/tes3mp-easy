@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# configure-ui — Configure GUI settings (ttf resolution, font size, scaling)
+# configure-ui — Configure GUI and Video settings (ttf resolution, font size, scaling, fps)
 # Layer 1: non-interactive. Takes values as arguments.
-# Usage: configure-ui <ttf_resolution> <font_size> <scaling>
+# Usage: configure-ui <ttf_resolution> <font_size> <scaling> [framerate_limit] [display_fps_counter]
 #
 
 set -euo pipefail
@@ -19,9 +19,11 @@ TES3MP_DIR="${TES3MP_DIR/#\~/$HOME}"
 TTF_RES="${1:-}"
 FONT_SIZE="${2:-}"
 SCALING="${3:-}"
+FPS_LIMIT="${4:-}"
+FPS_COUNTER="${5:-}"
 
 [[ -z "$TTF_RES" || -z "$FONT_SIZE" || -z "$SCALING" ]] && {
-    err "Usage: configure-ui <ttf_resolution> <font_size> <scaling>"
+    err "Usage: configure-ui <ttf_resolution> <font_size> <scaling> [framerate_limit] [display_fps_counter]"
     exit 1
 }
 
@@ -35,10 +37,11 @@ fi
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  Configure UI"
+echo "  Configure UI & Video"
 echo "═══════════════════════════════════════════════"
 echo ""
 
+# ── UI settings (section [GUI]) ─────────────────────────
 if ! grep -q "^\[GUI\]" "$SETTINGS_CFG" 2>/dev/null; then
     echo "" >> "$SETTINGS_CFG"
     echo "[GUI]" >> "$SETTINGS_CFG"
@@ -55,7 +58,42 @@ for key_val in "ttf resolution=$TTF_RES" "font size=$FONT_SIZE" "scaling factor=
         sed -i "/^\[GUI\]/a ${key} = ${val}" "$SETTINGS_CFG"
     fi
 done
+
+# ── Video settings (section [Video]) ─────────────────────
+if ! grep -q "^\[Video\]" "$SETTINGS_CFG" 2>/dev/null; then
+    echo "" >> "$SETTINGS_CFG"
+    echo "[Video]" >> "$SETTINGS_CFG"
+fi
+
+if [[ -n "$FPS_LIMIT" ]]; then
+    key="framerate limit"
+    if grep -q "^${key}[[:space:]]*=" <(awk '/^\[Video\]/,0' "$SETTINGS_CFG" 2>/dev/null); then
+        line_num=$(awk '/^\[Video\]/,0' "$SETTINGS_CFG" | grep -n "^${key}[[:space:]]*=" | head -1 | cut -d: -f1)
+        abs_line=$(( $(grep -n "^\[Video\]" "$SETTINGS_CFG" | head -1 | cut -d: -f1) + line_num - 1 ))
+        sed -i "${abs_line}s|^${key}[[:space:]]*=.*|${key} = ${FPS_LIMIT}|" "$SETTINGS_CFG"
+    else
+        sed -i "/^\[Video\]/a ${key} = ${FPS_LIMIT}" "$SETTINGS_CFG"
+    fi
+fi
+
+if [[ -n "$FPS_COUNTER" ]]; then
+    key="display framerate counter"
+    if grep -q "^${key}[[:space:]]*=" <(awk '/^\[Video\]/,0' "$SETTINGS_CFG" 2>/dev/null); then
+        line_num=$(awk '/^\[Video\]/,0' "$SETTINGS_CFG" | grep -n "^${key}[[:space:]]*=" | head -1 | cut -d: -f1)
+        abs_line=$(( $(grep -n "^\[Video\]" "$SETTINGS_CFG" | head -1 | cut -d: -f1) + line_num - 1 ))
+        sed -i "${abs_line}s|^${key}[[:space:]]*=.*|${key} = ${FPS_COUNTER}|" "$SETTINGS_CFG"
+    else
+        sed -i "/^\[Video\]/a ${key} = ${FPS_COUNTER}" "$SETTINGS_CFG"
+    fi
+fi
+
 ok "UI settings saved: ttf resolution=$TTF_RES, font size=$FONT_SIZE, scaling=$SCALING"
+if [[ -n "$FPS_LIMIT" ]]; then
+    ok "Framerate limit set to: $FPS_LIMIT"
+fi
+if [[ -n "$FPS_COUNTER" ]]; then
+    ok "Display framerate counter set to: $FPS_COUNTER"
+fi
 
 echo ""
 echo "═══════════════════════════════════════════════"

@@ -2,6 +2,8 @@
 resolution x = 2560
 resolution y = 1440
 window border = false
+display framerate counter = true
+framerate limit = 120
 
 [GUI]
 ttf resolution = 120
