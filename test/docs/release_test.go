@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -54,5 +55,45 @@ func TestStableReleaseLinks(t *testing.T) {
 	install := readDoc(t, filepath.Join(root, "install.sh"))
 	if !strings.Contains(install, `SERVER_ASSET='https://[^"]+/tes3mp-easy-[0-9]`) {
 		t.Error("install.sh: SERVER_ASSET must keep matching only versioned server archives")
+	}
+}
+
+// TestClientInstaller pins the client installer contract: the script ships as a
+// client asset in both the versioned release and the moving client-latest
+// alias, it keeps matching only versioned client archives (so the aliases stay
+// invisible), and the icon it installs lives next to the binary in assets/.
+func TestClientInstaller(t *testing.T) {
+	root := repoRoot(t)
+
+	workflow := readDoc(t, filepath.Join(root, ".github", "workflows", "release.yml"))
+	for _, want := range []string{
+		"install -m 0755 tes3mp-easy-client-installer.sh dist/",
+		`"tes3mp-easy-client-installer.sh")`,
+	} {
+		if !strings.Contains(workflow, want) {
+			t.Errorf(".github/workflows/release.yml: missing %q", want)
+		}
+	}
+
+	ci := readDoc(t, filepath.Join(root, ".github", "workflows", "ci.yml"))
+	for _, want := range []string{
+		"bash -n tes3mp-easy-client-installer.sh",
+		"bash test/client-install-smoke.sh",
+	} {
+		if !strings.Contains(ci, want) {
+			t.Errorf(".github/workflows/ci.yml: missing %q", want)
+		}
+	}
+
+	installer := readDoc(t, filepath.Join(root, "tes3mp-easy-client-installer.sh"))
+	if !strings.Contains(installer, `CLIENT_ASSET='https://[^"]+/tes3mp-easy-client-[0-9]`) {
+		t.Error("tes3mp-easy-client-installer.sh: CLIENT_ASSET must keep matching only versioned client archives")
+	}
+
+	for _, name := range []string{"tes3mp-easy.png", "tes3mp-easy.desktop"} {
+		path := filepath.Join(root, "assets", name)
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("client installer asset: %v", err)
+		}
 	}
 }
