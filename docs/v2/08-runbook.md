@@ -52,7 +52,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/in
 Конкретную версию серверного релиза можно закрепить:
 
 ```bash
-TES3MP_EASY_VERSION=0.3.1 bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install.sh)
+TES3MP_EASY_VERSION=0.3.2 bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/install.sh)
 ```
 
 Ручной путь, если архив нужно скачать заранее:
@@ -63,7 +63,7 @@ TES3MP_EASY_VERSION=0.3.1 bash <(curl -Ls https://raw.githubusercontent.com/Saag
    движущийся тег `server-latest` с архивом без версии в имени:
 
    ```bash
-   VERSION=0.3.1
+   VERSION=0.3.2
    curl -fsSLO "https://github.com/Saagilat/tes3mp-easy/releases/download/server-v${VERSION}/tes3mp-easy-${VERSION}-linux-amd64.tar.gz"
    curl -fsSLO "https://github.com/Saagilat/tes3mp-easy/releases/download/server-v${VERSION}/tes3mp-easy-${VERSION}-linux-amd64.tar.gz.sha256"
    sha256sum -c "tes3mp-easy-${VERSION}-linux-amd64.tar.gz.sha256"
@@ -86,7 +86,7 @@ TES3MP_EASY_VERSION=0.3.1 bash <(curl -Ls https://raw.githubusercontent.com/Saag
    Локальная сборка релиза:
 
    ```bash
-   go run ./cmd/tes3mp-easy-pack --version 0.3.1
+   go run ./cmd/tes3mp-easy-pack --version 0.3.2
    ```
 
 2. Проверьте хост без изменений:
@@ -1060,12 +1060,12 @@ Job `publish` после версионного релиза сам перест
 
 ```bash
 # серверный релиз
-git tag -a server-v0.3.1 -m "tes3mp-easy server 0.3.1"
-git push origin server-v0.3.1
+git tag -a server-v0.3.2 -m "tes3mp-easy server 0.3.2"
+git push origin server-v0.3.2
 
 # клиентский релиз
-git tag -a client-v0.2.8 -m "tes3mp-easy client 0.2.8"
-git push origin client-v0.2.8
+git tag -a client-v0.2.9 -m "tes3mp-easy client 0.2.9"
+git push origin client-v0.2.9
 ```
 
 - Версию подставляет workflow через `-ldflags -X
@@ -1079,8 +1079,8 @@ git push origin client-v0.2.8
   раньше серверного.
 - `install.sh` читает список релизов и берёт серверный архив с наибольшей
   версией, поэтому новый клиентский релиз не подменяет серверный.
-  `TES3MP_EASY_VERSION=0.3.1` прибивает версию серверного релиза;
-  `--version 0.3.1` у `tes3mp-easy-pack` задаёт её для локальной сборки.
+  `TES3MP_EASY_VERSION=0.3.2` прибивает версию серверного релиза;
+  `--version 0.3.2` у `tes3mp-easy-pack` задаёт её для локальной сборки.
 - После релиза проверьте алиасы (их обновляет тот же job `publish`, но
   молчаливая поломка видна только по ссылке):
 
