@@ -27,10 +27,12 @@
 `~/.local/share`:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh)
+curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh | bash
 ```
 
-`TES3MP_EASY_CLIENT_VERSION=0.3.0` прибивает версию клиента.
+Команда работает в bash, zsh и fish: `bash <(curl …)` — это process
+substitution, в fish её нет. `TES3MP_EASY_CLIENT_VERSION=0.3.1` прибивает
+версию клиента.
 
 Нужен Morrowind; на Linux также Steam + Proton. Адрес, порт и пароль сервера
 возьмите у админа.

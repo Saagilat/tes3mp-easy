@@ -89,6 +89,41 @@ func TestClientInstaller(t *testing.T) {
 	if !strings.Contains(installer, `CLIENT_ASSET='https://[^"]+/tes3mp-easy-client-[0-9]`) {
 		t.Error("tes3mp-easy-client-installer.sh: CLIENT_ASSET must keep matching only versioned client archives")
 	}
+	// Panels spawn Exec without a login shell, so the installer has to bake the
+	// absolute path of the installed binary into the menu entry.
+	if !strings.Contains(installer, `s|^Exec=${BINARY}|Exec=${escaped_bin}|`) {
+		t.Error("tes3mp-easy-client-installer.sh: the menu entry must get an absolute Exec path")
+	}
+
+	// The documented one-liner has to work in fish too: `bash <(curl …)` is a
+	// bash-only process substitution.
+	readme := readDoc(t, filepath.Join(root, "README.md"))
+	if strings.Contains(readme, "bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh") {
+		t.Error("README.md: the client installer one-liner must not use bash process substitution")
+	}
+	if !strings.Contains(readme, "tes3mp-easy-client-installer.sh | bash") {
+		t.Error("README.md: missing the pipe-based client installer one-liner")
+	}
+
+	desktop, err := os.ReadFile(filepath.Join(root, "assets", "tes3mp-easy.desktop"))
+	if err != nil {
+		t.Fatalf("client installer asset: %v", err)
+	}
+	entry := string(desktop)
+	for _, want := range []string{
+		"Exec=tes3mp-easy-client %U",
+		"Icon=tes3mp-easy",
+		"Categories=Game;",
+		"Comment=",
+		"Keywords=tes3mp;",
+	} {
+		if !strings.Contains(entry, want) {
+			t.Errorf("assets/tes3mp-easy.desktop: missing %q", want)
+		}
+	}
+	if strings.Contains(entry, "Categories=Game;Network;") {
+		t.Error("assets/tes3mp-easy.desktop: one main category only, Game;Network; duplicates the entry")
+	}
 
 	for _, name := range []string{"tes3mp-easy.png", "tes3mp-easy.desktop"} {
 		path := filepath.Join(root, "assets", name)

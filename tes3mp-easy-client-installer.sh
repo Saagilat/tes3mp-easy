@@ -8,7 +8,10 @@
 #   - install the icon and the menu entry from the same release tag.
 #
 # Usage:
-#   bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh)
+#   curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh | bash
+#
+# The pipe works in bash, zsh and fish; `bash <(curl …)` is bash process
+# substitution and fish rejects it.
 #
 # TES3MP_EASY_CLIENT_VERSION pins a client release (for example 0.3.0).
 set -Eeuo pipefail
@@ -144,12 +147,26 @@ done
 [[ -n $binary ]] || fail "$archive_name has no $BINARY binary"
 
 mkdir -p "$bin_dir" "$applications_dir" "$icon_dir"
+desktop_new=0
+[[ -e $applications_dir/$DESKTOP ]] || desktop_new=1
 staged="$bin_dir/.${BINARY}.new.$$"
 install -m 0755 "$binary" "$staged"
 mv -f -- "$staged" "$bin_dir/$BINARY"   # atomic replace, no ETXTBSY
 staged=""
 install -m 0644 "$tmp/assets/$ICON" "$icon_dir/$ICON"
-install -m 0644 "$tmp/assets/$DESKTOP" "$applications_dir/$DESKTOP"
+
+# Panels and launchers spawn Exec without a login shell, so the PATH they see is
+# the session one: on Xfce it has no ~/.local/bin. Write the absolute path of the
+# binary that was just installed instead of relying on PATH.
+installed_bin=$bin_dir/$BINARY
+escaped_bin=${installed_bin//\\/\\\\}
+escaped_bin=${escaped_bin//&/\\&}
+entry="$tmp/assets/$DESKTOP.installed"
+sed -e "s|^Exec=${BINARY}|Exec=${escaped_bin}|" "$tmp/assets/$DESKTOP" >"$entry" ||
+    fail "cannot rewrite Exec in $DESKTOP"
+grep -qF "Exec=$installed_bin" "$entry" ||
+    fail "assets/$DESKTOP has no Exec=$BINARY line"
+install -m 0644 "$entry" "$applications_dir/$DESKTOP"
 
 # Both helpers come from xdg-utils and are optional: a missing tool only means
 # the desktop and icon caches are refreshed later, on the next login.
@@ -166,7 +183,14 @@ printf '  menu:   %s\n' "$applications_dir/$DESKTOP"
 if installed=$("$bin_dir/$BINARY" --version 2>/dev/null); then
     printf '  version: %s\n' "$installed"
 fi
+if [[ $desktop_new -eq 1 ]]; then
+    printf '  note: restart the panel to pick up the menu entry'
+    case ${XDG_CURRENT_DESKTOP:-} in
+        *XFCE*) printf ' (Xfce: xfce4-panel -r)' ;;
+    esac
+    printf '\n'
+fi
 case ":$PATH:" in
     *":$bin_dir:"*) ;;
-    *) printf '  note: the menu entry needs %s in PATH, e.g. export PATH="%s:$PATH"\n' "$bin_dir" "$bin_dir" ;;
+    *) printf '  note: add %s to PATH to run %s from a shell: export PATH="%s:$PATH"\n' "$bin_dir" "$BINARY" "$bin_dir" ;;
 esac

@@ -35,7 +35,22 @@
 установщика»), `docs/v2/08-runbook.md` §17 (артефакты и проверка алиаса).
 
 **Как проверять.** На чистой Debian/Ubuntu без root:
-`bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh)`
+`curl -fsSL https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh | bash`
 — бинарь в `~/.local/bin`, пункт меню в `~/.local/share/applications`,
 `tes3mp-easy-client --version` печатает версию из последнего `client-v*`.
 С Windows установщика нет: там по-прежнему zip.
+
+**Правки после `client-v0.3.0` (→ `client-v0.3.1`).** Проверка на живом Xfce
+вскрыла две вещи. Первая: one-liner `bash <(curl …)` не работает в fish
+(process substitution есть только в bash/zsh) — в README, шапке скрипта и здесь
+команда переписана на `curl -fsSL … | bash`, это держит `TestClientInstaller`.
+Вторая: панель DE запускает `Exec` без login-шелла, а её `PATH`
+(`/proc/<panel>/environ`) не содержит `~/.local/bin`, поэтому относительный
+`Exec=tes3mp-easy-client` по клику не находился; установщик теперь подставляет
+абсолютный путь через `sed` и проверяет результат. Заодно в ассете
+`Categories=Game;` (две main-категории давали hint валидатора и дубль в меню),
+`Comment=` и `Keywords=tes3mp;morrowind;` — поиск в меню находит по
+«морровинд». Свежая установка печатает подсказку про перезапуск панели
+(`xfce4-panel -r`): Whisker держит список приложений в памяти и без этого
+новый пункт не ищется. Правки в `assets/` требуют нового тега — установщик
+берёт `.desktop` из тега.

@@ -1,9 +1,11 @@
 [Desktop Entry]
 Type=Application
 Name=TES3MP Easy
+Comment=TES3MP launcher for Morrowind
 Exec=tes3mp-easy-client %U
 Icon=tes3mp-easy
 Terminal=false
-Categories=Game;Network;
+Categories=Game;
+Keywords=tes3mp;morrowind;tes3mp easy;multiplayer;
 StartupNotify=true
 StartupWMClass=io.github.saagilat.tes3mp-easy

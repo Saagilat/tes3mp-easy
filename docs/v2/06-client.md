@@ -37,10 +37,14 @@
   в версионном релизе, и в `client-latest`, проверяет `.sha256` архива, кладёт
   бинарь в `~/.local/bin`, иконку и `.desktop` — в `$XDG_DATA_HOME`
   (по умолчанию `~/.local/share`), root не нужен; версия прибивается
-  `TES3MP_EASY_CLIENT_VERSION=0.3.0`. Иконку и меню он берёт из того же тега,
-  что и архив, поэтому установленный клиент всегда из одного релиза; поведение
-  держат `test/client-install-smoke.sh` и `TestClientInstaller`
-  (`test/docs/release_test.go`).
+  `TES3MP_EASY_CLIENT_VERSION=0.3.1`. В `.desktop` установщик подставляет
+  абсолютный путь к установленному бинарю: панели и лаунчеры запускают `Exec`
+  без login-шелла, и `~/.local/bin` в их `PATH` может отсутствовать (на Xfce
+  его нет). Если пункт в меню не появился сразу — меню перечитывает кэш:
+  `xfce4-panel -r` на Xfce, на других DE перелогин. Иконку и меню он берёт из
+  того же тега, что и архив, поэтому установленный клиент всегда из одного
+  релиза; поведение держат `test/client-install-smoke.sh` и
+  `TestClientInstaller` (`test/docs/release_test.go`).
   `.github/workflows/release.yml` собирает Linux и Windows архивы на тег
   `client-v<version>`; клиент и сервер выпускаются независимыми каналами, а
   клиентские артефакты не входят в серверный release tar. Рядом публикуется

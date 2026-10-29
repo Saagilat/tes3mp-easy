@@ -40,10 +40,10 @@ pack() {
 pack "$latest"
 pack "$older"
 
-# The release tag carries the icon and the menu entry next to the archive.
+# The release tag carries the icon and the menu entry next to the archive; the
+# menu entry is the real asset, so the test also covers its content.
 printf 'PNG\n' >"$fixture/tes3mp-easy.png"
-printf '[Desktop Entry]\nType=Application\nName=TES3MP Easy\n' \
-    >"$fixture/tes3mp-easy.desktop"
+cp "$repo_root/assets/tes3mp-easy.desktop" "$fixture/tes3mp-easy.desktop"
 
 cat >"$fixture/release.json" <<JSON
 {
@@ -178,6 +178,12 @@ done
 [[ -x $binary ]] || fail "latest release: $binary is not executable"
 grep -q '^Name=TES3MP Easy$' "$desktop" ||
     fail "latest release: $desktop is not the release menu entry"
+# Panels do not inherit the login shell PATH, so the menu entry must point at the
+# installed binary by absolute path instead of the bare command name.
+grep -qxF "Exec=$binary %U" "$desktop" ||
+    fail "latest release: $desktop does not exec $binary"
+grep -qxF 'Categories=Game;' "$desktop" ||
+    fail "latest release: $desktop must stay in the Game category only"
 
 # TES3MP_EASY_CLIENT_VERSION pins an older release through the tag endpoint.
 out=$(run_install "$work/home-pinned" TES3MP_EASY_CLIENT_VERSION=9.9.9) ||
