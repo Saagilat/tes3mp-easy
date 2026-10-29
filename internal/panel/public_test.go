@@ -75,6 +75,9 @@ func (f *fakePublicOps) ModsDeploy(context.Context, string) (DeployResult, error
 func (f *fakePublicOps) StateDeploy(context.Context, string) (DeployResult, error) {
 	return DeployResult{}, nil
 }
+func (f *fakePublicOps) StateDeployKeepMods(context.Context, string) (DeployResult, error) {
+	return DeployResult{}, nil
+}
 func (f *fakePublicOps) StaffSet(context.Context, string, int) error { return nil }
 func (f *fakePublicOps) ConfigGet(context.Context, string) (map[string]any, error) {
 	return nil, nil

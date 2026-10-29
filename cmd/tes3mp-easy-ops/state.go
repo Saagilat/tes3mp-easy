@@ -15,13 +15,16 @@ type stateDeployArgs struct {
 	archive   string
 	latest    bool
 	noRestart bool
+	keepMods  bool
 }
 
 type stateDeployData struct {
-	Archive         string `json:"archive"`
-	ModsArchive     string `json:"mods_archive"`
-	PredeployBackup string `json:"predeploy_backup"`
-	Restarted       bool   `json:"restarted"`
+	Archive         string   `json:"archive"`
+	ModsArchive     string   `json:"mods_archive"`
+	PredeployBackup string   `json:"predeploy_backup"`
+	ModsKept        bool     `json:"mods_kept"`
+	Restarted       bool     `json:"restarted"`
+	Warnings        []string `json:"warnings"`
 }
 
 func runState(opts options, args []string, client *systemd.Client,
@@ -71,6 +74,7 @@ func runStateDeploy(opts options, args []string, client *systemd.Client,
 		archive:   deployArgs.archive,
 		latest:    deployArgs.latest,
 		noRestart: deployArgs.noRestart,
+		keepMods:  deployArgs.keepMods,
 		now:       stateDeployNowFunc(),
 		dryRun:    opts.dryRun,
 		timeout:   opts.commandTimeout,
@@ -86,7 +90,9 @@ func runStateDeploy(opts options, args []string, client *systemd.Client,
 		Archive:         result.archive,
 		ModsArchive:     result.mods,
 		PredeployBackup: result.predeploy,
+		ModsKept:        result.modsKept,
 		Restarted:       result.restarted,
+		Warnings:        append([]string{}, result.warnings...),
 	}
 	if opts.json {
 		return writeJSONSuccess(stdout, stderr, data)
@@ -105,6 +111,7 @@ func parseStateDeployArgs(args []string) (stateDeployArgs, *ops.Error) {
 	archiveName := fs.String("archive", "", "")
 	latest := fs.Bool("latest", false, "")
 	noRestart := fs.Bool("no-restart", false, "")
+	keepMods := fs.Bool("keep-mods", false, "")
 
 	if err := fs.Parse(args); err != nil {
 		return stateDeployArgs{}, ops.NewError(ops.ExitInvalidArgument,
@@ -138,6 +145,7 @@ func parseStateDeployArgs(args []string) (stateDeployArgs, *ops.Error) {
 		archive:   *archiveName,
 		latest:    *latest,
 		noRestart: *noRestart,
+		keepMods:  *keepMods,
 	}, nil
 }
 
@@ -146,10 +154,15 @@ func writeStateDeployHuman(w io.Writer, data stateDeployData) error {
 	if data.Restarted {
 		restarted = "true"
 	}
+	modsKept := "false"
+	if data.ModsKept {
+		modsKept = "true"
+	}
 	var out strings.Builder
 	fmt.Fprintf(&out, "archive: %s\n", data.Archive)
 	fmt.Fprintf(&out, "mods_archive: %s\n", data.ModsArchive)
 	fmt.Fprintf(&out, "predeploy_backup: %s\n", data.PredeployBackup)
+	fmt.Fprintf(&out, "mods_kept: %s\n", modsKept)
 	fmt.Fprintf(&out, "restarted: %s\n", restarted)
 	_, err := io.WriteString(w, out.String())
 	return err

@@ -462,7 +462,7 @@ cgroup-лимитами, её потребление видно на графи�
 | systemd недоступен | Панель отдаёт 503 `service_unavailable`, не изображает «running» |
 | Кривой архив модов | `ops mods import` отклоняет до записи в `backups/mods/`; `mods deploy` — до подмены `mods/` |
 | Ошибка при восстановлении | `state deploy` возвращает старые `players/`, `world/` и `config.lua`; `tes3mp-server-default.cfg`, `banlist.json` и `customScripts.lua` не меняются; состояние сервера прежнее |
-| Нет пакета модов для state | `state deploy` возвращает `archive_invalid`; панель предлагает сначала задеплоить указанный пакет |
+| Нет пакета модов для state | `state deploy` без `--keep-mods` возвращает `archive_invalid`; панель предлагает задеплоить пакет или применить «Только состояние» |
 | Мало места (512 MiB–1 GiB) | `doctor` — `warn`; значение видно в метрике «свободно на диске», `backups create` сначала запускает full retention |
 | Мало места (<512 MiB) | `doctor` — `error`, мутации в панели заблокированы; `backups create` и `mods deploy` возвращают `no_space`; игра продолжает работать |
 | Бюджет архивов превышен | Retention удаляет state-кандидатов и незащищённые mods, месячные представители остаются, возвращается `warn` |

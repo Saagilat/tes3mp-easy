@@ -556,6 +556,14 @@ Rollback — это не отдельная магия, а `mods deploy --archiv
 Отдельной кнопки «включить моды» у строки нет: порядок всегда один и тот же, а
 `docs/v2/04-ops.md` по-прежнему вызывается двумя командами.
 
+Рядом с «Восстановить» есть «Только состояние» (`keep_mods=1`): панель вызывает
+`ops state deploy --archive <state> --keep-mods`, не трогает
+`backups/mods/current.txt` и не требует доступного пакета. Кнопка доступна и при
+`mods_available == false`. Подтверждение предупреждает, что мир с другого набора
+плагинов может не загрузиться, а клиенты с другим `requiredDataFiles.json`
+получат отказ сервера. Bundle-восстановление остаётся строгим: ZIP несёт оба
+файла и сначала импортирует/включает пакет.
+
 ### Восстановление из скачанного архива
 
 На `/admin/backups#state` есть форма «Восстановить из скачанного архива». Она принимает:
@@ -621,23 +629,41 @@ ZIP-сценарий одной операцией:
 
 ### `config` — `config.lua`
 
-Поля из белого списка:
+Поля из белого списка, сгруппированные в форме:
 
-- `gameMode` (string);
-- `loginTime` (int, 10..600);
-- `maxClientsPerIP` (int, 1..10, по умолчанию 3);
-- `difficulty` (int, -100..100);
-- `passTimeWhenEmpty` (bool);
-- `nightStartHour`, `nightEndHour` (int, 0..23);
-- `allowConsole`, `allowBedRest`, `allowWildernessRest`, `allowWait`,
-  `allowSuicideCommand`, `allowFixmeCommand` (bool);
-- `shareJournal`, `shareFactionRanks`, `shareTopics`, `shareBounty`,
-  `shareReputation` (bool);
-- `enforceDataFiles` (bool).
+- **Общие:** `gameMode` (string); `loginTime` (int, 10..600);
+  `maxClientsPerIP` (int, 1..10, по умолчанию 3); `difficulty` (int,
+  -100..100); `passTimeWhenEmpty` (bool); `nightStartHour`, `nightEndHour`
+  (int, 0..23).
+- **Права:** `allowConsole`, `allowBedRest`, `allowWildernessRest`, `allowWait`,
+  `allowSuicideCommand`, `allowFixmeCommand`, `enforceDataFiles` (bool);
+  `fixmeInterval` (int, 0..3600).
+- **Общий доступ:** `shareJournal`, `shareFactionRanks`,
+  `shareFactionExpulsion`, `shareFactionReputation`, `shareTopics`,
+  `shareBounty`, `shareReputation`, `shareMapExploration`, `shareVideos` (bool).
+- **Характеристики:** `maxAttributeValue`, `maxSkillValue` (int, 1..10000);
+  `maxSpeedValue`, `maxAcrobaticsValue` (int, 0..10000);
+  `ignoreModifierWithMaxSkill` (bool).
+- **Смерть и возрождение:** `playersRespawn`, `bountyResetOnDeath`,
+  `bountyDeathPenalty`, `respawnAtImperialShrine`, `respawnAtTribunalTemple`
+  (bool); `deathTime` (int, 0..3600); `deathPenaltyJailDays` (int, 0..365,
+  складывается со штрафом `bountyDeathPenalty`).
+- **Коллизии и авторитет:** `enablePlayerCollision`, `enableActorCollision`,
+  `enablePlacedObjectCollision`, `useActorCollisionForPlacedObjects` (bool);
+  `pingDifferenceRequiredForAuthority` (int, 0..10000);
+  `physicsFramerate` (int, 1..1000).
+- **Мир и объекты:** `useInstancedSpawn`, `allowOnContainerForUnloadedCells`
+  (bool); `maximumObjectScale` (int, 1..1000); `generatedRecordIdPrefix` (string,
+  до 32 символов); `enforcedLogLevel` (int, -1..4).
+- **База данных и диагностика:** `databaseType` (`json` или `sqlite3`);
+  `ignoreScriptErrors` (bool).
 
-Таблицы (`gameSettings`, `vrSettings`, `defaultTimeTable`, списки) не
-показываются в форме и не редактируются: `config get` может вернуть их в
-`read_only`, но панель этот блок не выводит.
+Под полем показан сырой `config.key` и диапазон. Источник правды —
+`gameconfig.LuaFields()`: из него строятся и `luaSpecs`, и поля формы. Таблицы
+(`gameSettings`, `vrSettings`, `defaultTimeTable`, списки) и строки-выражения
+(`dataPath`, `chatWindowInstructions`, `startupScriptsInstructions`,
+`databasePath`) не показываются в форме и не редактируются; они перечислены в
+`gameconfig.LuaReadOnlyFields()` с причиной `table` или `expression`.
 
 ### `banlist` — `banlist.json`
 

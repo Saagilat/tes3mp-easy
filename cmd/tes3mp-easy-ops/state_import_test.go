@@ -85,11 +85,12 @@ func writeStateImportFixture(t *testing.T, root string,
 
 func TestParseStateImportArgs(t *testing.T) {
 	tests := []struct {
-		name string
-		args []string
-		exit ops.ExitCode
-		file string
-		arch string
+		name     string
+		args     []string
+		exit     ops.ExitCode
+		file     string
+		arch     string
+		keepMods bool
 	}{
 		{name: "file", args: []string{"--file", "/tmp/state.tar.gz"},
 			exit: ops.ExitOK, file: "/tmp/state.tar.gz"},
@@ -98,6 +99,9 @@ func TestParseStateImportArgs(t *testing.T) {
 				"state-manual-2026-10-22_12-00-00.tar.gz"},
 			exit: ops.ExitOK, file: "/tmp/upload",
 			arch: "state-manual-2026-10-22_12-00-00.tar.gz"},
+		{name: "keep mods",
+			args: []string{"--file", "/tmp/upload", "--keep-mods"},
+			exit: ops.ExitOK, file: "/tmp/upload", keepMods: true},
 		{name: "missing file", exit: ops.ExitInvalidArgument},
 		{name: "empty file", args: []string{"--file="}, exit: ops.ExitInvalidArgument},
 		{name: "mods name", args: []string{"--file", "a", "--name",
@@ -118,7 +122,8 @@ func TestParseStateImportArgs(t *testing.T) {
 				}
 				return
 			}
-			if got.file != tt.file || got.name != tt.arch {
+			if got.file != tt.file || got.name != tt.arch ||
+				got.keepMods != tt.keepMods {
 				t.Fatalf("args = %+v", got)
 			}
 		})
@@ -216,6 +221,32 @@ func TestRunStateImportRejectsMissingModsPackage(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "backups", "state", state.Name)); !os.IsNotExist(err) {
 		t.Fatalf("invalid state was imported: %v", err)
+	}
+}
+
+func TestRunStateImportKeepModsWithoutPackage(t *testing.T) {
+	root := stateImportRoot(t)
+	fixStateImportNow(t, stateImportTestNow)
+	manifest := fixtures.ScriptedMods().Manifest(fixtures.ScriptedMods().Bytes(t))
+	state := fixtures.FullState(manifest)
+	state.Name = fixtures.StateManualName(fixtures.DefaultTime)
+	upload := filepath.Join(root, "panel-data", "uploads", "upload.tar.gz")
+	state.Write(t, upload)
+
+	code, data, stdout, stderr := runStateImportCommand(t, root,
+		"--file", upload, "--name", state.Name, "--keep-mods")
+	if code != int(ops.ExitOK) {
+		t.Fatalf("exit = %d; stdout=%q stderr=%q", code, stdout, stderr)
+	}
+	if !data.ModsKept || data.ModsArchive != manifest.Name {
+		t.Fatalf("import data = %+v", data)
+	}
+	if len(data.Warnings) != 1 ||
+		!strings.Contains(data.Warnings[0], "no active mods metadata") {
+		t.Fatalf("warnings = %v", data.Warnings)
+	}
+	if _, err := os.Stat(filepath.Join(root, "backups", "state", state.Name)); err != nil {
+		t.Fatalf("imported state not found: %v", err)
 	}
 }
 

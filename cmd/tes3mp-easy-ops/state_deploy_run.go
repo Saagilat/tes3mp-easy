@@ -52,7 +52,14 @@ func deployStateLocked(req stateDeployRequest,
 		archive:   selection.name,
 		mods:      selection.modsArchive,
 		predeploy: predeploy.archive,
+		modsKept:  req.keepMods,
 		warnings:  append([]string{}, predeploy.warnings...),
+	}
+	if req.keepMods {
+		if warning := keepModsWarning(filepath.Join(req.root, "backups", "mods"),
+			selection.modsArchive); warning != "" {
+			result.warnings = append(result.warnings, warning)
+		}
 	}
 	if req.dryRun {
 		return result, nil

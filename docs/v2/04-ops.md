@@ -73,8 +73,8 @@ internal/
 | `backups prune [--dry-run]` | Полный retention state + mods |
 | `mods import --file <path> [--name <archive>]` | Проверяет и импортирует архив модов; `--name` сохраняет имя для восстановления state |
 | `mods deploy (--current\|--latest\|--archive <name>) [--no-restart]` | Деплоит пакет модов, создаёт `state-predeploy-*`, запускает full retention |
-| `state import --file <path> [--name <archive>]` | Проверяет state на текущем пакете модов и кладёт его в `backups/state` |
-| `state deploy (--latest\|--archive <name>) [--no-restart]` | Восстанавливает world+players+config.lua на текущем пакете модов |
+| `state import --file <path> [--name <archive>] [--keep-mods]` | Проверяет state и кладёт его в `backups/state`; без `--keep-mods` требует текущий пакет модов |
+| `state deploy (--latest\|--archive <name>) [--no-restart] [--keep-mods]` | Восстанавливает world+players+config.lua; без `--keep-mods` на текущем пакете модов |
 | `staff set --player <name> --rank 0..3` | Меняет `settings.staffRank` |
 | `config get --file server\|config\|banlist` | Отдаёт структурированные настройки |
 | `config set --file ... --key <k> --value <v>` | Меняет одну настройку |
@@ -336,26 +336,33 @@ CLI: `backups prune [--dry-run]`.
 
 ### `state import`
 
-CLI: `state import --file <path> [--name <archive>] [--dry-run]`.
+CLI: `state import --file <path> [--name <archive>] [--keep-mods] [--dry-run]`.
 
 Импорт нужен для скачанного state. Команда проверяет layout,
 `current.txt` и `configs/config.lua`, а также требует, чтобы
 `current.txt` состояния совпадал с активным `backups/mods/current.txt` и
 sha256 пакета. Поэтому сначала выполняется `mods deploy`.
 
-`--name` задаёт точное имя в `backups/state`; без него используется basename
+`--name` задаёт точное имя в `backups/state`; بدون него используется basename
 файла. Коллизия — `invalid_argument`. Импорт защищает новый архив от retention
 этого запуска и не запускает `state deploy`.
 
+`--keep-mods` пропускает сверку с `backups/mods/current.txt` и наличие файла
+пакета: проверяются только layout, `configs/config.lua` и `current.txt` самого
+state. Это нужно, чтобы положить скачанный state, снятый на другом наборе
+плагинов, и затем применить его с `state deploy --keep-mods`. В `data` при этом
+есть `mods_kept: true` и предупреждение о расхождении.
+
 ### `state deploy`
 
-CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--dry-run]`.
+CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--keep-mods] [--dry-run]`.
 
 1. Найти state по имени или `--latest`.
 2. Проверить layout, `current.txt` и `configs/config.lua`; state без
    `config.lua` или с `tes3mp-server-default.cfg`/`banlist.json` отклоняется.
-3. Проверить, что `current.txt` состояния совпадает с
+3. Без `--keep-mods` проверить, что `current.txt` состояния совпадает с
    `backups/mods/current.txt`, а sha256 — с пакетом. Иначе `archive_invalid`.
+   С `--keep-mods` этот шаг пропускается.
 4. Создать `state-predeploy-*` из живых данных.
 5. Остановить сервер, если он работал.
 6. Распаковать state в `.staging`, заменить содержимое `players/`, `world/` и
@@ -365,7 +372,10 @@ CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--dry-run]`.
 8. При ошибке откатить `players/`, `world/`, `config.lua` и очистить staging.
 
 Моды не подменяются автоматически. Панель предлагает сначала `mods deploy`
-для указанного пакета, затем `state deploy`.
+для указанного пакета, затем `state deploy`. `--keep-mods` — осознанный выбор
+оператора: `backups/mods/current.txt` и файлы модов не меняются, в `warnings`
+попадает расхождение пакетов. Мир с другого набора может не загрузиться, а
+клиенты с чужим `requiredDataFiles.json` получат отказ.
 
 ### `mods import`
 
@@ -502,9 +512,13 @@ tes3mp-easy-ops staff set --player "John Doe" --rank 2
 
 `config set`:
 
-- ключ должен быть в белом списке;
+- ключ должен быть в белом списке `gameconfig.LuaFields()` — это все простые
+  скаляры `config.lua` 0.8.1: general, permissions, sharing, stats, death,
+  collisions, world и database (включая `deathPenaltyJailDays`, `deathTime`,
+  `playersRespawn`, `databaseType`);
 - тип и диапазон проверяются (порт 1024–65535, `maxClientsPerIP` 1–10,
-  `difficulty` -100..100 и т.п.);
+  `difficulty` -100..100, `deathPenaltyJailDays` 0..365 и т.п.;
+  `databaseType` — только `json` или `sqlite3`);
 - `--key`/`--value` меняют одну настройку;
 - строка `config.key = value` заменяется построчно, комментарии сохраняются;
 - перед записью — `.bak-<timestamp>`;

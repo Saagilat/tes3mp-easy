@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Saagilat/tes3mp-easy/internal/mods"
@@ -49,6 +51,70 @@ func TestCheckServerUsesPublicAPI(t *testing.T) {
 	}
 	if _, err := service.CheckServer(t.Context(), ""); err == nil {
 		t.Fatal("empty profile accepted")
+	}
+}
+
+func TestEnsureModsChecksPanelWithInstalledMods(t *testing.T) {
+	service, workDir, id := installedService(t)
+	service.UpdateSettings(Settings{
+		MorrowindPath: makeMorrowind(t, morrowind.RequiredFiles...),
+		WorkDir:       workDir,
+	})
+	installFakeMods(t, workDir, id)
+	called := false
+	service.installMods = func(_ context.Context, _ mods.Options,
+	) (mods.Result, error) {
+		called = true
+		return mods.Result{Skipped: true}, nil
+	}
+
+	result, warnings, err := service.EnsureMods(t.Context(), id, nil)
+	if err != nil || len(warnings) != 0 {
+		t.Fatalf("EnsureMods = %+v, %v, %v", result, warnings, err)
+	}
+	if !called || !result.Skipped {
+		t.Fatalf("panel check was skipped: called=%t result=%+v", called, result)
+	}
+}
+
+func TestEnsureModsWarnsWhenPanelIsUnavailable(t *testing.T) {
+	service, workDir, id := installedService(t)
+	service.UpdateSettings(Settings{
+		MorrowindPath: makeMorrowind(t, morrowind.RequiredFiles...),
+		WorkDir:       workDir,
+	})
+	installFakeMods(t, workDir, id)
+	service.installMods = func(_ context.Context, _ mods.Options,
+	) (mods.Result, error) {
+		return mods.Result{}, errors.New("panel is down")
+	}
+
+	result, warnings, err := service.EnsureMods(t.Context(), id, nil)
+	if err != nil {
+		t.Fatalf("EnsureMods with installed mods = %v", err)
+	}
+	if !result.State.Installed {
+		t.Fatalf("result state = %+v", result.State)
+	}
+	if len(warnings) != 1 ||
+		!strings.Contains(warnings[0], "not verified against the panel") {
+		t.Fatalf("warnings = %v", warnings)
+	}
+}
+
+func TestEnsureModsKeepsPanelFailureFatalWithoutInstall(t *testing.T) {
+	service, workDir, id := installedService(t)
+	service.UpdateSettings(Settings{
+		MorrowindPath: makeMorrowind(t, morrowind.RequiredFiles...),
+		WorkDir:       workDir,
+	})
+	service.installMods = func(_ context.Context, _ mods.Options,
+	) (mods.Result, error) {
+		return mods.Result{}, errors.New("panel is down")
+	}
+
+	if _, _, err := service.EnsureMods(t.Context(), id, nil); err == nil {
+		t.Fatal("EnsureMods without an installation accepted a panel failure")
 	}
 }
 

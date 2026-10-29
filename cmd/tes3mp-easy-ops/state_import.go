@@ -20,22 +20,25 @@ import (
 )
 
 type stateImportArgs struct {
-	file string
-	name string
+	file     string
+	name     string
+	keepMods bool
 }
 
 type stateImportRequest struct {
-	root   string
-	file   string
-	name   string
-	now    time.Time
-	dryRun bool
+	root     string
+	file     string
+	name     string
+	keepMods bool
+	now      time.Time
+	dryRun   bool
 }
 
 type stateImportResult struct {
 	archive    string
 	sha256     string
 	mods       string
+	modsKept   bool
 	players    int
 	worldFiles int
 	pruned     []string
@@ -46,6 +49,7 @@ type stateImportData struct {
 	Archive     string   `json:"archive"`
 	SHA256      string   `json:"sha256"`
 	ModsArchive string   `json:"mods_archive"`
+	ModsKept    bool     `json:"mods_kept"`
 	Players     int      `json:"players"`
 	WorldFiles  int      `json:"world_files"`
 	Pruned      []string `json:"pruned"`
@@ -75,11 +79,12 @@ func runStateImport(opts options, args []string, stdout, stderr io.Writer) int {
 	}
 
 	result, importErr := importStateLocked(stateImportRequest{
-		root:   opts.root,
-		file:   importArgs.file,
-		name:   importArgs.name,
-		now:    stateImportNowFunc(),
-		dryRun: opts.dryRun,
+		root:     opts.root,
+		file:     importArgs.file,
+		name:     importArgs.name,
+		keepMods: importArgs.keepMods,
+		now:      stateImportNowFunc(),
+		dryRun:   opts.dryRun,
 	})
 	if importErr != nil {
 		return writeError(stdout, stderr, opts.json, importErr)
@@ -89,6 +94,7 @@ func runStateImport(opts options, args []string, stdout, stderr io.Writer) int {
 		Archive:     result.archive,
 		SHA256:      result.sha256,
 		ModsArchive: result.mods,
+		ModsKept:    result.modsKept,
 		Players:     result.players,
 		WorldFiles:  result.worldFiles,
 		Pruned:      append([]string{}, result.pruned...),
@@ -110,6 +116,7 @@ func parseStateImportArgs(args []string) (stateImportArgs, *ops.Error) {
 
 	file := fs.String("file", "", "")
 	name := fs.String("name", "", "")
+	keepMods := fs.Bool("keep-mods", false, "")
 
 	if err := fs.Parse(args); err != nil {
 		return stateImportArgs{}, ops.NewError(ops.ExitInvalidArgument,
@@ -129,7 +136,7 @@ func parseStateImportArgs(args []string) (stateImportArgs, *ops.Error) {
 				fmt.Sprintf("state import: --name: %v", err))
 		}
 	}
-	return stateImportArgs{file: *file, name: *name}, nil
+	return stateImportArgs{file: *file, name: *name, keepMods: *keepMods}, nil
 }
 
 func importStateLocked(req stateImportRequest) (stateImportResult, *ops.Error) {
@@ -174,7 +181,12 @@ func importStateLocked(req stateImportRequest) (stateImportResult, *ops.Error) {
 		return stateImportResult{}, stateImportError("choose archive name", nameErr)
 	}
 
-	info, _, err := archive.ValidateStateFileWithSize(req.file, modsDir)
+	var info archive.StateInfo
+	if req.keepMods {
+		info, _, err = archive.ValidateStateLayoutFileWithSize(req.file)
+	} else {
+		info, _, err = archive.ValidateStateFileWithSize(req.file, modsDir)
+	}
 	if err != nil {
 		return stateImportResult{}, stateImportError("validate upload", err)
 	}
@@ -187,10 +199,16 @@ func importStateLocked(req stateImportRequest) (stateImportResult, *ops.Error) {
 		archive:    name,
 		sha256:     sum,
 		mods:       info.Current.Name,
+		modsKept:   req.keepMods,
 		players:    info.Players,
 		worldFiles: info.WorldFiles,
 		pruned:     []string{},
 		warnings:   []string{},
+	}
+	if req.keepMods {
+		if warning := keepModsWarning(modsDir, info.Current.Name); warning != "" {
+			result.warnings = append(result.warnings, warning)
+		}
 	}
 
 	cfg := retention.Config{
@@ -280,6 +298,7 @@ func writeStateImportHuman(w io.Writer, data stateImportData) error {
 	out += fmt.Sprintf("archive: %s\n", data.Archive)
 	out += fmt.Sprintf("sha256: %s\n", data.SHA256)
 	out += fmt.Sprintf("mods_archive: %s\n", data.ModsArchive)
+	out += fmt.Sprintf("mods_kept: %t\n", data.ModsKept)
 	out += fmt.Sprintf("players: %d\n", data.Players)
 	out += fmt.Sprintf("world_files: %d\n", data.WorldFiles)
 	_, err := io.WriteString(w, out)

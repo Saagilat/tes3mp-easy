@@ -193,7 +193,7 @@ func readLua(path string, data []byte) (Snapshot, error) {
 	for key, entry := range doc.entries {
 		spec, known := findSpec(luaSpecs, key)
 		if !known {
-			if entry.complex {
+			if entry.complex || readOnlyLuaKey(key) {
 				readOnly[key] = true
 			}
 			continue
@@ -253,6 +253,10 @@ func coerceLuaValue(spec valueSpec, value any) (any, error) {
 		if spec.maxLen > 0 && len(text) > spec.maxLen {
 			return nil, fmt.Errorf("%s must be at most %d characters", spec.key, spec.maxLen)
 		}
+		if !valueAllowed(spec, text) {
+			return nil, fmt.Errorf("%s must be one of %s", spec.key,
+				strings.Join(spec.allowed, ", "))
+		}
 		return text, nil
 	case kindInt:
 		number, ok := value.(int)
@@ -282,6 +286,10 @@ func setLua(path string, data []byte, key, rawValue string,
 	}
 	spec, ok := findSpec(luaSpecs, key)
 	if !ok {
+		if field, readOnly := luaReadOnlySpec(key); readOnly {
+			return nil, nil, invalidf(FileConfig, key,
+				"%s is read-only (%s)", key, field.Reason)
+		}
 		return nil, nil, invalidf(FileConfig, key,
 			"key is not in the editable whitelist")
 	}

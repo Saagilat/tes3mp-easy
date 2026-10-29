@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -54,6 +55,23 @@ func (s *shell) showModsUpdate(profile config.Server) {
 			s.render()
 		})
 	}()
+}
+
+func (s *shell) markModsCurrent(id string) {
+	s.statusMu.Lock()
+	status := s.statuses[id]
+	status.NeedsUpdate = false
+	s.statuses[id] = status
+	s.statusMu.Unlock()
+}
+
+func (s *shell) invalidateStatus(id string) {
+	s.statusMu.Lock()
+	status := s.statuses[id]
+	status.Checked = false
+	status.CheckedAt = time.Time{}
+	s.statuses[id] = status
+	s.statusMu.Unlock()
 }
 
 func modsProgressFraction(update mods.Progress) float64 {

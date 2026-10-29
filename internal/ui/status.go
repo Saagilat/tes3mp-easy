@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
@@ -14,13 +15,24 @@ import (
 	"github.com/Saagilat/tes3mp-easy/internal/serverapi"
 )
 
+// serverStatusTTL keeps the online badge useful without polling the panel on
+// every render. Play does its own mod check, so a stale badge cannot hide a
+// changed pack.
+const serverStatusTTL = 30 * time.Second
+
 type serverStatus struct {
 	Checked     bool
+	CheckedAt   time.Time
 	Checking    bool
 	Online      bool
 	NeedsUpdate bool
 	Info        serverapi.Server
 	Err         error
+}
+
+func statusFresh(status serverStatus, now time.Time) bool {
+	return status.Checked && !status.CheckedAt.IsZero() &&
+		now.Sub(status.CheckedAt) < serverStatusTTL
 }
 
 func (s *shell) statusFor(id string) serverStatus {
@@ -69,7 +81,8 @@ func (s *shell) checkServer(profile config.Server, label *widget.Label,
 	play *widget.Button, modsInstalled bool,
 ) {
 	s.statusMu.Lock()
-	if s.checking[profile.ID] || s.statuses[profile.ID].Checked {
+	if s.checking[profile.ID] ||
+		statusFresh(s.statuses[profile.ID], time.Now()) {
 		s.statusMu.Unlock()
 		return
 	}
@@ -81,7 +94,7 @@ func (s *shell) checkServer(profile config.Server, label *widget.Label,
 		if err != nil {
 			s.service.LogError("check server", err)
 		}
-		status := serverStatus{Checked: true, Err: err}
+		status := serverStatus{Checked: true, CheckedAt: time.Now(), Err: err}
 		if err == nil {
 			status.Online = true
 			status.Info = info

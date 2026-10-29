@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Saagilat/tes3mp-easy/internal/app"
 	"github.com/Saagilat/tes3mp-easy/internal/config"
@@ -16,6 +17,23 @@ import (
 	"github.com/Saagilat/tes3mp-easy/internal/openmwcfg"
 	"github.com/Saagilat/tes3mp-easy/internal/tes3mp"
 )
+
+func TestServerStatusTTL(t *testing.T) {
+	now := time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+	if statusFresh(serverStatus{}, now) {
+		t.Fatal("unchecked status is fresh")
+	}
+	if !statusFresh(serverStatus{Checked: true, CheckedAt: now}, now) {
+		t.Fatal("just checked status is stale")
+	}
+	if statusFresh(serverStatus{Checked: true,
+		CheckedAt: now.Add(-serverStatusTTL)}, now) {
+		t.Fatal("status at TTL is still fresh")
+	}
+	if statusFresh(serverStatus{Checked: true}, now) {
+		t.Fatal("zero CheckedAt is fresh")
+	}
+}
 
 func TestRunRejectsNilService(t *testing.T) {
 	if err := Run(nil); err == nil {

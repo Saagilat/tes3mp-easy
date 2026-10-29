@@ -20,6 +20,7 @@ type stateDeployRequest struct {
 	archive   string
 	latest    bool
 	noRestart bool
+	keepMods  bool
 	now       time.Time
 	dryRun    bool
 	timeout   time.Duration
@@ -29,6 +30,7 @@ type stateDeployResult struct {
 	archive   string
 	mods      string
 	predeploy string
+	modsKept  bool
 	restarted bool
 	warnings  []string
 }
@@ -72,7 +74,7 @@ func resolveStateDeployTarget(req stateDeployRequest) (stateDeploySelection, *op
 	}
 
 	target := filepath.Join(stateDir, name)
-	info, size, err := inspectStateDeployArchive(target, modsDir)
+	info, size, err := inspectStateDeployArchive(target, modsDir, !req.keepMods)
 	if err != nil {
 		return stateDeploySelection{}, err
 	}
@@ -84,7 +86,8 @@ func resolveStateDeployTarget(req stateDeployRequest) (stateDeploySelection, *op
 	}, nil
 }
 
-func inspectStateDeployArchive(name, modsDir string) (archive.StateInfo, int64, *ops.Error) {
+func inspectStateDeployArchive(name, modsDir string, checkMods bool,
+) (archive.StateInfo, int64, *ops.Error) {
 	info, err := os.Lstat(name)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
@@ -101,11 +104,45 @@ func inspectStateDeployArchive(name, modsDir string) (archive.StateInfo, int64, 
 				name, archive.MaxCompressedSize))
 	}
 
-	state, uncompressed, err := archive.ValidateStateFileWithSize(name, modsDir)
+	var (
+		state        archive.StateInfo
+		uncompressed int64
+	)
+	if checkMods {
+		state, uncompressed, err = archive.ValidateStateFileWithSize(name, modsDir)
+	} else {
+		state, uncompressed, err = archive.ValidateStateLayoutFileWithSize(name)
+	}
 	if err != nil {
 		return archive.StateInfo{}, 0, stateDeployError("validate archive", err)
 	}
 	return state, uncompressed, nil
+}
+
+// keepModsWarning explains which package the snapshot was taken with when the
+// operator chose to keep the active one. It is informational: a world from a
+// different mod pack may fail to load, and that risk is the operator's call.
+func keepModsWarning(modsDir, stateMods string) string {
+	if stateMods == "" {
+		return ""
+	}
+	active, err := archive.ReadCurrentFile(filepath.Join(modsDir, "current.txt"))
+	switch {
+	case err == nil && active.Name == stateMods:
+		return ""
+	case err == nil:
+		return fmt.Sprintf(
+			"state was created with mods archive %q; keeping active mods %q",
+			stateMods, active.Name)
+	case errors.Is(err, fs.ErrNotExist):
+		return fmt.Sprintf(
+			"state was created with mods archive %q; no active mods metadata found, keeping the current mods files",
+			stateMods)
+	default:
+		return fmt.Sprintf(
+			"state was created with mods archive %q; cannot read active mods metadata: %v",
+			stateMods, err)
+	}
 }
 
 func latestStateArchive(stateDir string) (string, *ops.Error) {

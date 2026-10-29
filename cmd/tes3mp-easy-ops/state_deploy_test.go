@@ -114,6 +114,7 @@ func TestParseStateDeployArgs(t *testing.T) {
 		archive   string
 		latest    bool
 		noRestart bool
+		keepMods  bool
 	}{
 		{name: "archive", args: []string{"--archive", "state-manual-x.tar.gz"},
 			exit: ops.ExitOK, archive: "state-manual-x.tar.gz"},
@@ -121,6 +122,8 @@ func TestParseStateDeployArgs(t *testing.T) {
 			latest: true},
 		{name: "no restart", args: []string{"--latest", "--no-restart"},
 			exit: ops.ExitOK, latest: true, noRestart: true},
+		{name: "keep mods", args: []string{"--latest", "--keep-mods"},
+			exit: ops.ExitOK, latest: true, keepMods: true},
 		{name: "missing selector", exit: ops.ExitInvalidArgument},
 		{name: "empty archive", args: []string{"--archive="},
 			exit: ops.ExitInvalidArgument},
@@ -151,7 +154,7 @@ func TestParseStateDeployArgs(t *testing.T) {
 				t.Fatal("parse succeeded, want error")
 			}
 			if got.archive != tt.archive || got.latest != tt.latest ||
-				got.noRestart != tt.noRestart {
+				got.noRestart != tt.noRestart || got.keepMods != tt.keepMods {
 				t.Fatalf("args = %+v", got)
 			}
 		})
@@ -439,8 +442,51 @@ func TestWriteStateDeployHuman(t *testing.T) {
 	want := "archive: state-manual-2026-10-22_12-00-00.tar.gz\n" +
 		"mods_archive: mods-2026-10-22_12-00-00.tar.gz\n" +
 		"predeploy_backup: state-predeploy-2026-10-22_12-00-00.tar.gz\n" +
+		"mods_kept: false\n" +
 		"restarted: true\n"
 	if out.String() != want {
 		t.Fatalf("human output = %q, want %q", out.String(), want)
 	}
+}
+
+// TestRunStateDeployKeepMods applies a snapshot from another mod pack and
+// leaves backups/mods untouched.
+func TestRunStateDeployKeepMods(t *testing.T) {
+	fixStateDeployHooks(t)
+	root, _, _, _ := stateDeployRoot(t)
+	modsDir := filepath.Join(root, "backups", "mods")
+	currentBefore := fixtures.ReadCurrent(t, modsDir)
+
+	foreign := fixtures.DefaultMods()
+	foreign.Name = "mods-2026-10-22_14-00-00.tar.gz"
+	body := foreign.Bytes(t)
+	fixtures.WriteFile(t, filepath.Join(modsDir, foreign.Name), string(body))
+	state := fixtures.FullState(foreign.Manifest(body))
+	state.Name = "state-manual-2026-10-22_15-00-00.tar.gz"
+	state.Players = []fixtures.StateFile{{
+		Name: "player.json", Body: "{\"foreign\":true}\n",
+	}}
+	state.Write(t, filepath.Join(root, "backups", "state", state.Name))
+
+	runner := activeRunner(t)
+	code, data, stdout, stderr := runStateDeployCommand(t, root,
+		systemd.New(runner), "--archive", state.Name, "--keep-mods")
+	if code != int(ops.ExitOK) {
+		t.Fatalf("exit = %d; stdout=%q stderr=%q", code, stdout, stderr)
+	}
+	if !data.ModsKept || data.ModsArchive != foreign.Name {
+		t.Fatalf("deploy data = %+v", data)
+	}
+	if len(data.Warnings) != 1 ||
+		!strings.Contains(data.Warnings[0], "keeping active mods") {
+		t.Fatalf("warnings = %v", data.Warnings)
+	}
+	if got := fixtures.ReadCurrent(t, modsDir); got != currentBefore {
+		t.Fatalf("current.txt changed: %+v -> %+v", currentBefore, got)
+	}
+	player, err := os.ReadFile(filepath.Join(root, "players", "player.json"))
+	if err != nil || string(player) != "{\"foreign\":true}\n" {
+		t.Fatalf("restored player = %q, %v", player, err)
+	}
+	assertNoStateDeployLeftovers(t, root)
 }

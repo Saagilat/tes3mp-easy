@@ -61,29 +61,30 @@ func (s *shell) playServer(profile config.Server) {
 		defer s.endPlay(profile.ID)
 		ctx := context.Background()
 		warnings := []string{}
-		needsUpdate := !s.modsInstalled(profile.ID) ||
-			s.statusFor(profile.ID).NeedsUpdate
-		if needsUpdate {
-			fyne.Do(func() {
-				status.SetText(tr.T(i18n.KeyModsChecking))
-				progress.SetValue(0)
-			})
-			result, err := s.service.UpdateMods(ctx, profile.ID,
-				func(update mods.Progress) {
-					fyne.Do(func() {
-						progress.SetValue(modsProgressFraction(update))
-						status.SetText(modsProgressLabel(tr, update))
-					})
-				})
-			if err != nil {
+		// The panel is asked before every launch: a pack replaced while the
+		// window was open must not leave the game on yesterday's plugins. The
+		// metadata request is cheap and mods.Install skips an unchanged archive.
+		fyne.Do(func() {
+			status.SetText(tr.T(i18n.KeyModsChecking))
+			progress.SetValue(0)
+		})
+		modsResult, modsWarnings, err := s.service.EnsureMods(ctx, profile.ID,
+			func(update mods.Progress) {
 				fyne.Do(func() {
-					popup.Hide()
-					s.showErrorWithRetry(err, func() { s.playServer(profile) })
+					progress.SetValue(modsProgressFraction(update))
+					status.SetText(modsProgressLabel(tr, update))
 				})
-				return
-			}
-			warnings = append(warnings, result.Warnings...)
+			})
+		if err != nil {
+			fyne.Do(func() {
+				popup.Hide()
+				s.showErrorWithRetry(err, func() { s.playServer(profile) })
+			})
+			return
 		}
+		warnings = append(warnings, modsWarnings...)
+		warnings = append(warnings, modsResult.Warnings...)
+		s.markModsCurrent(profile.ID)
 
 		fyne.Do(func() {
 			status.SetText(tr.T(i18n.KeyServerLaunching))
@@ -118,6 +119,7 @@ func (s *shell) playServer(profile config.Server) {
 		}
 		waitErr := result.Process.Wait()
 		s.service.GameStopped()
+		s.invalidateStatus(profile.ID)
 		fyne.Do(func() {
 			s.render()
 			if waitErr != nil {

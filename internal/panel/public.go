@@ -95,6 +95,7 @@ type archiveItem struct {
 	ModsAvailable   bool
 	ModsCurrent     bool
 	CanRestore      bool
+	CanKeepMods     bool
 	DownloadURL     string
 	ModsDownloadURL string
 	BundleURL       string
@@ -147,6 +148,9 @@ func archiveItems(tr *i18n.Translator, items []BackupItem, typ string, opt archi
 		// disk: the panel enables the pack first (see handleStateDeploy), so the
 		// operator no longer has to deploy mods manually before restoring.
 		view.CanRestore = opt.Admin && typ == "state" && view.ModsAvailable
+		// The state-only action deliberately ignores the snapshot's pack, so it
+		// stays available when that archive was pruned or never imported.
+		view.CanKeepMods = opt.Admin && typ == "state"
 		views = append(views, view)
 	}
 	return views

@@ -162,35 +162,38 @@ const (
 	KeyPanelDashboardUploadMods     = "panel.dashboard.upload_mods"
 	KeyPanelDashboardRestore        = "panel.dashboard.restore"
 
-	KeyPanelStateTitle          = "panel.state.title"
-	KeyPanelStateEyebrow        = "panel.state.eyebrow"
-	KeyPanelStateHeading        = "panel.state.heading"
-	KeyPanelStateLead           = "panel.state.lead"
-	KeyPanelStateMissingMods    = "panel.state.missing_mods"
-	KeyPanelStateCurrentMods    = "panel.state.current_mods"
-	KeyPanelStateRestoreHeading = "panel.state.restore_heading"
-	KeyPanelStateRestoreHint    = "panel.state.restore_hint"
-	KeyPanelStateRestoreConfirm = "panel.state.restore_confirm"
-	KeyPanelStateFileLabel      = "panel.state.file_label"
-	KeyPanelStateUploadRestore  = "panel.state.upload_restore"
-	KeyPanelStateWhatChanges    = "panel.state.what_changes"
-	KeyPanelStateWhatChangesTxt = "panel.state.what_changes_text"
-	KeyPanelStateCreate         = "panel.state.create"
-	KeyPanelStateManageMods     = "panel.state.manage_mods"
-	KeyPanelStateLimit          = "panel.state.limit"
-	KeyPanelStateEmpty          = "panel.state.empty"
-	KeyPanelStateMods           = "panel.state.mods"
-	KeyPanelStateModsMissing    = "panel.state.mods_missing"
-	KeyPanelStateModsActive     = "panel.state.mods_active"
-	KeyPanelStateModsInactive   = "panel.state.mods_inactive"
-	KeyPanelStateDownloadState  = "panel.state.download_state"
-	KeyPanelStateDownloadBundle = "panel.state.download_bundle"
-	KeyPanelStateDownloadMods   = "panel.state.download_mods"
-	KeyPanelStateDeployMods     = "panel.state.deploy_mods"
-	KeyPanelStateDeployConfirm  = "panel.state.deploy_confirm"
-	KeyPanelStateRestoreButton  = "panel.state.restore_button"
-	KeyPanelStateDeployFirst    = "panel.state.deploy_first"
-	KeyPanelStateOlder          = "panel.state.older"
+	KeyPanelStateTitle           = "panel.state.title"
+	KeyPanelStateEyebrow         = "panel.state.eyebrow"
+	KeyPanelStateHeading         = "panel.state.heading"
+	KeyPanelStateLead            = "panel.state.lead"
+	KeyPanelStateMissingMods     = "panel.state.missing_mods"
+	KeyPanelStateCurrentMods     = "panel.state.current_mods"
+	KeyPanelStateRestoreHeading  = "panel.state.restore_heading"
+	KeyPanelStateRestoreHint     = "panel.state.restore_hint"
+	KeyPanelStateRestoreConfirm  = "panel.state.restore_confirm"
+	KeyPanelStateFileLabel       = "panel.state.file_label"
+	KeyPanelStateUploadRestore   = "panel.state.upload_restore"
+	KeyPanelStateWhatChanges     = "panel.state.what_changes"
+	KeyPanelStateWhatChangesTxt  = "panel.state.what_changes_text"
+	KeyPanelStateCreate          = "panel.state.create"
+	KeyPanelStateManageMods      = "panel.state.manage_mods"
+	KeyPanelStateLimit           = "panel.state.limit"
+	KeyPanelStateEmpty           = "panel.state.empty"
+	KeyPanelStateMods            = "panel.state.mods"
+	KeyPanelStateModsMissing     = "panel.state.mods_missing"
+	KeyPanelStateModsActive      = "panel.state.mods_active"
+	KeyPanelStateModsInactive    = "panel.state.mods_inactive"
+	KeyPanelStateDownloadState   = "panel.state.download_state"
+	KeyPanelStateDownloadBundle  = "panel.state.download_bundle"
+	KeyPanelStateDownloadMods    = "panel.state.download_mods"
+	KeyPanelStateDeployMods      = "panel.state.deploy_mods"
+	KeyPanelStateDeployConfirm   = "panel.state.deploy_confirm"
+	KeyPanelStateRestoreButton   = "panel.state.restore_button"
+	KeyPanelStateDeployFirst     = "panel.state.deploy_first"
+	KeyPanelStateKeepModsButton  = "panel.state.keep_mods_button"
+	KeyPanelStateKeepModsHint    = "panel.state.keep_mods_hint"
+	KeyPanelStateKeepModsConfirm = "panel.state.keep_mods_confirm"
+	KeyPanelStateOlder           = "panel.state.older"
 )
 
 const (
@@ -233,17 +236,25 @@ const (
 	KeyPanelConfigReset      = "panel.config.reset"
 	KeyPanelConfigStatusIdle = "panel.config.status_idle"
 
-	KeyPanelConfigSectionServer  = "panel.config.section_server"
-	KeyPanelConfigSectionGame    = "panel.config.section_game"
-	KeyPanelConfigSectionBanlist = "panel.config.section_banlist"
-	KeyPanelConfigGameNote       = "panel.config.game_note"
-	KeyPanelConfigHostname       = "panel.config.field_hostname"
-	KeyPanelConfigPort           = "panel.config.field_port"
-	KeyPanelConfigMaxPlayers     = "panel.config.field_max_players"
-	KeyPanelConfigPassword       = "panel.config.field_password"
-	KeyPanelConfigLogLevel       = "panel.config.field_log_level"
-	KeyPanelConfigBanNames       = "panel.config.banlist_names"
-	KeyPanelConfigBanIPs         = "panel.config.banlist_ips"
+	KeyPanelConfigSectionServer    = "panel.config.section_server"
+	KeyPanelConfigSectionGame      = "panel.config.section_game"
+	KeyPanelConfigSectionBanlist   = "panel.config.section_banlist"
+	KeyPanelConfigGameNote         = "panel.config.game_note"
+	KeyPanelConfigGroupGeneral     = "panel.config.group_general"
+	KeyPanelConfigGroupPermissions = "panel.config.group_permissions"
+	KeyPanelConfigGroupSharing     = "panel.config.group_sharing"
+	KeyPanelConfigGroupStats       = "panel.config.group_stats"
+	KeyPanelConfigGroupDeath       = "panel.config.group_death"
+	KeyPanelConfigGroupCollisions  = "panel.config.group_collisions"
+	KeyPanelConfigGroupWorld       = "panel.config.group_world"
+	KeyPanelConfigGroupDatabase    = "panel.config.group_database"
+	KeyPanelConfigHostname         = "panel.config.field_hostname"
+	KeyPanelConfigPort             = "panel.config.field_port"
+	KeyPanelConfigMaxPlayers       = "panel.config.field_max_players"
+	KeyPanelConfigPassword         = "panel.config.field_password"
+	KeyPanelConfigLogLevel         = "panel.config.field_log_level"
+	KeyPanelConfigBanNames         = "panel.config.banlist_names"
+	KeyPanelConfigBanIPs           = "panel.config.banlist_ips"
 
 	KeyPanelStateRestoreRowConfirm = "panel.state.restore_row_confirm"
 
@@ -578,35 +589,38 @@ var panelCatalogs = map[Language]map[string]string{
 		KeyPanelDashboardUploadMods:     "Upload mods",
 		KeyPanelDashboardRestore:        "Restore",
 
-		KeyPanelStateTitle:          "Snapshots — tes3mp-easy",
-		KeyPanelStateEyebrow:        "Backups",
-		KeyPanelStateHeading:        "Snapshots",
-		KeyPanelStateLead:           "A snapshot keeps players, the world and config.lua; the server password and banlist.json stay in the live configs and never enter a snapshot. Mods live in separate immutable archives that the snapshot points to.",
-		KeyPanelStateMissingMods:    "No mod pack is active yet. Restoring is still possible for snapshots whose pack is on disk: the pack is enabled automatically.",
-		KeyPanelStateCurrentMods:    "Active mod pack: <code>%s</code>",
-		KeyPanelStateRestoreHeading: "Restore from a downloaded archive",
-		KeyPanelStateRestoreHint:    "A ZIP with a snapshot and its mods imports both; a standalone state <code>.tar.gz</code> is restored on top of the pack it references, and the panel enables that pack first.",
-		KeyPanelStateRestoreConfirm: "Restore the snapshot from the archive? players/, world/ and config.lua will be replaced.",
-		KeyPanelStateFileLabel:      "Archive .zip or state .tar.gz, up to 1 GiB",
-		KeyPanelStateUploadRestore:  "Upload and restore",
-		KeyPanelStateWhatChanges:    "What exactly is replaced",
-		KeyPanelStateWhatChangesTxt: "players/, world/ and config.lua are replaced; the password in tes3mp-server-default.cfg and banlist.json stay untouched. Mods are replaced only from a ZIP. A running server is restarted. Before restoring, ops creates state-predeploy-*.",
-		KeyPanelStateCreate:         "Create snapshot",
-		KeyPanelStateManageMods:     "Manage mods",
-		KeyPanelStateLimit:          "Rows per page",
-		KeyPanelStateEmpty:          "No snapshots yet. Create the first one with “Create snapshot”.",
-		KeyPanelStateMods:           "Mod pack",
-		KeyPanelStateModsMissing:    "Pack missing",
-		KeyPanelStateModsActive:     "active",
-		KeyPanelStateModsInactive:   "enabled on restore",
-		KeyPanelStateDownloadState:  "Download snapshot",
-		KeyPanelStateDownloadBundle: "Snapshot + mods (.zip)",
-		KeyPanelStateDownloadMods:   "Download mods",
-		KeyPanelStateDeployMods:     "Enable mods",
-		KeyPanelStateDeployConfirm:  "Enable mods %s? The server will be restarted.",
-		KeyPanelStateRestoreButton:  "Restore",
-		KeyPanelStateDeployFirst:    "The referenced mod archive is missing: restore is unavailable",
-		KeyPanelStateOlder:          "Show older",
+		KeyPanelStateTitle:           "Snapshots — tes3mp-easy",
+		KeyPanelStateEyebrow:         "Backups",
+		KeyPanelStateHeading:         "Snapshots",
+		KeyPanelStateLead:            "A snapshot keeps players, the world and config.lua; the server password and banlist.json stay in the live configs and never enter a snapshot. Mods live in separate immutable archives that the snapshot points to.",
+		KeyPanelStateMissingMods:     "No mod pack is active yet. Restoring is still possible for snapshots whose pack is on disk: the pack is enabled automatically.",
+		KeyPanelStateCurrentMods:     "Active mod pack: <code>%s</code>",
+		KeyPanelStateRestoreHeading:  "Restore from a downloaded archive",
+		KeyPanelStateRestoreHint:     "A ZIP with a snapshot and its mods imports both; a standalone state <code>.tar.gz</code> is restored on top of the pack it references, and the panel enables that pack first.",
+		KeyPanelStateRestoreConfirm:  "Restore the snapshot from the archive? players/, world/ and config.lua will be replaced.",
+		KeyPanelStateFileLabel:       "Archive .zip or state .tar.gz, up to 1 GiB",
+		KeyPanelStateUploadRestore:   "Upload and restore",
+		KeyPanelStateWhatChanges:     "What exactly is replaced",
+		KeyPanelStateWhatChangesTxt:  "players/, world/ and config.lua are replaced; the password in tes3mp-server-default.cfg and banlist.json stay untouched. Mods are replaced only from a ZIP. A running server is restarted. Before restoring, ops creates state-predeploy-*.",
+		KeyPanelStateCreate:          "Create snapshot",
+		KeyPanelStateManageMods:      "Manage mods",
+		KeyPanelStateLimit:           "Rows per page",
+		KeyPanelStateEmpty:           "No snapshots yet. Create the first one with “Create snapshot”.",
+		KeyPanelStateMods:            "Mod pack",
+		KeyPanelStateModsMissing:     "Pack missing",
+		KeyPanelStateModsActive:      "active",
+		KeyPanelStateModsInactive:    "enabled on restore",
+		KeyPanelStateDownloadState:   "Download snapshot",
+		KeyPanelStateDownloadBundle:  "Snapshot + mods (.zip)",
+		KeyPanelStateDownloadMods:    "Download mods",
+		KeyPanelStateDeployMods:      "Enable mods",
+		KeyPanelStateDeployConfirm:   "Enable mods %s? The server will be restarted.",
+		KeyPanelStateRestoreButton:   "Restore",
+		KeyPanelStateDeployFirst:     "The referenced mod archive is missing: restore is unavailable",
+		KeyPanelStateKeepModsButton:  "Apply state only",
+		KeyPanelStateKeepModsHint:    "Restore players/, world/ and config.lua, keeping the active mod pack",
+		KeyPanelStateKeepModsConfirm: "Apply snapshot %s without its mod pack? A world from another pack may fail to load, and clients with a different requiredDataFiles.json will be rejected by the server.",
+		KeyPanelStateOlder:           "Show older",
 
 		KeyPanelModsTitle:           "Mods — tes3mp-easy",
 		KeyPanelModsEyebrow:         "Content",
@@ -647,17 +661,74 @@ var panelCatalogs = map[Language]map[string]string{
 		KeyPanelConfigReset:      "Cancel",
 		KeyPanelConfigStatusIdle: "No changes",
 
-		KeyPanelConfigSectionServer:  "Server",
-		KeyPanelConfigSectionGame:    "Game settings",
-		KeyPanelConfigSectionBanlist: "Banlist",
-		KeyPanelConfigGameNote:       "Tables and lists are shown read-only.",
-		KeyPanelConfigHostname:       "Server name",
-		KeyPanelConfigPort:           "Port (1024..65535)",
-		KeyPanelConfigMaxPlayers:     "Max players (1..64)",
-		KeyPanelConfigPassword:       "Server password (empty = no password)",
-		KeyPanelConfigLogLevel:       "Log level (0..4)",
-		KeyPanelConfigBanNames:       "Player names (one per line)",
-		KeyPanelConfigBanIPs:         "IP addresses (one per line)",
+		KeyPanelConfigSectionServer:                             "Server",
+		KeyPanelConfigSectionGame:                               "Game settings",
+		KeyPanelConfigSectionBanlist:                            "Banlist",
+		KeyPanelConfigGameNote:                                  "Tables and lists are shown read-only.",
+		KeyPanelConfigGroupGeneral:                              "General",
+		KeyPanelConfigGroupPermissions:                          "Permissions",
+		KeyPanelConfigGroupSharing:                              "Sharing",
+		KeyPanelConfigGroupStats:                                "Stats",
+		KeyPanelConfigGroupDeath:                                "Death and respawn",
+		KeyPanelConfigGroupCollisions:                           "Collisions and authority",
+		KeyPanelConfigGroupWorld:                                "World and objects",
+		KeyPanelConfigGroupDatabase:                             "Database and diagnostics",
+		"panel.config.field.gameMode":                           "Game mode",
+		"panel.config.field.loginTime":                          "Login time, s",
+		"panel.config.field.maxClientsPerIP":                    "Max clients per IP",
+		"panel.config.field.difficulty":                         "Difficulty",
+		"panel.config.field.passTimeWhenEmpty":                  "Pass time when empty",
+		"panel.config.field.nightStartHour":                     "Night starts at",
+		"panel.config.field.nightEndHour":                       "Night ends at",
+		"panel.config.field.allowConsole":                       "Allow console",
+		"panel.config.field.allowBedRest":                       "Allow rest in beds",
+		"panel.config.field.allowWildernessRest":                "Allow rest in the wilderness",
+		"panel.config.field.allowWait":                          "Allow waiting",
+		"panel.config.field.allowSuicideCommand":                "Allow /suicide",
+		"panel.config.field.allowFixmeCommand":                  "Allow /fixme",
+		"panel.config.field.fixmeInterval":                      "Cooldown between /fixme uses, s",
+		"panel.config.field.enforceDataFiles":                   "Enforce required data files",
+		"panel.config.field.shareJournal":                       "Share journal",
+		"panel.config.field.shareFactionRanks":                  "Share faction ranks",
+		"panel.config.field.shareFactionExpulsion":              "Share faction expulsion",
+		"panel.config.field.shareFactionReputation":             "Share faction reputation",
+		"panel.config.field.shareTopics":                        "Share topics",
+		"panel.config.field.shareBounty":                        "Share bounty",
+		"panel.config.field.shareReputation":                    "Share reputation",
+		"panel.config.field.shareMapExploration":                "Share map exploration",
+		"panel.config.field.shareVideos":                        "Share videos",
+		"panel.config.field.maxAttributeValue":                  "Max attribute value",
+		"panel.config.field.maxSpeedValue":                      "Max Speed value",
+		"panel.config.field.maxSkillValue":                      "Max skill value",
+		"panel.config.field.maxAcrobaticsValue":                 "Max Acrobatics value",
+		"panel.config.field.ignoreModifierWithMaxSkill":         "Allow modifiers above the skill limit",
+		"panel.config.field.playersRespawn":                     "Players respawn after death",
+		"panel.config.field.deathTime":                          "Time dead before respawn, s (only when respawn is on)",
+		"panel.config.field.deathPenaltyJailDays":               "Jail days on death (added to the bounty penalty)",
+		"panel.config.field.bountyResetOnDeath":                 "Reset bounty on death",
+		"panel.config.field.bountyDeathPenalty":                 "Jail time proportional to bounty on death",
+		"panel.config.field.respawnAtImperialShrine":            "Allow respawn at Imperial shrines",
+		"panel.config.field.respawnAtTribunalTemple":            "Allow respawn at Tribunal temples",
+		"panel.config.field.enablePlayerCollision":              "Players collide with actors",
+		"panel.config.field.enableActorCollision":               "Actors collide with actors",
+		"panel.config.field.enablePlacedObjectCollision":        "Placed objects collide with actors",
+		"panel.config.field.useActorCollisionForPlacedObjects":  "Use actor collision for placed objects",
+		"panel.config.field.pingDifferenceRequiredForAuthority": "Ping difference required for authority, ms",
+		"panel.config.field.physicsFramerate":                   "Physics framerate",
+		"panel.config.field.useInstancedSpawn":                  "Use instanced spawn",
+		"panel.config.field.allowOnContainerForUnloadedCells":   "Allow containers in unloaded cells",
+		"panel.config.field.maximumObjectScale":                 "Maximum object scale",
+		"panel.config.field.generatedRecordIdPrefix":            "Generated record ID prefix",
+		"panel.config.field.enforcedLogLevel":                   "Enforced client log level (-1 = client choice)",
+		"panel.config.field.ignoreScriptErrors":                 "Ignore script errors",
+		"panel.config.field.databaseType":                       "Database type",
+		KeyPanelConfigHostname:                                  "Server name",
+		KeyPanelConfigPort:                                      "Port (1024..65535)",
+		KeyPanelConfigMaxPlayers:                                "Max players (1..64)",
+		KeyPanelConfigPassword:                                  "Server password (empty = no password)",
+		KeyPanelConfigLogLevel:                                  "Log level (0..4)",
+		KeyPanelConfigBanNames:                                  "Player names (one per line)",
+		KeyPanelConfigBanIPs:                                    "IP addresses (one per line)",
 
 		KeyPanelStateRestoreRowConfirm: "Restore snapshot %s? The current players/, world/ and config.lua will be replaced.",
 
@@ -996,35 +1067,38 @@ var panelCatalogs = map[Language]map[string]string{
 		KeyPanelDashboardUploadMods:     "Загрузить моды",
 		KeyPanelDashboardRestore:        "Восстановить",
 
-		KeyPanelStateTitle:          "Сохранения — tes3mp-easy",
-		KeyPanelStateEyebrow:        "Бэкапы",
-		KeyPanelStateHeading:        "Сохранения",
-		KeyPanelStateLead:           "Сохранение хранит игроков, мир и config.lua; пароль сервера и banlist.json остаются в живых конфигах и в сохранение не попадают. Моды лежат в отдельных неизменяемых архивах, на которые сохранение ссылается.",
-		KeyPanelStateMissingMods:    "Активного пакета модов пока нет. Восстановление всё равно доступно для сохранений, чей пакет есть на диске: панель включит его сама.",
-		KeyPanelStateCurrentMods:    "Активный пакет модов: <code>%s</code>",
-		KeyPanelStateRestoreHeading: "Восстановить из скачанного архива",
-		KeyPanelStateRestoreHint:    "ZIP «сохранение + моды» импортирует и то и другое; отдельный state <code>.tar.gz</code> восстанавливается поверх пакета, на который ссылается, — панель сначала включит этот пакет.",
-		KeyPanelStateRestoreConfirm: "Восстановить сохранение из архива? players/, world/ и config.lua будут заменены.",
-		KeyPanelStateFileLabel:      "Архив .zip или state .tar.gz, до 1 ГиБ",
-		KeyPanelStateUploadRestore:  "Загрузить и восстановить",
-		KeyPanelStateWhatChanges:    "Что именно заменяется",
-		KeyPanelStateWhatChangesTxt: "players/, world/ и config.lua заменяются; пароль в tes3mp-server-default.cfg и banlist.json не меняются. Моды подменяются только из ZIP. Если сервер работает, он будет перезапущен. Перед восстановлением ops создаст state-predeploy-*.",
-		KeyPanelStateCreate:         "Создать сохранение",
-		KeyPanelStateManageMods:     "Управление модами",
-		KeyPanelStateLimit:          "Записей на страницу",
-		KeyPanelStateEmpty:          "Сохранений пока нет. Создайте первое кнопкой «Создать сохранение».",
-		KeyPanelStateMods:           "Пакет модов",
-		KeyPanelStateModsMissing:    "Пакет не найден",
-		KeyPanelStateModsActive:     "активен",
-		KeyPanelStateModsInactive:   "включится при восстановлении",
-		KeyPanelStateDownloadState:  "Скачать сохранение",
-		KeyPanelStateDownloadBundle: "Сохранение и моды (.zip)",
-		KeyPanelStateDownloadMods:   "Скачать моды",
-		KeyPanelStateDeployMods:     "Включить моды",
-		KeyPanelStateDeployConfirm:  "Включить моды %s? Сервер будет перезапущен.",
-		KeyPanelStateRestoreButton:  "Восстановить",
-		KeyPanelStateDeployFirst:    "Архив модов не найден — восстановить нельзя",
-		KeyPanelStateOlder:          "Показать более старые",
+		KeyPanelStateTitle:           "Сохранения — tes3mp-easy",
+		KeyPanelStateEyebrow:         "Бэкапы",
+		KeyPanelStateHeading:         "Сохранения",
+		KeyPanelStateLead:            "Сохранение хранит игроков, мир и config.lua; пароль сервера и banlist.json остаются в живых конфигах и в сохранение не попадают. Моды лежат в отдельных неизменяемых архивах, на которые сохранение ссылается.",
+		KeyPanelStateMissingMods:     "Активного пакета модов пока нет. Восстановление всё равно доступно для сохранений, чей пакет есть на диске: панель включит его сама.",
+		KeyPanelStateCurrentMods:     "Активный пакет модов: <code>%s</code>",
+		KeyPanelStateRestoreHeading:  "Восстановить из скачанного архива",
+		KeyPanelStateRestoreHint:     "ZIP «сохранение + моды» импортирует и то и другое; отдельный state <code>.tar.gz</code> восстанавливается поверх пакета, на который ссылается, — панель сначала включит этот пакет.",
+		KeyPanelStateRestoreConfirm:  "Восстановить сохранение из архива? players/, world/ и config.lua будут заменены.",
+		KeyPanelStateFileLabel:       "Архив .zip или state .tar.gz, до 1 ГиБ",
+		KeyPanelStateUploadRestore:   "Загрузить и восстановить",
+		KeyPanelStateWhatChanges:     "Что именно заменяется",
+		KeyPanelStateWhatChangesTxt:  "players/, world/ и config.lua заменяются; пароль в tes3mp-server-default.cfg и banlist.json не меняются. Моды подменяются только из ZIP. Если сервер работает, он будет перезапущен. Перед восстановлением ops создаст state-predeploy-*.",
+		KeyPanelStateCreate:          "Создать сохранение",
+		KeyPanelStateManageMods:      "Управление модами",
+		KeyPanelStateLimit:           "Записей на страницу",
+		KeyPanelStateEmpty:           "Сохранений пока нет. Создайте первое кнопкой «Создать сохранение».",
+		KeyPanelStateMods:            "Пакет модов",
+		KeyPanelStateModsMissing:     "Пакет не найден",
+		KeyPanelStateModsActive:      "активен",
+		KeyPanelStateModsInactive:    "включится при восстановлении",
+		KeyPanelStateDownloadState:   "Скачать сохранение",
+		KeyPanelStateDownloadBundle:  "Сохранение и моды (.zip)",
+		KeyPanelStateDownloadMods:    "Скачать моды",
+		KeyPanelStateDeployMods:      "Включить моды",
+		KeyPanelStateDeployConfirm:   "Включить моды %s? Сервер будет перезапущен.",
+		KeyPanelStateRestoreButton:   "Восстановить",
+		KeyPanelStateDeployFirst:     "Архив модов не найден — восстановить нельзя",
+		KeyPanelStateKeepModsButton:  "Только состояние",
+		KeyPanelStateKeepModsHint:    "Восстановить players/, world/ и config.lua, оставив активный мод-пак",
+		KeyPanelStateKeepModsConfirm: "Применить состояние %s без его мод-пака? Мир с другого набора плагинов может не загрузиться, а клиенты с другим requiredDataFiles.json получат отказ сервера.",
+		KeyPanelStateOlder:           "Показать более старые",
 
 		KeyPanelModsTitle:           "Моды — tes3mp-easy",
 		KeyPanelModsEyebrow:         "Контент",
@@ -1065,17 +1139,74 @@ var panelCatalogs = map[Language]map[string]string{
 		KeyPanelConfigReset:      "Отменить",
 		KeyPanelConfigStatusIdle: "Изменений нет",
 
-		KeyPanelConfigSectionServer:  "Сервер",
-		KeyPanelConfigSectionGame:    "Игровые настройки",
-		KeyPanelConfigSectionBanlist: "Банлист",
-		KeyPanelConfigGameNote:       "Таблицы и списки показываются только для чтения.",
-		KeyPanelConfigHostname:       "Имя сервера",
-		KeyPanelConfigPort:           "Порт (1024..65535)",
-		KeyPanelConfigMaxPlayers:     "Максимум игроков (1..64)",
-		KeyPanelConfigPassword:       "Пароль сервера (пусто = без пароля)",
-		KeyPanelConfigLogLevel:       "Уровень логов (0..4)",
-		KeyPanelConfigBanNames:       "Имена игроков (по одной на строку)",
-		KeyPanelConfigBanIPs:         "IP-адреса (по одному на строку)",
+		KeyPanelConfigSectionServer:                             "Сервер",
+		KeyPanelConfigSectionGame:                               "Игровые настройки",
+		KeyPanelConfigSectionBanlist:                            "Банлист",
+		KeyPanelConfigGameNote:                                  "Таблицы и списки показываются только для чтения.",
+		KeyPanelConfigGroupGeneral:                              "Общие",
+		KeyPanelConfigGroupPermissions:                          "Права",
+		KeyPanelConfigGroupSharing:                              "Общий доступ",
+		KeyPanelConfigGroupStats:                                "Характеристики",
+		KeyPanelConfigGroupDeath:                                "Смерть и возрождение",
+		KeyPanelConfigGroupCollisions:                           "Коллизии и авторитет",
+		KeyPanelConfigGroupWorld:                                "Мир и объекты",
+		KeyPanelConfigGroupDatabase:                             "База данных и диагностика",
+		"panel.config.field.gameMode":                           "Режим игры",
+		"panel.config.field.loginTime":                          "Время входа, с",
+		"panel.config.field.maxClientsPerIP":                    "Клиентов на IP",
+		"panel.config.field.difficulty":                         "Сложность",
+		"panel.config.field.passTimeWhenEmpty":                  "Ускорять время без игроков",
+		"panel.config.field.nightStartHour":                     "Ночь начинается в",
+		"panel.config.field.nightEndHour":                       "Ночь заканчивается в",
+		"panel.config.field.allowConsole":                       "Разрешить консоль",
+		"panel.config.field.allowBedRest":                       "Разрешить отдых в кроватях",
+		"panel.config.field.allowWildernessRest":                "Разрешить отдых в wilderness",
+		"panel.config.field.allowWait":                          "Разрешить ожидание",
+		"panel.config.field.allowSuicideCommand":                "Разрешить /suicide",
+		"panel.config.field.allowFixmeCommand":                  "Разрешить /fixme",
+		"panel.config.field.fixmeInterval":                      "Пауза между /fixme, с",
+		"panel.config.field.enforceDataFiles":                   "Требовать обязательные data files",
+		"panel.config.field.shareJournal":                       "Общий журнал",
+		"panel.config.field.shareFactionRanks":                  "Общие ранги фракций",
+		"panel.config.field.shareFactionExpulsion":              "Общее изгнание из фракций",
+		"panel.config.field.shareFactionReputation":             "Общая репутация фракций",
+		"panel.config.field.shareTopics":                        "Общие темы",
+		"panel.config.field.shareBounty":                        "Общая награда за голову",
+		"panel.config.field.shareReputation":                    "Общая репутация",
+		"panel.config.field.shareMapExploration":                "Общая карта",
+		"panel.config.field.shareVideos":                        "Общие видео",
+		"panel.config.field.maxAttributeValue":                  "Максимум атрибута",
+		"panel.config.field.maxSpeedValue":                      "Максимум Speed",
+		"panel.config.field.maxSkillValue":                      "Максимум навыка",
+		"panel.config.field.maxAcrobaticsValue":                 "Максимум Acrobatics",
+		"panel.config.field.ignoreModifierWithMaxSkill":         "Разрешать модификаторы выше лимита навыка",
+		"panel.config.field.playersRespawn":                     "Возрождать игроков после смерти",
+		"panel.config.field.deathTime":                          "Время до возрождения, с (только при включённом возрождении)",
+		"panel.config.field.deathPenaltyJailDays":               "Штраф за смерть, дней тюрьмы (складывается со штрафом за bounty)",
+		"panel.config.field.bountyResetOnDeath":                 "Сбрасывать bounty после смерти",
+		"panel.config.field.bountyDeathPenalty":                 "Тюрьма пропорционально bounty после смерти",
+		"panel.config.field.respawnAtImperialShrine":            "Возрождение в имперских святилищах",
+		"panel.config.field.respawnAtTribunalTemple":            "Возрождение в храмах Трибунала",
+		"panel.config.field.enablePlayerCollision":              "Игроки сталкиваются с актёрами",
+		"panel.config.field.enableActorCollision":               "Актёры сталкиваются с актёрами",
+		"panel.config.field.enablePlacedObjectCollision":        "Объекты сталкиваются с актёрами",
+		"panel.config.field.useActorCollisionForPlacedObjects":  "Коллизия объектов как у актёров",
+		"panel.config.field.pingDifferenceRequiredForAuthority": "Разница пинга для смены авторитета, мс",
+		"panel.config.field.physicsFramerate":                   "Частота физики",
+		"panel.config.field.useInstancedSpawn":                  "Инстансовый спавн",
+		"panel.config.field.allowOnContainerForUnloadedCells":   "Разрешить контейнеры в незагруженных клетках",
+		"panel.config.field.maximumObjectScale":                 "Максимальный масштаб объекта",
+		"panel.config.field.generatedRecordIdPrefix":            "Префикс сгенерированных record ID",
+		"panel.config.field.enforcedLogLevel":                   "Уровень логов клиента (-1 = выбор клиента)",
+		"panel.config.field.ignoreScriptErrors":                 "Игнорировать ошибки скриптов",
+		"panel.config.field.databaseType":                       "Тип базы данных",
+		KeyPanelConfigHostname:                                  "Имя сервера",
+		KeyPanelConfigPort:                                      "Порт (1024..65535)",
+		KeyPanelConfigMaxPlayers:                                "Максимум игроков (1..64)",
+		KeyPanelConfigPassword:                                  "Пароль сервера (пусто = без пароля)",
+		KeyPanelConfigLogLevel:                                  "Уровень логов (0..4)",
+		KeyPanelConfigBanNames:                                  "Имена игроков (по одной на строку)",
+		KeyPanelConfigBanIPs:                                    "IP-адреса (по одному на строку)",
 
 		KeyPanelStateRestoreRowConfirm: "Восстановить состояние %s? Текущие players/, world/ и config.lua будут заменены.",
 

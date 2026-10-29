@@ -14,10 +14,12 @@ import (
 )
 
 type stateDeployPayload struct {
-	Archive         string `json:"archive"`
-	ModsArchive     string `json:"mods_archive"`
-	PredeployBackup string `json:"predeploy_backup"`
-	Restarted       bool   `json:"restarted"`
+	Archive         string   `json:"archive"`
+	ModsArchive     string   `json:"mods_archive"`
+	PredeployBackup string   `json:"predeploy_backup"`
+	ModsKept        bool     `json:"mods_kept"`
+	Restarted       bool     `json:"restarted"`
+	Warnings        []string `json:"warnings"`
 }
 
 func stateDeployContractRoot(t *testing.T) (string, fixtures.ModsManifest,
@@ -45,7 +47,8 @@ func decodeStateDeploy(t *testing.T, res result) (envelope, stateDeployPayload) 
 	t.Helper()
 
 	env := requireReadSuccess(t, res,
-		[]string{"archive", "mods_archive", "predeploy_backup", "restarted"})
+		[]string{"archive", "mods_archive", "mods_kept", "predeploy_backup",
+			"restarted", "warnings"})
 	var data stateDeployPayload
 	if err := json.Unmarshal(env.Data, &data); err != nil {
 		t.Fatalf("decode state deploy payload: %v", err)

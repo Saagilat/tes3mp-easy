@@ -42,12 +42,20 @@ func ValidateStateFile(name, modsDir string) (StateInfo, error) {
 // do not match the current layout, including old archives that still contain
 // tes3mp-server-default.cfg or banlist.json.
 func ValidateStateLayoutFile(name string) (StateInfo, error) {
+	info, _, err := ValidateStateLayoutFileWithSize(name)
+	return info, err
+}
+
+// ValidateStateLayoutFileWithSize is ValidateStateLayoutFile plus the total
+// uncompressed size of the state archive's files. Deploy uses it when an
+// operator explicitly keeps the active mod pack.
+func ValidateStateLayoutFileWithSize(name string) (StateInfo, int64, error) {
 	reader, err := Open(name)
 	if err != nil {
-		return StateInfo{}, err
+		return StateInfo{}, 0, err
 	}
 	defer reader.Close()
-	return ValidateState(reader)
+	return ValidateStateWithSize(reader)
 }
 
 // ValidateStateFileWithSize is ValidateStateFile plus the total uncompressed

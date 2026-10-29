@@ -86,6 +86,14 @@
                               {{if .ModsArchive}}<input type="hidden" name="mods" value="{{.ModsArchive}}">{{end}}
                               <button class="button button--danger button--small" type="submit"{{if not .CanRestore}} disabled title="{{$.T "panel.state.deploy_first"}}"{{end}}>{{$.T "panel.state.restore_button"}}</button>
                             </form>
+                            {{if .CanKeepMods}}
+                              <form method="post" action="/admin/state/deploy" data-confirm="{{$.Tf "panel.state.keep_mods_confirm" .Name}}">
+                                {{template "csrf" $}}
+                                <input type="hidden" name="archive" value="{{.Name}}">
+                                <input type="hidden" name="keep_mods" value="1">
+                                <button class="button button--secondary button--small" type="submit" title="{{$.T "panel.state.keep_mods_hint"}}">{{$.T "panel.state.keep_mods_button"}}</button>
+                              </form>
+                            {{end}}
                           </div>
                         </td>
                       </tr>

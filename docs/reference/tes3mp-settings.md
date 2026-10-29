@@ -6,14 +6,11 @@
 
 Full documentation of all settings in `/tes3mp-easy/configs/config.lua` (TES3MP 0.8.1).
 
-Settings exposed by the admin panel are listed in `docs/v2/05-panel.md` §11; all other keys are edited with `ops config set` or directly in `config.lua`.
+Settings exposed by the admin panel and `ops config set` are listed in `docs/v2/05-panel.md` §11. Other keys are not writable through the whitelist: tables and expression-valued strings are read-only by design, so edit them directly in `config.lua`.
 
 ## Server info
 
-| Setting | Default | Description |
-| --------- | --------- | ------------- |
-| `config.serverName` | `"TES3MP Server"` | Server name displayed in the server browser |
-| `config.serverPassword` | `""` | Server password (empty = no password) |
+`config.lua` 0.8.1 does not contain the server name or password. They live in `configs/tes3mp-server-default.cfg` as `hostname` and `password`; the panel edits them in the **Server** section.
 
 ## Game settings
 

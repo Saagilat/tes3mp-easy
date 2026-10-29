@@ -92,6 +92,7 @@ config.someTable = {
 }
 config.someList = { "a", "b" }
 config.unknownScalar = 7
+config.dataPath = tes3mp.GetDataPath()
 `
 	path := filepath.Join(root, "configs", "config.lua")
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
@@ -108,7 +109,7 @@ config.unknownScalar = 7
 	if got := snapshot.Values["loginTime"]; got != 45 {
 		t.Fatalf("loginTime = %#v, want 45", got)
 	}
-	wantReadOnly := []string{"someList", "someTable"}
+	wantReadOnly := []string{"dataPath", "someList", "someTable"}
 	if !reflect.DeepEqual(snapshot.ReadOnly, wantReadOnly) {
 		t.Fatalf("read_only = %v, want %v", snapshot.ReadOnly, wantReadOnly)
 	}

@@ -84,6 +84,7 @@ type StateImportResult struct {
 	Archive     string   `json:"archive"`
 	SHA256      string   `json:"sha256"`
 	ModsArchive string   `json:"mods_archive"`
+	ModsKept    bool     `json:"mods_kept"`
 	Players     int      `json:"players"`
 	WorldFiles  int      `json:"world_files"`
 	Pruned      []string `json:"pruned"`
@@ -93,13 +94,15 @@ type StateImportResult struct {
 // DeployResult combines the fields of `ops mods deploy` and `ops state deploy`.
 // Fields that do not belong to the executed command remain zero-valued.
 type DeployResult struct {
-	Archive         string  `json:"archive"`
-	SHA256          string  `json:"sha256,omitempty"`
-	Previous        *string `json:"previous,omitempty"`
-	StateBackup     string  `json:"state_backup,omitempty"`
-	ModsArchive     string  `json:"mods_archive,omitempty"`
-	PredeployBackup string  `json:"predeploy_backup,omitempty"`
-	Restarted       bool    `json:"restarted"`
+	Archive         string   `json:"archive"`
+	SHA256          string   `json:"sha256,omitempty"`
+	Previous        *string  `json:"previous,omitempty"`
+	StateBackup     string   `json:"state_backup,omitempty"`
+	ModsArchive     string   `json:"mods_archive,omitempty"`
+	PredeployBackup string   `json:"predeploy_backup,omitempty"`
+	ModsKept        bool     `json:"mods_kept,omitempty"`
+	Restarted       bool     `json:"restarted"`
+	Warnings        []string `json:"warnings,omitempty"`
 }
 
 // ConfigSnapshot is the full decoded `data` object of `ops config get`. The
@@ -137,6 +140,7 @@ type Ops interface {
 	ModsImport(ctx context.Context, path string) (ImportResult, error)
 	ModsDeploy(ctx context.Context, ref string) (DeployResult, error)
 	StateDeploy(ctx context.Context, name string) (DeployResult, error)
+	StateDeployKeepMods(ctx context.Context, name string) (DeployResult, error)
 	StaffSet(ctx context.Context, player string, rank int) error
 	ConfigGet(ctx context.Context, file string) (map[string]any, error)
 	ConfigSet(ctx context.Context, file, key string, value any) error
@@ -832,6 +836,19 @@ func (c *OpsClient) ModsDeploy(ctx context.Context, ref string) (DeployResult, e
 
 // StateDeploy restores "latest" or the named state archive.
 func (c *OpsClient) StateDeploy(ctx context.Context, name string) (DeployResult, error) {
+	return c.stateDeploy(ctx, name, false)
+}
+
+// StateDeployKeepMods restores players, world and config.lua while leaving the
+// active mod archive and backups/mods/current.txt untouched.
+func (c *OpsClient) StateDeployKeepMods(ctx context.Context, name string,
+) (DeployResult, error) {
+	return c.stateDeploy(ctx, name, true)
+}
+
+func (c *OpsClient) stateDeploy(ctx context.Context, name string,
+	keepMods bool,
+) (DeployResult, error) {
 	args := []string{"state", "deploy"}
 	switch name {
 	case "":
@@ -841,6 +858,9 @@ func (c *OpsClient) StateDeploy(ctx context.Context, name string) (DeployResult,
 		args = append(args, "--latest")
 	default:
 		args = append(args, "--archive", name)
+	}
+	if keepMods {
+		args = append(args, "--keep-mods")
 	}
 	raw, err := c.call(ctx, c.longMutationTimeout, "state deploy", args...)
 	if err != nil {

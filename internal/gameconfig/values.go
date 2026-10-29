@@ -22,6 +22,40 @@ type valueSpec struct {
 	min, max int64
 	minLen   int
 	maxLen   int
+	group    string
+	allowed  []string
+}
+
+// Lua field groups keep the panel form readable as the editable key list grows.
+// The order of LuaFields also defines the order of groups and fields.
+const (
+	LuaGroupGeneral     = "general"
+	LuaGroupPermissions = "permissions"
+	LuaGroupSharing     = "sharing"
+	LuaGroupStats       = "stats"
+	LuaGroupDeath       = "death"
+	LuaGroupCollisions  = "collisions"
+	LuaGroupWorld       = "world"
+	LuaGroupDatabase    = "database"
+)
+
+// LuaField is the public description of an editable config.lua key. The panel
+// builds its form from this list, so it cannot drift from the write whitelist.
+type LuaField struct {
+	Key      string
+	Kind     string
+	Group    string
+	LabelKey string
+	Min      int64
+	Max      int64
+	Allowed  []string
+}
+
+// LuaReadOnlyField documents a config.lua key that cannot be edited as a
+// single scalar assignment. Reason is "table" or "expression".
+type LuaReadOnlyField struct {
+	Key    string
+	Reason string
 }
 
 var serverSpecs = []valueSpec{
@@ -34,25 +68,156 @@ var serverSpecs = []valueSpec{
 }
 
 var luaSpecs = []valueSpec{
-	{key: "gameMode", kind: kindString},
-	{key: "loginTime", kind: kindInt, min: 10, max: 600},
-	{key: "maxClientsPerIP", kind: kindInt, min: 1, max: 10},
-	{key: "difficulty", kind: kindInt, min: -100, max: 100},
-	{key: "passTimeWhenEmpty", kind: kindBool},
-	{key: "nightStartHour", kind: kindInt, min: 0, max: 23},
-	{key: "nightEndHour", kind: kindInt, min: 0, max: 23},
-	{key: "allowConsole", kind: kindBool},
-	{key: "allowBedRest", kind: kindBool},
-	{key: "allowWildernessRest", kind: kindBool},
-	{key: "allowWait", kind: kindBool},
-	{key: "allowSuicideCommand", kind: kindBool},
-	{key: "allowFixmeCommand", kind: kindBool},
-	{key: "shareJournal", kind: kindBool},
-	{key: "shareFactionRanks", kind: kindBool},
-	{key: "shareTopics", kind: kindBool},
-	{key: "shareBounty", kind: kindBool},
-	{key: "shareReputation", kind: kindBool},
-	{key: "enforceDataFiles", kind: kindBool},
+	// General
+	{key: "gameMode", kind: kindString, group: LuaGroupGeneral},
+	{key: "loginTime", kind: kindInt, min: 10, max: 600, group: LuaGroupGeneral},
+	{key: "maxClientsPerIP", kind: kindInt, min: 1, max: 10, group: LuaGroupGeneral},
+	{key: "difficulty", kind: kindInt, min: -100, max: 100, group: LuaGroupGeneral},
+	{key: "passTimeWhenEmpty", kind: kindBool, group: LuaGroupGeneral},
+	{key: "nightStartHour", kind: kindInt, min: 0, max: 23, group: LuaGroupGeneral},
+	{key: "nightEndHour", kind: kindInt, min: 0, max: 23, group: LuaGroupGeneral},
+
+	// Permissions
+	{key: "allowConsole", kind: kindBool, group: LuaGroupPermissions},
+	{key: "allowBedRest", kind: kindBool, group: LuaGroupPermissions},
+	{key: "allowWildernessRest", kind: kindBool, group: LuaGroupPermissions},
+	{key: "allowWait", kind: kindBool, group: LuaGroupPermissions},
+	{key: "allowSuicideCommand", kind: kindBool, group: LuaGroupPermissions},
+	{key: "allowFixmeCommand", kind: kindBool, group: LuaGroupPermissions},
+	{key: "fixmeInterval", kind: kindInt, min: 0, max: 3600, group: LuaGroupPermissions},
+	{key: "enforceDataFiles", kind: kindBool, group: LuaGroupPermissions},
+
+	// Sharing
+	{key: "shareJournal", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareFactionRanks", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareFactionExpulsion", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareFactionReputation", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareTopics", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareBounty", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareReputation", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareMapExploration", kind: kindBool, group: LuaGroupSharing},
+	{key: "shareVideos", kind: kindBool, group: LuaGroupSharing},
+
+	// Stats
+	{key: "maxAttributeValue", kind: kindInt, min: 1, max: 10000, group: LuaGroupStats},
+	{key: "maxSpeedValue", kind: kindInt, min: 0, max: 10000, group: LuaGroupStats},
+	{key: "maxSkillValue", kind: kindInt, min: 1, max: 10000, group: LuaGroupStats},
+	{key: "maxAcrobaticsValue", kind: kindInt, min: 0, max: 10000, group: LuaGroupStats},
+	{key: "ignoreModifierWithMaxSkill", kind: kindBool, group: LuaGroupStats},
+
+	// Death and respawn
+	{key: "playersRespawn", kind: kindBool, group: LuaGroupDeath},
+	{key: "deathTime", kind: kindInt, min: 0, max: 3600, group: LuaGroupDeath},
+	{key: "deathPenaltyJailDays", kind: kindInt, min: 0, max: 365, group: LuaGroupDeath},
+	{key: "bountyResetOnDeath", kind: kindBool, group: LuaGroupDeath},
+	{key: "bountyDeathPenalty", kind: kindBool, group: LuaGroupDeath},
+	{key: "respawnAtImperialShrine", kind: kindBool, group: LuaGroupDeath},
+	{key: "respawnAtTribunalTemple", kind: kindBool, group: LuaGroupDeath},
+
+	// Collisions and authority
+	{key: "enablePlayerCollision", kind: kindBool, group: LuaGroupCollisions},
+	{key: "enableActorCollision", kind: kindBool, group: LuaGroupCollisions},
+	{key: "enablePlacedObjectCollision", kind: kindBool, group: LuaGroupCollisions},
+	{key: "useActorCollisionForPlacedObjects", kind: kindBool, group: LuaGroupCollisions},
+	{key: "pingDifferenceRequiredForAuthority", kind: kindInt, min: 0, max: 10000, group: LuaGroupCollisions},
+	{key: "physicsFramerate", kind: kindInt, min: 1, max: 1000, group: LuaGroupCollisions},
+
+	// World and objects
+	{key: "useInstancedSpawn", kind: kindBool, group: LuaGroupWorld},
+	{key: "allowOnContainerForUnloadedCells", kind: kindBool, group: LuaGroupWorld},
+	{key: "maximumObjectScale", kind: kindInt, min: 1, max: 1000, group: LuaGroupWorld},
+	{key: "generatedRecordIdPrefix", kind: kindString, maxLen: 32, group: LuaGroupWorld},
+	{key: "enforcedLogLevel", kind: kindInt, min: -1, max: 4, group: LuaGroupWorld},
+
+	// Database and diagnostics
+	{key: "ignoreScriptErrors", kind: kindBool, group: LuaGroupDatabase},
+	{key: "databaseType", kind: kindString, group: LuaGroupDatabase,
+		allowed: []string{"json", "sqlite3"}},
+}
+
+// luaReadOnlySpecs lists stock config.lua keys that are deliberately outside
+// the scalar whitelist. Exposed for inventory tests and documentation.
+var luaReadOnlySpecs = []LuaReadOnlyField{
+	{Key: "dataPath", Reason: "expression"},
+	{Key: "chatWindowInstructions", Reason: "expression"},
+	{Key: "startupScriptsInstructions", Reason: "expression"},
+	{Key: "databasePath", Reason: "expression"},
+	{Key: "gameSettings", Reason: "table"},
+	{Key: "vrSettings", Reason: "table"},
+	{Key: "defaultTimeTable", Reason: "table"},
+	{Key: "worldStartupScripts", Reason: "table"},
+	{Key: "playerStartupScripts", Reason: "table"},
+	{Key: "disabledClientScriptIds", Reason: "table"},
+	{Key: "synchronizedClientScriptIds", Reason: "table"},
+	{Key: "instancedSpawn", Reason: "table"},
+	{Key: "noninstancedSpawn", Reason: "table"},
+	{Key: "defaultRespawn", Reason: "table"},
+	{Key: "forbiddenCells", Reason: "table"},
+	{Key: "bannedEquipmentItems", Reason: "table"},
+	{Key: "rankColors", Reason: "table"},
+	{Key: "customMenuIds", Reason: "table"},
+	{Key: "menuHelperFiles", Reason: "table"},
+	{Key: "enforcedCollisionRefIds", Reason: "table"},
+	{Key: "disallowedActivateRefIds", Reason: "table"},
+	{Key: "disallowedDeleteRefIds", Reason: "table"},
+	{Key: "disallowedCreateRefIds", Reason: "table"},
+	{Key: "disallowedLockRefIds", Reason: "table"},
+	{Key: "disallowedTrapRefIds", Reason: "table"},
+	{Key: "disallowedStateRefIds", Reason: "table"},
+	{Key: "disallowedDoorStateRefIds", Reason: "table"},
+	{Key: "recordStoreLoadOrder", Reason: "table"},
+	{Key: "enchantableRecordTypes", Reason: "table"},
+	{Key: "carriableRecordTypes", Reason: "table"},
+	{Key: "unplaceableRecordTypes", Reason: "table"},
+	{Key: "validRecordSettings", Reason: "table"},
+	{Key: "requiredRecordSettings", Reason: "table"},
+	{Key: "mutuallyExclusiveRecordSettings", Reason: "table"},
+	{Key: "numericalRecordSettings", Reason: "table"},
+	{Key: "booleanRecordSettings", Reason: "table"},
+	{Key: "minMaxRecordSettings", Reason: "table"},
+	{Key: "rgbRecordSettings", Reason: "table"},
+	{Key: "cellPacketTypes", Reason: "table"},
+	{Key: "disallowedNameStrings", Reason: "table"},
+	{Key: "playerKeyOrder", Reason: "table"},
+	{Key: "cellKeyOrder", Reason: "table"},
+	{Key: "recordstoreKeyOrder", Reason: "table"},
+	{Key: "worldKeyOrder", Reason: "table"},
+}
+
+// LuaFields returns the editable config.lua keys in presentation order.
+func LuaFields() []LuaField {
+	fields := make([]LuaField, 0, len(luaSpecs))
+	for _, spec := range luaSpecs {
+		fields = append(fields, LuaField{
+			Key:      spec.key,
+			Kind:     spec.kind.name(),
+			Group:    spec.group,
+			LabelKey: "panel.config.field." + spec.key,
+			Min:      spec.min,
+			Max:      spec.max,
+			Allowed:  append([]string(nil), spec.allowed...),
+		})
+	}
+	return fields
+}
+
+// LuaReadOnlyFields returns non-scalar config.lua keys and the reason they are
+// read-only.
+func LuaReadOnlyFields() []LuaReadOnlyField {
+	return append([]LuaReadOnlyField(nil), luaReadOnlySpecs...)
+}
+
+func (k valueKind) name() string {
+	switch k {
+	case kindString:
+		return "string"
+	case kindInt:
+		return "int"
+	case kindBool:
+		return "bool"
+	default:
+		return ""
+	}
 }
 
 func findSpec(specs []valueSpec, key string) (valueSpec, bool) {
@@ -62,6 +227,32 @@ func findSpec(specs []valueSpec, key string) (valueSpec, bool) {
 		}
 	}
 	return valueSpec{}, false
+}
+
+func valueAllowed(spec valueSpec, value string) bool {
+	if len(spec.allowed) == 0 {
+		return true
+	}
+	for _, allowed := range spec.allowed {
+		if value == allowed {
+			return true
+		}
+	}
+	return false
+}
+
+func readOnlyLuaKey(key string) bool {
+	_, ok := luaReadOnlySpec(key)
+	return ok
+}
+
+func luaReadOnlySpec(key string) (LuaReadOnlyField, bool) {
+	for _, field := range luaReadOnlySpecs {
+		if field.Key == key {
+			return field, true
+		}
+	}
+	return LuaReadOnlyField{}, false
 }
 
 func parseTypedValue(spec valueSpec, raw string) (any, error) {
@@ -76,6 +267,10 @@ func parseTypedValue(spec valueSpec, raw string) (any, error) {
 		}
 		if spec.maxLen > 0 && len(value) > spec.maxLen {
 			return nil, fmt.Errorf("%s must be at most %d characters", spec.key, spec.maxLen)
+		}
+		if !valueAllowed(spec, value) {
+			return nil, fmt.Errorf("%s must be one of %s", spec.key,
+				strings.Join(spec.allowed, ", "))
 		}
 		return value, nil
 	case kindInt:

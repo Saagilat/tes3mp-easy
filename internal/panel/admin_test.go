@@ -199,6 +199,12 @@ func (f *fakeAdminOps) StateDeploy(_ context.Context, name string) (DeployResult
 	return DeployResult{Archive: name}, f.stateDeployErr
 }
 
+func (f *fakeAdminOps) StateDeployKeepMods(_ context.Context, name string,
+) (DeployResult, error) {
+	f.deploys = append(f.deploys, adminDeployCall{kind: "state-keep-mods", ref: name})
+	return DeployResult{Archive: name, ModsKept: true}, f.stateDeployErr
+}
+
 func (f *fakeAdminOps) StaffSet(_ context.Context, player string, rank int) error {
 	f.staffCalls = append(f.staffCalls, struct {
 		player string
@@ -777,7 +783,7 @@ func TestAdminStatePageGroupsAndValidatesInput(t *testing.T) {
 	}
 	body := rec.Body.String()
 	for _, want := range []string{
-		"state-manual", "state-predeploy", "Restore",
+		"state-manual", "state-predeploy", "Restore", "Apply state only",
 		"Download snapshot", "mods-2026-10-23_12-00-00.tar.gz",
 		"Show older", "state-2026-10-20_12-00-00.tar.gz",
 		"Restore from a downloaded archive", "/admin/state/restore",
@@ -790,6 +796,9 @@ func TestAdminStatePageGroupsAndValidatesInput(t *testing.T) {
 	}
 	if got := strings.Count(body, "/bundle"); got != 2 {
 		t.Fatalf("bundle links = %d, want 2 (missing pack hidden):\n%s", got, body)
+	}
+	if got := strings.Count(body, "Apply state only"); got != 3 {
+		t.Fatalf("state-only actions = %d, want 3:\n%s", got, body)
 	}
 	if strings.Contains(body, "/admin/mods/deploy\" data-confirm") {
 		t.Fatalf("state rows still carry a separate mods deploy button:\n%s", body)
@@ -876,6 +885,20 @@ func TestAdminStateCreateAndDeploy(t *testing.T) {
 	if rec.Code != http.StatusBadRequest || len(env.ops.deploys) != 0 {
 		t.Fatalf("unsafe mods field = %d calls=%+v", rec.Code, env.ops.deploys)
 	}
+
+	// "State only" ignores the snapshot pack, so a missing pack does not block it
+	// and no mods deploy is attempted.
+	env.ops.deploys = nil
+	env.ops.deployErr = adminError(ops.CodeNoSpace, ops.ExitNoSpace,
+		"not enough space for mods", nil)
+	rec = env.request(t, http.MethodPost, "/admin/state/deploy", url.Values{
+		"archive":   {"state-predeploy-2026-10-22_12-00-00.tar.gz"},
+		"keep_mods": {"1"},
+	})
+	if rec.Code != http.StatusSeeOther || len(env.ops.deploys) != 1 ||
+		env.ops.deploys[0].kind != "state-keep-mods" {
+		t.Fatalf("state-only restore = %d calls=%+v", rec.Code, env.ops.deploys)
+	}
 }
 
 func TestAdminStateCreateFailureRendersReason(t *testing.T) {
@@ -906,6 +929,7 @@ func adminConfigSnapshots() map[string]ConfigSnapshot {
 			Values: map[string]any{
 				"gameMode": "Default", "loginTime": 60, "passTimeWhenEmpty": false,
 				"allowConsole": false, "shareBounty": false,
+				"deathPenaltyJailDays": 5,
 			},
 			ReadOnly: []string{"gameSettings", "defaultTimeTable"},
 		},
@@ -929,7 +953,8 @@ func TestAdminConfigPageAndSave(t *testing.T) {
 	}
 	body := rec.Body.String()
 	for _, want := range []string{
-		"Morrowind with friends", "loginTime",
+		"Morrowind with friends", "loginTime", "deathPenaltyJailDays",
+		"Death and respawn", "Jail days",
 		`action="/admin/config/config"`, `action="/admin/config/server"`,
 	} {
 		if !strings.Contains(body, want) {
@@ -941,6 +966,29 @@ func TestAdminConfigPageAndSave(t *testing.T) {
 		if strings.Contains(body, unwanted) {
 			t.Fatalf("config page still contains %q:\n%s", unwanted, body)
 		}
+	}
+}
+
+// TestAdminConfigSavesDeathPenalty checks a v1 death key end to end: the form
+// shows the translated label and a whole-form POST sends only the diff.
+func TestAdminConfigSavesDeathPenalty(t *testing.T) {
+	env := newAdminTestEnv(t, &fakeAdminOps{
+		configSnapshots: adminConfigSnapshots(),
+	})
+	rec := env.request(t, http.MethodPost, "/admin/config/config",
+		url.Values{"deathPenaltyJailDays": {"10"}})
+	if rec.Code != http.StatusOK || len(env.ops.configSets) != 1 {
+		t.Fatalf("death penalty save = %d calls=%+v",
+			rec.Code, env.ops.configSets)
+	}
+	call := env.ops.configSets[0]
+	if call.file != "config" || call.key != "deathPenaltyJailDays" ||
+		call.value != 10 {
+		t.Fatalf("death penalty call = %+v", call)
+	}
+	if !strings.Contains(rec.Body.String(), "Jail days") ||
+		!strings.Contains(rec.Body.String(), "deathPenaltyJailDays") {
+		t.Fatalf("saved page lost the death field:\n%s", rec.Body.String())
 	}
 }
 
@@ -991,7 +1039,7 @@ func TestAdminConfigSaveFailureHighlightsField(t *testing.T) {
 	}
 	body := rec.Body.String()
 	if !strings.Contains(body, "loginTime must be in 10..600") ||
-		!strings.Contains(body, "Check this field: loginTime") {
+		!strings.Contains(body, "Check this field: Login time, s") {
 		t.Fatalf("config failure does not highlight the field:\n%s", body)
 	}
 }

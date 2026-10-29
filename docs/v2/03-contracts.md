@@ -256,7 +256,7 @@ CLI: `backups prune [--dry-run]`.
 
 ### `state deploy`
 
-CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--dry-run]`.
+CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--keep-mods] [--dry-run]`.
 
 ```json
 {
@@ -265,14 +265,21 @@ CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--dry-run]`.
     "archive": "state-2026-10-27_16-40-00.tar.gz",
     "mods_archive": "mods-2026-10-27_16-40-00.tar.gz",
     "predeploy_backup": "state-predeploy-2026-10-27_17-02-11.tar.gz",
-    "restarted": true
+    "mods_kept": false,
+    "restarted": true,
+    "warnings": []
   }
 }
 ```
 
-- State-архив обязан ссылаться на текущий пакет модов: `current.txt` состояния
-  должен совпадать с `backups/mods/current.txt`, а sha256 — с файлом. Иначе
-  `archive_invalid`; моды автоматически не подменяются.
+- Без `--keep-mods` state-архив обязан ссылаться на текущий пакет модов:
+  `current.txt` состояния должен совпадать с `backups/mods/current.txt`, а
+  sha256 — с файлом. Иначе `archive_invalid`; моды автоматически не подменяются.
+- С `--keep-mods` сверка с активным пакетом и наличие его файла пропускаются.
+  `backups/mods/current.txt` и файлы модов не меняются, `mods_kept` = `true`, а
+  при расхождении в `warnings` попадает пакет снимка и активный пакет. Риск
+  осознанный: мир с другого набора может не загрузиться, клиенты с чужим
+  `requiredDataFiles.json` получат отказ сервера.
 - Восстанавливаются `players/`, `world/` и `configs/config.lua`.
   `tes3mp-server-default.cfg`, `banlist.json`, `customScripts.lua` и остальные
   файлы `configs/` не трогаются.
@@ -284,7 +291,7 @@ CLI: `state deploy (--latest|--archive <name>) [--no-restart] [--dry-run]`.
 
 ### `state import`
 
-CLI: `state import --file <path> [--name <archive>] [--dry-run]`.
+CLI: `state import --file <path> [--name <archive>] [--keep-mods] [--dry-run]`.
 
 ```json
 {
@@ -293,6 +300,7 @@ CLI: `state import --file <path> [--name <archive>] [--dry-run]`.
     "archive": "state-manual-2026-10-22_12-00-00.tar.gz",
     "sha256": "abc...",
     "mods_archive": "mods-2026-10-22_12-00-00.tar.gz",
+    "mods_kept": false,
     "players": 12,
     "world_files": 340,
     "pruned": [],
@@ -305,9 +313,11 @@ CLI: `state import --file <path> [--name <archive>] [--dry-run]`.
   системе, что `backups/state`; при `EXDEV` используется атомарное копирование.
 - `--name` сохраняет точное имя скачанного state. Без него берётся basename
   файла. Оба варианта обязаны соответствовать §6.6.
-- State проверяется полностью, включая `configs/config.lua` и совпадение
-  `current.txt` с активным `backups/mods/current.txt`. Поэтому перед импортом
-  нужный пакет модов уже должен быть задеплоен.
+- Без `--keep-mods` state проверяется полностью, включая `configs/config.lua` и
+  совпадение `current.txt` с активным `backups/mods/current.txt`. Поэтому перед
+  импортом нужный пакет модов уже должен быть задеплоен.
+- С `--keep-mods` проверяются layout и `configs/config.lua`, но не активный
+  пакет. `mods_kept` = `true`; расхождение пакетов попадает в `warnings`.
 - Импорт только кладёт архив в `backups/state`; восстановление выполняет
   отдельный `state deploy`. Импортированный архив защищён от retention этого
   запуска.
@@ -393,8 +403,22 @@ CLI: `state import --file <path> [--name <archive>] [--dry-run]`.
 }
 ```
 
-Для `config` таблицы и списки возвращаются как `read_only`, а не как значения
-для редактирования.
+Для `config` таблицы и строки-выражения (`dataPath`, `databasePath`,
+`chatWindowInstructions`, `startupScriptsInstructions`) возвращаются как
+`read_only`, а не как значения для редактирования. `values` содержит все
+простые скаляры из `gameconfig.LuaFields()`, в том числе блок смерти:
+
+```json
+{
+  "file": "config",
+  "values": {
+    "playersRespawn": true,
+    "deathTime": 5,
+    "deathPenaltyJailDays": 5
+  },
+  "read_only": ["defaultRespawn", "gameSettings"]
+}
+```
 
 ### `config set`
 
@@ -516,8 +540,8 @@ world/
 - sha256 должен совпадать с содержимым файла.
 
 `backups/mods/current.txt` — активный пакет модов.
-`current.txt` внутри state — пакет, с которым снят мир; `state deploy` требует,
-чтобы активный пакет совпадал с ним.
+`current.txt` внутри state — пакет, с которым снят мир; без `--keep-mods`
+`state deploy` требует, чтобы активный пакет совпадал с ним.
 
 ### 6.5. Configs
 

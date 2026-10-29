@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/Saagilat/tes3mp-easy/internal/archive"
+	"github.com/Saagilat/tes3mp-easy/internal/gameconfig"
 	"github.com/Saagilat/tes3mp-easy/internal/i18n"
 	"github.com/Saagilat/tes3mp-easy/internal/serverruntime"
 )
@@ -182,9 +183,14 @@ type adminConfigPageData struct {
 type adminConfigSection struct {
 	File   string
 	Title  string
-	Fields []adminConfigField
+	Groups []adminConfigGroup
 	Note   string
 	Error  string
+}
+
+type adminConfigGroup struct {
+	Title  string
+	Fields []adminConfigField
 }
 
 type adminConfigField struct {
@@ -192,6 +198,7 @@ type adminConfigField struct {
 	Label   string
 	Kind    string
 	Value   string
+	Hint    string
 	Checked bool
 }
 
@@ -1179,14 +1186,17 @@ func (h *panelHandler) handleStateDeploy(w http.ResponseWriter, r *http.Request,
 	}
 	// The state row sends the mod pack the snapshot was created with. If that
 	// pack is not active yet the panel deploys it first, so restoring stays a
-	// single click instead of "deploy mods, then restore".
+	// single click instead of "deploy mods, then restore". The separate
+	// "state only" action sets keep_mods and leaves the active pack untouched.
+	keepMods := r.PostForm.Get("keep_mods") == "1"
 	mods := r.PostForm.Get("mods")
-	if mods != "" && (!safeArchiveName(mods) || archive.ValidateModsArchiveName(mods) != nil) {
+	if !keepMods && mods != "" &&
+		(!safeArchiveName(mods) || archive.ValidateModsArchiveName(mods) != nil) {
 		h.renderStateFailure(w, r, session, http.StatusBadRequest,
 			h.tr().T(i18n.KeyPanelAdminModsNameInvalid), "mods")
 		return
 	}
-	if mods != "" {
+	if !keepMods && mods != "" {
 		current, listErr := h.ops.BackupsList(r.Context(), "mods", 1, "")
 		if listErr != nil {
 			status, message, field := h.adminFailure(listErr)
@@ -1210,16 +1220,24 @@ func (h *panelHandler) handleStateDeploy(w http.ResponseWriter, r *http.Request,
 				deployed.Archive, deployed.Restarted)
 		}
 	}
-	result, err := h.ops.StateDeploy(r.Context(), name)
+	var (
+		result DeployResult
+		err    error
+	)
+	if keepMods {
+		result, err = h.ops.StateDeployKeepMods(r.Context(), name)
+	} else {
+		result, err = h.ops.StateDeploy(r.Context(), name)
+	}
 	if err != nil {
-		h.logger.Printf("audit: action=state.deploy archive=%s result=error code=%s",
-			name, adminErrorCode(err))
+		h.logger.Printf("audit: action=state.deploy archive=%s keep_mods=%t result=error code=%s",
+			name, keepMods, adminErrorCode(err))
 		status, message, field := h.adminFailure(err)
 		h.renderStateFailure(w, r, session, status, message, field)
 		return
 	}
-	h.logger.Printf("audit: action=state.deploy archive=%s mods=%s result=ok restarted=%t",
-		result.Archive, mods, result.Restarted)
+	h.logger.Printf("audit: action=state.deploy archive=%s mods=%s keep_mods=%t result=ok restarted=%t",
+		result.Archive, mods, keepMods, result.Restarted)
 	http.Redirect(w, r, "/admin/state?ok=state_deployed", http.StatusSeeOther)
 }
 
@@ -1291,38 +1309,42 @@ type adminConfigFieldDef struct {
 	// are, operator-facing labels are translated.
 	LabelKey string
 	Kind     string
+	Group    string
+	Min      int64
+	Max      int64
+	Allowed  []string
 }
 
 var adminConfigFields = map[string][]adminConfigFieldDef{
 	"server": {
 		{Key: "hostname", LabelKey: i18n.KeyPanelConfigHostname, Kind: "string"},
-		{Key: "port", LabelKey: i18n.KeyPanelConfigPort, Kind: "int"},
-		{Key: "maximumPlayers", LabelKey: i18n.KeyPanelConfigMaxPlayers, Kind: "int"},
+		{Key: "port", LabelKey: i18n.KeyPanelConfigPort, Kind: "int", Min: 1024, Max: 65535},
+		{Key: "maximumPlayers", LabelKey: i18n.KeyPanelConfigMaxPlayers, Kind: "int", Min: 1, Max: 64},
 		{Key: "password", LabelKey: i18n.KeyPanelConfigPassword, Kind: "password"},
-		{Key: "logLevel", LabelKey: i18n.KeyPanelConfigLogLevel, Kind: "int"},
+		{Key: "logLevel", LabelKey: i18n.KeyPanelConfigLogLevel, Kind: "int", Min: 0, Max: 4},
 		{Key: "masterServerEnabled", Label: "Master server", Kind: "bool"},
 	},
-	"config": {
-		{Key: "gameMode", Label: "Game mode", Kind: "string"},
-		{Key: "loginTime", Label: "loginTime (10..600)", Kind: "int"},
-		{Key: "maxClientsPerIP", Label: "maxClientsPerIP (1..10)", Kind: "int"},
-		{Key: "difficulty", Label: "difficulty (-100..100)", Kind: "int"},
-		{Key: "passTimeWhenEmpty", Label: "passTimeWhenEmpty", Kind: "bool"},
-		{Key: "nightStartHour", Label: "nightStartHour (0..23)", Kind: "int"},
-		{Key: "nightEndHour", Label: "nightEndHour (0..23)", Kind: "int"},
-		{Key: "allowConsole", Label: "allowConsole", Kind: "bool"},
-		{Key: "allowBedRest", Label: "allowBedRest", Kind: "bool"},
-		{Key: "allowWildernessRest", Label: "allowWildernessRest", Kind: "bool"},
-		{Key: "allowWait", Label: "allowWait", Kind: "bool"},
-		{Key: "allowSuicideCommand", Label: "allowSuicideCommand", Kind: "bool"},
-		{Key: "allowFixmeCommand", Label: "allowFixmeCommand", Kind: "bool"},
-		{Key: "shareJournal", Label: "shareJournal", Kind: "bool"},
-		{Key: "shareFactionRanks", Label: "shareFactionRanks", Kind: "bool"},
-		{Key: "shareTopics", Label: "shareTopics", Kind: "bool"},
-		{Key: "shareBounty", Label: "shareBounty", Kind: "bool"},
-		{Key: "shareReputation", Label: "shareReputation", Kind: "bool"},
-		{Key: "enforceDataFiles", Label: "enforceDataFiles", Kind: "bool"},
-	},
+	"config": luaConfigFieldDefs(),
+}
+
+// luaConfigFieldDefs is the panel projection of the gameconfig whitelist. The
+// keys, types, ranges and groups come from one place, so adding a supported
+// config.lua key cannot leave the form behind.
+func luaConfigFieldDefs() []adminConfigFieldDef {
+	fields := gameconfig.LuaFields()
+	defs := make([]adminConfigFieldDef, 0, len(fields))
+	for _, field := range fields {
+		defs = append(defs, adminConfigFieldDef{
+			Key:      field.Key,
+			LabelKey: field.LabelKey,
+			Kind:     field.Kind,
+			Group:    field.Group,
+			Min:      field.Min,
+			Max:      field.Max,
+			Allowed:  append([]string(nil), field.Allowed...),
+		})
+	}
+	return defs
 }
 
 func (h *panelHandler) configSnapshot(ctx context.Context,
@@ -1358,6 +1380,40 @@ func configFieldLabel(tr *i18n.Translator, def adminConfigFieldDef) string {
 	return def.Label
 }
 
+func configFieldHint(def adminConfigFieldDef) string {
+	hint := def.Key
+	if def.Kind == "int" {
+		hint += fmt.Sprintf(" · %d..%d", def.Min, def.Max)
+	}
+	if len(def.Allowed) > 0 {
+		hint += " · " + strings.Join(def.Allowed, "|")
+	}
+	return hint
+}
+
+func configGroupTitle(tr *i18n.Translator, group string) string {
+	switch group {
+	case gameconfig.LuaGroupGeneral:
+		return tr.T(i18n.KeyPanelConfigGroupGeneral)
+	case gameconfig.LuaGroupPermissions:
+		return tr.T(i18n.KeyPanelConfigGroupPermissions)
+	case gameconfig.LuaGroupSharing:
+		return tr.T(i18n.KeyPanelConfigGroupSharing)
+	case gameconfig.LuaGroupStats:
+		return tr.T(i18n.KeyPanelConfigGroupStats)
+	case gameconfig.LuaGroupDeath:
+		return tr.T(i18n.KeyPanelConfigGroupDeath)
+	case gameconfig.LuaGroupCollisions:
+		return tr.T(i18n.KeyPanelConfigGroupCollisions)
+	case gameconfig.LuaGroupWorld:
+		return tr.T(i18n.KeyPanelConfigGroupWorld)
+	case gameconfig.LuaGroupDatabase:
+		return tr.T(i18n.KeyPanelConfigGroupDatabase)
+	default:
+		return ""
+	}
+}
+
 func (h *panelHandler) configSections(r *http.Request) ([]adminConfigSection, error) {
 	sections := make([]adminConfigSection, 0, 2)
 	for _, item := range []struct {
@@ -1378,21 +1434,31 @@ func (h *panelHandler) configSections(r *http.Request) ([]adminConfigSection, er
 			Title: h.tr().T(item.titleKey),
 			Note:  h.tr().T(item.noteKey),
 		}
+		groupIndex := make(map[string]int)
 		for _, def := range adminConfigFields[item.file] {
 			value, exists := snapshot.Values[def.Key]
 			if !exists {
 				continue
+			}
+			index, ok := groupIndex[def.Group]
+			if !ok {
+				index = len(section.Groups)
+				groupIndex[def.Group] = index
+				section.Groups = append(section.Groups, adminConfigGroup{
+					Title: configGroupTitle(h.tr(), def.Group),
+				})
 			}
 			field := adminConfigField{
 				Key:   def.Key,
 				Label: configFieldLabel(h.tr(), def),
 				Kind:  def.Kind,
 				Value: fmt.Sprint(value),
+				Hint:  configFieldHint(def),
 			}
 			if def.Kind == "bool" {
 				field.Checked, _ = value.(bool)
 			}
-			section.Fields = append(section.Fields, field)
+			section.Groups[index].Fields = append(section.Groups[index].Fields, field)
 		}
 		sections = append(sections, section)
 	}
@@ -1575,9 +1641,11 @@ func (h *panelHandler) renderConfigFailure(w http.ResponseWriter, r *http.Reques
 		if field == "" {
 			continue
 		}
-		for _, item := range data.Sections[index].Fields {
-			if item.Key == field {
-				data.Sections[index].Error = item.Label
+		for groupIndex := range data.Sections[index].Groups {
+			for _, item := range data.Sections[index].Groups[groupIndex].Fields {
+				if item.Key == field {
+					data.Sections[index].Error = item.Label
+				}
 			}
 		}
 	}

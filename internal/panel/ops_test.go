@@ -196,7 +196,10 @@ func opsSuccessResponse(args []string) []byte {
 	case strings.HasPrefix(key, "mods deploy"):
 		return []byte(`{"ok":true,"data":{"archive":"mods-new.tar.gz","sha256":"123","previous":null,"state_backup":"state-predeploy.tar.gz","restarted":true}}`)
 	case strings.HasPrefix(key, "state deploy"):
-		return []byte(`{"ok":true,"data":{"archive":"state-restored.tar.gz","mods_archive":"mods-current.tar.gz","predeploy_backup":"state-predeploy.tar.gz","restarted":false}}`)
+		if strings.Contains(key, "--keep-mods") {
+			return []byte(`{"ok":true,"data":{"archive":"state-restored.tar.gz","mods_archive":"mods-older.tar.gz","predeploy_backup":"state-predeploy.tar.gz","mods_kept":true,"restarted":false,"warnings":["state was created with mods archive mods-older.tar.gz; keeping active mods mods-current.tar.gz"]}}`)
+		}
+		return []byte(`{"ok":true,"data":{"archive":"state-restored.tar.gz","mods_archive":"mods-current.tar.gz","predeploy_backup":"state-predeploy.tar.gz","mods_kept":false,"restarted":false,"warnings":[]}}`)
 	case strings.HasPrefix(key, "config get --file server"):
 		return []byte(`{"ok":true,"data":{"file":"server","values":{"hostname":"Morrowind with friends","port":25565},"read_only":["rules"]}}`)
 	case strings.HasPrefix(key, "config get --file config"):
@@ -254,6 +257,11 @@ func TestOpsClientCommands(t *testing.T) {
 	if _, err := client.StateDeploy(ctx, "state-explicit.tar.gz"); err != nil {
 		t.Fatalf("StateDeploy archive: %v", err)
 	}
+	kept, err := client.StateDeployKeepMods(ctx, "state-explicit.tar.gz")
+	if err != nil || !kept.ModsKept || kept.ModsArchive != "mods-older.tar.gz" ||
+		len(kept.Warnings) != 1 {
+		t.Fatalf("StateDeployKeepMods = %+v, %v", kept, err)
+	}
 	if err := client.StaffSet(ctx, "John Doe", 2); err != nil {
 		t.Fatalf("StaffSet: %v", err)
 	}
@@ -306,19 +314,21 @@ func TestOpsClientCommands(t *testing.T) {
 	assertOpsCall(t, calls[9], client.binary, withRoot(
 		"state", "deploy", "--archive", "state-explicit.tar.gz")...)
 	assertOpsCall(t, calls[10], client.binary, withRoot(
+		"state", "deploy", "--archive", "state-explicit.tar.gz", "--keep-mods")...)
+	assertOpsCall(t, calls[11], client.binary, withRoot(
 		"staff", "set", "--player", "John Doe", "--rank", "2")...)
-	assertOpsCall(t, calls[11], client.binary, withRoot("config", "get", "--file", "server")...)
-	assertOpsCall(t, calls[12], client.binary, withRoot("config", "get", "--file", "config")...)
-	assertOpsCall(t, calls[13], client.binary, withRoot(
+	assertOpsCall(t, calls[12], client.binary, withRoot("config", "get", "--file", "server")...)
+	assertOpsCall(t, calls[13], client.binary, withRoot("config", "get", "--file", "config")...)
+	assertOpsCall(t, calls[14], client.binary, withRoot(
 		"config", "set", "--file", "config", "--key", "hostname",
 		"--value", "Morrowind with friends")...)
-	assertOpsCall(t, calls[14], client.binary, withRoot(
-		"config", "set", "--file", "config", "--key", "loginTime", "--value", "60")...)
 	assertOpsCall(t, calls[15], client.binary, withRoot(
+		"config", "set", "--file", "config", "--key", "loginTime", "--value", "60")...)
+	assertOpsCall(t, calls[16], client.binary, withRoot(
 		"config", "set", "--file", "config", "--key", "enabled", "--value", "true")...)
-	assertOpsCall(t, calls[16], client.binary, withRoot("start")...)
-	assertOpsCall(t, calls[17], client.binary, withRoot("stop")...)
-	assertOpsCall(t, calls[18], client.binary, withRoot("restart")...)
+	assertOpsCall(t, calls[17], client.binary, withRoot("start")...)
+	assertOpsCall(t, calls[18], client.binary, withRoot("stop")...)
+	assertOpsCall(t, calls[19], client.binary, withRoot("restart")...)
 }
 
 func TestOpsClientNamedImports(t *testing.T) {

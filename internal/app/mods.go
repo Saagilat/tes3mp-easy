@@ -43,6 +43,28 @@ func (s *Service) ModsState(id string) (mods.State, error) {
 	return mods.Inspect(workDir, strings.TrimSpace(id))
 }
 
+// EnsureMods checks the panel for the current mod pack before every launch.
+// A changed pack is downloaded and installed; an unchanged one is a cheap
+// metadata request. When the panel is unreachable but a local installation is
+// intact, the error becomes a warning and the game may start offline with the
+// existing files.
+func (s *Service) EnsureMods(ctx context.Context, id string,
+	progress func(mods.Progress),
+) (mods.Result, []string, error) {
+	result, err := s.UpdateMods(ctx, id, progress)
+	if err == nil {
+		return result, nil, nil
+	}
+	state, stateErr := s.ModsState(id)
+	if stateErr != nil || !state.Installed {
+		return mods.Result{}, nil, err
+	}
+	s.LogWarnf("mods for %s were not verified: %v", strings.TrimSpace(id), err)
+	return mods.Result{State: state}, []string{
+		fmt.Sprintf("mods were not verified against the panel: %v", err),
+	}, nil
+}
+
 // UpdateMods downloads and installs the current mod pack for one profile. The
 // method is safe to call from a UI goroutine; progress is delivered through the
 // callback.
