@@ -22,6 +22,16 @@
 Рядом с каждым архивом лежит `.sha256`. Конкретную версию берите из релиза
 `client-v<version>`: там те же файлы с версией в имени.
 
+На Linux клиент ставится одной командой, без root: установщик проверяет
+`.sha256`, кладёт бинарь в `~/.local/bin`, а иконку и пункт меню — в
+`~/.local/share`:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/Saagilat/tes3mp-easy/master/tes3mp-easy-client-installer.sh)
+```
+
+`TES3MP_EASY_CLIENT_VERSION=0.3.0` прибивает версию клиента.
+
 Нужен Morrowind; на Linux также Steam + Proton. Адрес, порт и пароль сервера
 возьмите у админа.
 

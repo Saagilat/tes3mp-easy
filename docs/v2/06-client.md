@@ -32,7 +32,15 @@
 - GUI — Fyne. Один бинарник, без Electron, Node.js и локального веб-сервера.
 - Windows: `tes3mp-easy-client.exe`.
 - Linux: `tes3mp-easy-client`.
-- Без установщика и без автообновления: новая версия — новый архив.
+- Без автообновления: новая версия — новый архив. Для Linux есть необязательный
+  установщик `tes3mp-easy-client-installer.sh`: публикуется клиентским ассетом и
+  в версионном релизе, и в `client-latest`, проверяет `.sha256` архива, кладёт
+  бинарь в `~/.local/bin`, иконку и `.desktop` — в `$XDG_DATA_HOME`
+  (по умолчанию `~/.local/share`), root не нужен; версия прибивается
+  `TES3MP_EASY_CLIENT_VERSION=0.3.0`. Иконку и меню он берёт из того же тега,
+  что и архив, поэтому установленный клиент всегда из одного релиза; поведение
+  держат `test/client-install-smoke.sh` и `TestClientInstaller`
+  (`test/docs/release_test.go`).
   `.github/workflows/release.yml` собирает Linux и Windows архивы на тег
   `client-v<version>`; клиент и сервер выпускаются независимыми каналами, а
   клиентские артефакты не входят в серверный release tar. Рядом публикуется

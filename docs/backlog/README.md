@@ -31,3 +31,4 @@ BL-008, BL-013 → BL-007, BL-014 → BL-004, BL-016 → BL-012.
 | [BL-022](BL-022-state-deploy-keep-mods.md) | Применить state без применения его мод-пака | сделано |
 | [BL-023](BL-023-mods-check-on-launch.md) | Проверка модов при запуске иногда не выполняется | сделано |
 | [BL-024](BL-024-server-settings-v1-parity.md) | Настройки сервера на панели не покрывают `config.lua` v1 | сделано |
+| [BL-025](BL-025-client-installer.md) | Установщик клиента для Linux | сделано |

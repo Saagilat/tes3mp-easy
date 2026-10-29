@@ -1047,9 +1047,9 @@ panic.
 | Канал | Тег | Артефакты |
 |---|---|---|
 | server | `server-v<version>` | `tes3mp-easy-<version>-linux-amd64.tar.gz` (+ `.sha256`) |
-| client | `client-v<version>` | `tes3mp-easy-client-<version>-linux-amd64.tar.gz`, `tes3mp-easy-client-<version>-windows-amd64.zip` (+ `.sha256`) |
+| client | `client-v<version>` | `tes3mp-easy-client-<version>-linux-amd64.tar.gz`, `tes3mp-easy-client-<version>-windows-amd64.zip` (+ `.sha256`), `tes3mp-easy-client-installer.sh` (+ `.sha256`) |
 | server | `server-latest` (движущийся) | `tes3mp-easy-linux-amd64.tar.gz` (+ `.sha256`) |
-| client | `client-latest` (движущийся) | `tes3mp-easy-client-linux-amd64.tar.gz`, `tes3mp-easy-client-windows-amd64.zip` (+ `.sha256`) |
+| client | `client-latest` (движущийся) | `tes3mp-easy-client-linux-amd64.tar.gz`, `tes3mp-easy-client-windows-amd64.zip`, `tes3mp-easy-client-installer.sh` (+ `.sha256`) |
 
 Job `publish` после версионного релиза сам переставляет тег
 `<channel>-latest` на выпущенный коммит (через API, `force`), копирует архивы
@@ -1096,6 +1096,21 @@ git push origin client-v0.2.9
   что job требует `refs/tags/`. Ручной запасной путь — переставить тег
   (`git tag -f server-latest <sha> && git push -f origin server-latest`) и
   загрузить алиасные файлы в релиз вручную.
+- Установщик клиента `tes3mp-easy-client-installer.sh` попадает в оба клиентских
+  релиза под одним и тем же именем: версии в имени нет, поэтому `publish`
+  копирует его в алиас как есть, а `install.sh` его не видит (он ищет серверный
+  шаблон). Иконку и `.desktop` установщик берёт из `assets/` того тега, откуда
+  скачан архив, поэтому релиз без `assets/` (всё, что до установщика) он
+  отвергает с явной ошибкой. После релиза проверьте:
+
+  ```bash
+  curl -fsSL "https://github.com/Saagilat/tes3mp-easy/releases/download/client-latest/tes3mp-easy-client-installer.sh" | head -n 1
+  curl -fsSL "https://github.com/Saagilat/tes3mp-easy/releases/download/client-latest/tes3mp-easy-client-installer.sh.sha256"
+  ```
+
+  Обе команды отвечают `200` и `#!/usr/bin/env bash`/хеш; на чистой машине
+  установщик ставит клиент в `~/.local/bin` и пункт меню без root
+  (`test/client-install-smoke.sh` держит это в CI).
 - `internal/contract` и `internal/serverapi` описывают протокол
   клиент↔панель: несовместимые изменения выпускаются в обоих каналах.
 - Панель отдаёт свою версию в `/api/v1/server` как `panel_version` — это
