@@ -5,8 +5,8 @@ package version
 
 // Client is the desktop client version. It matches the client-v<version> tag
 // and the client archives published with that GitHub release.
-var Client = "0.2.8"
+var Client = "0.2.9"
 
 // Server is the server release version: ops, the panel and the archive built by
 // cmd/tes3mp-easy-pack. It matches the server-v<version> tag.
-var Server = "0.3.1"
+var Server = "0.3.2"
