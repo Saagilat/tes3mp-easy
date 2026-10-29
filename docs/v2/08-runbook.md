@@ -1064,8 +1064,8 @@ git tag -a server-v0.3.2 -m "tes3mp-easy server 0.3.2"
 git push origin server-v0.3.2
 
 # клиентский релиз
-git tag -a client-v0.3.0 -m "tes3mp-easy client 0.3.0"
-git push origin client-v0.3.0
+git tag -a client-v0.3.1 -m "tes3mp-easy client 0.3.1"
+git push origin client-v0.3.1
 ```
 
 - Версию подставляет workflow через `-ldflags -X
@@ -1110,7 +1110,13 @@ git push origin client-v0.3.0
 
   Обе команды отвечают `200` и `#!/usr/bin/env bash`/хеш; на чистой машине
   установщик ставит клиент в `~/.local/bin` и пункт меню без root
-  (`test/client-install-smoke.sh` держит это в CI).
+  (`test/client-install-smoke.sh` держит это в CI). В `.desktop` он пишет
+  абсолютный путь вместо `tes3mp-easy-client`: панель DE запускает `Exec` без
+  login-шелла и `~/.local/bin` в её `PATH` нет. Пункт появляется после того, как
+  меню перечитает кэш: на Xfce это `xfce4-panel -r` (Whisker иначе не находит
+  новую запись поиском), на остальных DE — перелогин. One-liner в README и в
+  шапке скрипта — `curl -fsSL … | bash`, потому что `bash <(curl …)` не работает
+  в fish.
 - `internal/contract` и `internal/serverapi` описывают протокол
   клиент↔панель: несовместимые изменения выпускаются в обоих каналах.
 - Панель отдаёт свою версию в `/api/v1/server` как `panel_version` — это
